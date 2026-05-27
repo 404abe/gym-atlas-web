@@ -1,0 +1,264 @@
+import { API_URL } from './config';
+import type { Gym, GymEquipment, GymWithQuantity } from '@/types/gym';
+import type { Equipment } from '@/types/equipment';
+import type { PendingGym, PendingEquipment, PendingSuggestion, AdminUser } from '@/types/admin';
+import type { LeaderboardEntry } from '@/types/leaderboard';
+import { BestInClassCategory, BestInClassEntry } from '@/types/bestInClass';
+
+// ── Auth helpers ──────────────────────────────────────────────────────────────
+
+function getToken(): string | null {
+	if (typeof window === 'undefined') return null;
+	return localStorage.getItem('auth_token');
+}
+
+function authHeaders(): Record<string, string> {
+	const token = getToken();
+	return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+// ── Core fetch ────────────────────────────────────────────────────────────────
+
+async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
+	const res = await fetch(`${API_URL}${path}`, options);
+	if (!res.ok) {
+		const error = await res.json().catch(() => ({ error: 'Request failed' }));
+		throw new Error(error.error || `HTTP ${res.status}`);
+	}
+	const body = await res.json();
+	return body.data;
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+
+export const loginUser = (email: string, password: string): Promise<{ token: string }> =>
+	apiFetch('/auth/login', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ email, password })
+	});
+
+export const registerUser = (email: string, password: string, username: string): Promise<void> =>
+	apiFetch('/auth/register', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ email, password, username })
+	});
+
+// ── Gyms ──────────────────────────────────────────────────────────────────────
+
+export const fetchGyms = (): Promise<Gym[]> => apiFetch('/gyms');
+
+export const fetchGymById = (id: number): Promise<Gym> => apiFetch(`/gyms/${id}`);
+
+export const fetchGymEquipment = (id: number): Promise<GymEquipment[]> =>
+	apiFetch(`/gyms/${id}/equipment`);
+
+export const fetchGymStats = (): Promise<Gym[]> =>
+	apiFetch('/gyms/stats', { headers: authHeaders() });
+
+export const favouriteGym = (id: number): Promise<void> =>
+	apiFetch(`/gyms/${id}/favourite`, { method: 'POST', headers: authHeaders() });
+
+export const unfavouriteGym = (id: number): Promise<void> =>
+	apiFetch(`/gyms/${id}/favourite`, { method: 'DELETE', headers: authHeaders() });
+
+export const rateGym = (id: number, rating: number): Promise<void> =>
+	apiFetch(`/gyms/${id}/rate`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json', ...authHeaders() },
+		body: JSON.stringify({ rating })
+	});
+
+export const uploadGymImage = async (id: number, file: File): Promise<string> => {
+	const formData = new FormData();
+	formData.append('image', file);
+	const data = await apiFetch<{ image_url: string }>(`/gyms/${id}/image`, {
+		method: 'POST',
+		headers: authHeaders(),
+		body: formData
+	});
+	return data.image_url;
+};
+
+export const createGym = (body: {
+	name: string;
+	latitude: number;
+	longitude: number;
+	city?: string;
+	country?: string;
+}): Promise<Gym> =>
+	apiFetch('/gyms', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json', ...authHeaders() },
+		body: JSON.stringify(body)
+	});
+
+export const addGymEquipment = (
+	gymId: number,
+	equipmentId: number,
+	quantity: number
+): Promise<unknown> =>
+	apiFetch(`/gyms/${gymId}/equipment`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json', ...authHeaders() },
+		body: JSON.stringify({ equipment_id: equipmentId, quantity })
+	});
+
+export const removeGymEquipment = (gymId: number, equipmentId: number): Promise<void> =>
+	apiFetch(`/gyms/${gymId}/equipment/${equipmentId}`, {
+		method: 'DELETE',
+		headers: authHeaders()
+	});
+
+// ── Equipment ─────────────────────────────────────────────────────────────────
+
+export const fetchAllEquipment = (): Promise<Equipment[]> =>
+	apiFetch('/equipment', { headers: authHeaders() });
+
+export const fetchEquipmentById = (id: string | number): Promise<Equipment> =>
+	apiFetch(`/equipment/${id}`, { headers: authHeaders() });
+
+export const fetchEquipmentGyms = (slug: string): Promise<{ gyms: GymWithQuantity[] }> =>
+	apiFetch(`/equipment/${slug}/gyms`, { headers: authHeaders() });
+
+export const fetchEquipmentBrands = (): Promise<{ brands: string[] }> =>
+	apiFetch('/equipment/brands');
+
+export const fetchEquipmentSeries = (brand: string): Promise<{ series: string[] }> =>
+	apiFetch(`/equipment/series?brand=${encodeURIComponent(brand)}`);
+
+export const searchEquipment = (query: string): Promise<unknown[]> =>
+	apiFetch(`/equipment/search?q=${encodeURIComponent(query)}`);
+
+export const createEquipment = (body: {
+	name: string;
+	brand: string;
+	series: string;
+	type: string;
+	resistance_profile?: string;
+}): Promise<Equipment> =>
+	apiFetch('/equipment', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json', ...authHeaders() },
+		body: JSON.stringify(body)
+	});
+
+export const rateEquipment = (id: string | number, rating: number): Promise<void> =>
+	apiFetch(`/equipment/${id}/rate`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json', ...authHeaders() },
+		body: JSON.stringify({ rating })
+	});
+
+export const favouriteEquipment = (id: string | number): Promise<void> =>
+	apiFetch(`/equipment/${id}/favourite`, {
+		method: 'POST',
+		headers: authHeaders()
+	});
+
+export const unfavouriteEquipment = (id: string | number): Promise<void> =>
+	apiFetch(`/equipment/${id}/favourite`, {
+		method: 'DELETE',
+		headers: authHeaders()
+	});
+
+export const uploadEquipmentImage = async (id: string | number, file: File): Promise<string> => {
+	const formData = new FormData();
+	formData.append('image', file);
+	const data = await apiFetch<{ image_url: string }>(`/equipment/${id}/image`, {
+		method: 'POST',
+		headers: authHeaders(),
+		body: formData
+	});
+	return data.image_url;
+};
+
+// ── Admin ─────────────────────────────────────────────────────────────────────
+
+export const fetchAdminPending = (): Promise<{
+	gyms: PendingGym[];
+	equipment: PendingEquipment[];
+	suggestions: PendingSuggestion[];
+}> => apiFetch('/admin/pending', { headers: authHeaders() });
+
+export const fetchAdminUsers = (): Promise<{ users: AdminUser[] }> =>
+	apiFetch('/admin/users', { headers: authHeaders() });
+
+export const adminAction = (
+	action: 'approve' | 'reject',
+	type: 'gym' | 'equipment' | 'suggestion',
+	id: number
+): Promise<void> =>
+	apiFetch(`/admin/${action}/${type}/${id}`, {
+		method: 'POST',
+		headers: authHeaders()
+	});
+
+export const makeAdmin = (userId: number): Promise<void> =>
+	apiFetch(`/admin/make-admin/${userId}`, {
+		method: 'POST',
+		headers: authHeaders()
+	});
+
+// ── Best in Class ─────────────────────────────────────────────────────────────
+
+export const fetchBestInClassCategories = async (): Promise<{ categories: BestInClassCategory[] }> => {
+	const data = await apiFetch<BestInClassCategory[] | { categories: BestInClassCategory[] }>('/best-in-class/categories');
+	return Array.isArray(data) ? { categories: data } : data;
+};
+
+export const setBestInClass = (categoryId: number, equipmentId: number): Promise<void> =>
+	apiFetch('/best-in-class', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json', ...authHeaders() },
+		body: JSON.stringify({ category_id: categoryId, equipment_id: equipmentId })
+	});
+
+export const removeBestInClass = (categoryId: number): Promise<void> =>
+	apiFetch(`/best-in-class/${categoryId}`, {
+		method: 'DELETE',
+		headers: authHeaders()
+	});
+
+export const fetchUserBestInClass = async (
+	userId: string | number
+): Promise<{ best_in_class: BestInClassEntry[] }> => {
+	const data = await apiFetch<BestInClassEntry[] | { best_in_class: BestInClassEntry[] }>(`/best-in-class/user/${userId}`, { headers: authHeaders() });
+	return Array.isArray(data) ? { best_in_class: data } : data;
+};
+
+// ── Leaderboard ───────────────────────────────────────────────────────────────
+
+export const fetchLeaderboard = (): Promise<LeaderboardEntry[]> =>
+	apiFetch('/leaderboard');
+
+export const fetchLeaderboardUser = (id: string | number): Promise<unknown> =>
+	apiFetch(`/leaderboard/user/${id}`, { headers: authHeaders() });
+
+// ── Users ─────────────────────────────────────────────────────────────────────
+
+export const fetchUser = (id: string | number): Promise<unknown> =>
+	apiFetch(`/users/${id}`, { headers: authHeaders() });
+
+export type UserStats = {
+	favouriteGymsCount: number;
+	favouriteEquipmentCount: number;
+	gyms_rated: number;
+	equipment_rated: number;
+};
+
+export const fetchUserStats = (id: string | number): Promise<UserStats> =>
+	apiFetch(`/users/${id}/stats`, { headers: authHeaders() });
+
+export const fetchUserRatingsGyms = (id: string | number): Promise<unknown> =>
+	apiFetch(`/users/${id}/ratings/gyms`, { headers: authHeaders() });
+
+export const fetchUserRatingsEquipment = (id: string | number): Promise<unknown> =>
+	apiFetch(`/users/${id}/ratings/equipment`, { headers: authHeaders() });
+
+export const fetchUserFavouritesGyms = (id: string | number): Promise<unknown> =>
+	apiFetch(`/users/${id}/favourites/gyms`, { headers: authHeaders() });
+
+export const fetchUserFavouritesEquipment = (id: string | number): Promise<unknown> =>
+	apiFetch(`/users/${id}/favourites/equipment`, { headers: authHeaders() });

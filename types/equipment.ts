@@ -1,0 +1,16 @@
+// types/equipment.ts
+export interface Equipment {
+	created_at: string | number | Date;
+	id: number;
+	brand: string;
+	series: string;
+	name: string;
+	slug: string;
+	type: 'pin_loaded' | 'plate_loaded';
+	resistance_profile?: 'constant' | 'ascending' | 'descending';
+	rating?: number;
+	avg_rating?: number;
+	user_rating?: number;
+	is_favorite?: boolean;
+	image_url?: string;
+}

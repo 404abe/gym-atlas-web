@@ -1,0 +1,194 @@
+@import 'tailwindcss';
+@import 'mapbox-gl/dist/mapbox-gl.css';
+
+/* ── Design Tokens ───────────────────────────── */
+:root {
+	--bg-color: #0f0f0f;
+	--surface-color: #141414;
+	--sub-alt-color: #1a1a1a;
+	--border-color: #222222;
+	--sub-color: #4c4c4c;
+	--text-color: #e7e7e7;
+	--main-color: #e7e7e7;
+	--caret-color: #e7e7e7;
+	--accent: #e7e7e7;
+	--success-color: #5c8f00;
+	--roundness: 6px;
+
+	/* ── Hit targets ── */
+	--hit-size: 44px; /* touch (iPad default) */
+	--icon-size: 22px;
+	--logo-size: 14px;
+}
+
+@media (pointer: fine) {
+	:root {
+		--hit-size: 36px; /* mouse / trackpad */
+		--icon-size: 18px;
+		--logo-size: 13px;
+	}
+}
+
+/* Hides only the "Improve this map" link, keeps other attribution */
+.mapboxgl-ctrl-attrib a:last-of-type {
+	display: none;
+}
+
+.mapboxgl-ctrl-attrib {
+	display: none !important;
+}
+
+/* ── Tailwind v4 Theme Bridge ────────────────── */
+@theme inline {
+	/* colours */
+	--color-bg: var(--bg-color);
+	--color-surface: var(--surface-color);
+	--color-border: var(--border-color);
+	--color-sub: var(--sub-color);
+	--color-text: var(--text-color);
+	--color-main: var(--main-color);
+	--accent: var(--accent);
+	--color-success: var(--success-color);
+	--color-sub-alt: var(--sub-alt-color);
+	/* typography */
+	--font-sans: 'DM Sans', sans-serif;
+	--font-mono: 'Roboto Mono', monospace;
+
+	/* radius */
+	--radius: var(--roundness);
+
+	/* breakpoints — MonkeyType's exact values */
+	--breakpoint-xs: 450px;
+	--breakpoint-sm: 721px;
+	--breakpoint-md: 849px;
+	--breakpoint-lg: 1105px;
+	--breakpoint-xl: 1361px;
+	--breakpoint-2xl: 1617px;
+
+	/* transitions */
+	--default-transition-duration: 0.22s;
+}
+
+@media (max-width: 450px) {
+	.content-grid {
+		--padding-inline: 1rem;
+	}
+}
+
+/* ── Base Styles ─────────────────────────────── */
+body {
+	background: var(--bg-color);
+	color: var(--text-color);
+	font-family: var(--font-sans);
+}
+
+/* MonkeyType content grid — credit Kevin Powell */
+.content-grid {
+	--padding-inline: 2rem;
+	--content-max-width: 1536px;
+	--breakout-size: calc((calc(var(--content-max-width) + 12rem) - var(--content-max-width)) / 2);
+
+	display: grid;
+	justify-content: center;
+	grid-template-columns:
+		[full-width-start] var(--padding-inline)
+		[full-width-padding-start] minmax(0, 1fr)
+		[breakout-start] minmax(0, var(--breakout-size))
+		[content-start] min(100% - (var(--padding-inline) * 2), var(--content-max-width))
+		[content-end] minmax(0, var(--breakout-size))
+		[breakout-end] minmax(0, 1fr)
+		[full-width-padding-end] var(--padding-inline)
+		[full-width-end];
+}
+
+html {
+	height: 100dvh;
+}
+
+/* default — all children sit in content column */
+.content-grid > * {
+	grid-column: content;
+}
+
+/* breakout — slightly wider than content */
+.content-grid > .breakout {
+	grid-column: breakout;
+}
+
+/* full width — edge to edge, no padding */
+.content-grid > .full-width {
+	grid-column: full-width;
+}
+
+/* full width but with padding */
+.content-grid > .full-width-padding {
+	grid-column: full-width-padding;
+}
+.content-grid.h-full {
+	height: 100%;
+	overflow: hidden;
+}
+
+* {
+	border-color: var(--border-color);
+	box-sizing: border-box;
+}
+
+/* ── Sidebar ─────────────────────────────────── */
+:root {
+	--sidebar-width: 28%;
+}
+
+.sidebar {
+	display: none;
+	flex-shrink: 0;
+	width: var(--sidebar-width);
+}
+
+@media (min-width: 849px) {
+	/* md */
+	.sidebar {
+		display: flex;
+		flex-direction: column;
+	}
+}
+
+.sidebar--open {
+	display: flex;
+	flex-direction: column;
+	position: fixed;
+	inset-block: 0;
+	left: 0;
+	z-index: 30;
+	width: 80vw;
+	max-width: 24rem;
+	background: var(--surface-color);
+	border-radius: 0 var(--roundness) var(--roundness) 0;
+}
+
+/* ── Scrollbar ───────────────────────────────── */
+::-webkit-scrollbar {
+	width: 4px;
+}
+::-webkit-scrollbar-track {
+	background: transparent;
+}
+::-webkit-scrollbar-thumb {
+	background: var(--border-color);
+	border-radius: 2px;
+}
+
+/* 
+One caveat — React icon size prop only takes a number, not a CSS string. For icons specifically you'd need a small hook:
+tsxconst iconSize = typeof window !== 'undefined' && 
+  window.matchMedia('(pointer: fine)').matches ? 18 : 22; */
+
+.example::-webkit-scrollbar {
+	display: none;
+}
+
+@layer components {
+	.select-toolbar {
+		@apply bg-sub-alt text-main h-8 rounded-lg px-2 text-sm outline-none;
+	}
+}

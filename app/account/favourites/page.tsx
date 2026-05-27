@@ -1,0 +1,129 @@
+'use client';
+import { useEffect, useState } from 'react';
+import { useAuth } from '@/app/contexts/AuthContext';
+import { fetchUserFavouritesGyms, fetchUserFavouritesEquipment } from '@/lib/api';
+import Link from 'next/link';
+import { MapPin, Dumbbell } from 'lucide-react';
+import type { Gym } from '@/types/gym';
+import type { Equipment } from '@/types/equipment';
+
+type FavGym = Pick<Gym, 'id' | 'name' | 'city' | 'country' | 'image_url'>;
+type FavEquip = Pick<Equipment, 'id' | 'name' | 'brand' | 'series' | 'slug' | 'image_url'>;
+
+export default function FavouritesPage() {
+	const { user, loading: authLoading } = useAuth();
+	const [tab, setTab] = useState<'gyms' | 'equipment'>('gyms');
+	const [gyms, setGyms] = useState<FavGym[]>([]);
+	const [equipment, setEquipment] = useState<FavEquip[]>([]);
+	const [loading, setLoading] = useState(true);
+
+	useEffect(() => {
+		if (authLoading) return;
+		if (!user) {
+			setLoading(false);
+			return;
+		}
+		Promise.all([fetchUserFavouritesGyms(user.id), fetchUserFavouritesEquipment(user.id)])
+			.then(([gymData, equipData]) => {
+				setGyms((gymData as FavGym[]) ?? []);
+				setEquipment((equipData as FavEquip[]) ?? []);
+			})
+			.catch(console.error)
+			.finally(() => setLoading(false));
+	}, [user, authLoading]);
+
+	return (
+		<div className="space-y-4">
+			{/* Tabs */}
+			<div className="bg-main/5 flex w-fit items-center rounded-xl p-1">
+				<button
+					onClick={() => setTab('gyms')}
+					className={`rounded-lg px-4 py-1.5 text-sm font-medium transition ${
+						tab === 'gyms' ? 'bg-main text-bg' : 'text-sub hover:text-main'
+					}`}
+				>
+					Gyms {!loading && <span className="ml-1 opacity-60">{gyms.length}</span>}
+				</button>
+				<button
+					onClick={() => setTab('equipment')}
+					className={`rounded-lg px-4 py-1.5 text-sm font-medium transition ${
+						tab === 'equipment' ? 'bg-main text-bg' : 'text-sub hover:text-main'
+					}`}
+				>
+					Equipment {!loading && <span className="ml-1 opacity-60">{equipment.length}</span>}
+				</button>
+			</div>
+
+			{/* Content */}
+			{loading ? (
+				<p className="text-sub text-sm">Loading...</p>
+			) : tab === 'gyms' ? (
+				<div className="space-y-2">
+					{gyms.length === 0 ? (
+						<p className="text-sub text-sm">No favourite gyms yet.</p>
+					) : (
+						gyms.map((g) => (
+							<Link
+							id='cardImage'
+								key={g.id}
+								href={`/gyms/${g.id}`}
+								className="bg-sub-alt hover:bg-main/5 flex items-center gap-3 rounded-xl px-4 py-3 transition"
+							>
+								{g.image_url ? (
+									<img
+										src={g.image_url}
+										alt={g.name}
+										className="h-9 w-9 shrink-0 rounded-lg object-cover"
+									/>
+								) : (
+									<div className="bg-main/10 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg">
+										<MapPin className="text-sub h-4 w-4" />
+									</div>
+								)}
+								<div>
+									<p className="text-main text-sm font-medium">{g.name}</p>
+									<p className="text-sub text-xs">
+										{g.city}, {g.country}
+									</p>
+								</div>
+							</Link>
+						))
+					)}
+				</div>
+			) : (
+				<div className="space-y-2">
+					{equipment.length === 0 ? (
+						<p className="text-sub text-sm">No favourite equipment yet.</p>
+					) : (
+						equipment.map((e) => (
+							<Link
+								key={e.id}
+								href={`/equipment/${e.id}`}
+								className="bg-sub-alt hover:bg-main/5 flex items-center gap-3 rounded-xl px-4 py-3 transition"
+							>
+								{e.image_url ? (
+									<img
+										src={e.image_url}
+										alt={e.name}
+										className="h-9 w-9 shrink-0 rounded-lg object-cover"
+									/>
+								) : (
+									<div className="bg-main/10 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg">
+										<Dumbbell className="text-sub h-4 w-4" />
+									</div>
+								)}
+								<div>
+									<p className="text-main text-sm font-medium">{e.name}</p>
+									<p className="text-sub text-xs">
+										{e.brand}
+										{e.series ? ` · ${e.series}` : ''}
+									</p>
+								</div>
+							</Link>
+						))
+					)}
+				</div>
+			)}
+		</div>
+	);
+}
