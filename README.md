@@ -1,4 +1,4 @@
-[![](https://raw.githubusercontent.com/404abe/gym-atlas-web/main/public/banner-white-logo.png)](https://YOUR_URL.com)
+[![](https://raw.githubusercontent.com/404abe/gym-atlas-web/main/public/banner-white-logo.png)](https://gym-atlas-web.vercel.app/)
 <br />
 
 [![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
