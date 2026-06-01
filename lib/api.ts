@@ -7,9 +7,17 @@ import { BestInClassCategory, BestInClassEntry } from '@/types/bestInClass';
 
 // ── Auth helpers ──────────────────────────────────────────────────────────────
 
+// AuthContext calls setAuthToken whenever the Supabase session changes so that
+// authHeaders() stays synchronous without reading localStorage directly.
+let _token: string | null = null;
+
+export function setAuthToken(token: string | null): void {
+	console.log('[api] setAuthToken called with:', token ? token.slice(0, 20) + '...' : null);
+	_token = token;
+}
+
 function getToken(): string | null {
-	if (typeof window === 'undefined') return null;
-	return localStorage.getItem('auth_token');
+	return _token;
 }
 
 function authHeaders(): Record<string, string> {
@@ -28,22 +36,6 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
 	const body = await res.json();
 	return body.data;
 }
-
-// ── Auth ──────────────────────────────────────────────────────────────────────
-
-export const loginUser = (email: string, password: string): Promise<{ token: string }> =>
-	apiFetch('/auth/login', {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ email, password })
-	});
-
-export const registerUser = (email: string, password: string, username: string): Promise<void> =>
-	apiFetch('/auth/register', {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ email, password, username })
-	});
 
 // ── Gyms ──────────────────────────────────────────────────────────────────────
 
@@ -195,7 +187,7 @@ export const adminAction = (
 		headers: authHeaders()
 	});
 
-export const makeAdmin = (userId: number): Promise<void> =>
+export const makeAdmin = (userId: string): Promise<void> =>
 	apiFetch(`/admin/make-admin/${userId}`, {
 		method: 'POST',
 		headers: authHeaders()

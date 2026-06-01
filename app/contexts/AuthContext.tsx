@@ -1,29 +1,33 @@
 'use client';
-import { createContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { useContext } from 'react';
-import { loginUser, registerUser } from '@/lib/api';
-import { User } from '@/types/user';
+import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase';
+import { setAuthToken } from '@/lib/api';
+import type { User } from '@/types/user';
 
 type AuthContextType = {
 	user: User | null;
 	token: string | null;
 	login: (email: string, password: string) => Promise<void>;
 	register: (email: string, password: string, username: string) => Promise<void>;
-	logout: () => void;
+	logout: () => Promise<void>;
 	loading: boolean;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-function decodeToken(token: string): User {
-	const payload = JSON.parse(atob(token.split('.')[1]));
-	return {
-		id: payload.id,
-		email: payload.email,
-		username: payload.username || '',
-		role: payload.role ?? 'user'
-	};
+// Singleton client — created once outside the component so only one
+// onAuthStateChange subscription exists for the lifetime of the app.
+const supabase = createClient();
+
+async function fetchProfile(userId: string): Promise<{ username: string; role: string }> {
+	const { data } = await supabase
+		.from('profiles')
+		.select('username, role')
+		.eq('id', userId)
+		.single();
+	return { username: data?.username ?? '', role: data?.role ?? 'user' };
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -33,37 +37,73 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	const router = useRouter();
 
 	useEffect(() => {
-		const storedToken = localStorage.getItem('auth_token');
-		if (storedToken) {
-			try {
-				setUser(decodeToken(storedToken));
-				setToken(storedToken);
-			} catch (error) {
-				console.error('❌ Invalid token:', error);
-				localStorage.removeItem('auth_token');
+		// onAuthStateChange fires INITIAL_SESSION as its first event, after any
+		// pending OAuth code exchange — making it the authoritative source for
+		// the initial auth state. Using getSession() separately can resolve before
+		// the code exchange completes, causing a false unauthenticated state.
+		const { data: { subscription } } = supabase.auth.onAuthStateChange(
+			async (_event: AuthChangeEvent, session: Session | null) => {
+				console.log('[AuthContext] onAuthStateChange fired:', _event, 'token:', session?.access_token?.slice(0, 20) ?? null);
+				if (session) {
+					// Set _token immediately before any async work. TOKEN_REFRESHED
+					// fires with loading=false, so the account page effect can run
+					// while fetchProfile is still in-flight — it needs a valid token.
+					setAuthToken(session.access_token);
+					const profile = await fetchProfile(session.user.id);
+					console.log('[AuthContext] fetchProfile resolved, calling setUser + setLoading(false)');
+					setUser({
+						id: session.user.id,
+						email: session.user.email ?? '',
+						username: profile.username,
+						role: profile.role as User['role'],
+					});
+					setToken(session.access_token);
+				} else {
+					setUser(null);
+					setToken(null);
+					setAuthToken(null);
+				}
+				setLoading(false);
 			}
-		}
-		setLoading(false);
+		);
+
+		return () => subscription.unsubscribe();
 	}, []);
 
 	const login = async (email: string, password: string) => {
-		const data = await loginUser(email, password);
-		localStorage.setItem('auth_token', data.token);
-		setUser(decodeToken(data.token));
-		setToken(data.token);
+		const { error } = await supabase.auth.signInWithPassword({ email, password });
+		if (error) throw new Error(error.message);
 		router.push('/');
 	};
 
 	const register = async (email: string, password: string, username: string) => {
-		await registerUser(email, password, username);
-		await login(email, password);
+		// Pre-check uniqueness so the error message is actionable.
+		// profiles has a SELECT policy open to everyone, so this works with the anon key.
+		const { data: existing } = await supabase
+			.from('profiles')
+			.select('id')
+			.eq('username', username)
+			.maybeSingle();
+		if (existing) throw new Error('Username already taken');
+
+		const { error } = await supabase.auth.signUp({
+			email,
+			password,
+			options: { data: { username } },
+		});
+		if (error) throw new Error(error.message);
+		router.push('/');
 	};
 
-	const logout = () => {
-		localStorage.removeItem('auth_token');
-		setUser(null);
-		setToken(null);
-		router.push('/');
+	const logout = async () => {
+		try {
+			await supabase.auth.signOut();
+		} finally {
+			setUser(null);
+			setToken(null);
+			setAuthToken(null);
+			router.push('/');
+		}
 	};
 
 	return (
