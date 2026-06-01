@@ -3,6 +3,10 @@
 import { useState } from 'react';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { UserPlus } from 'lucide-react';
+import { FcGoogle } from 'react-icons/fc';
+import { createClient } from '@/lib/supabase';
+
+const supabase = createClient();
 
 export default function Register() {
 	const { register } = useAuth();
@@ -12,6 +16,13 @@ export default function Register() {
 	const [confirmPassword, setConfirmPassword] = useState('');
 	const [error, setError] = useState('');
 	const [loading, setLoading] = useState(false);
+
+	const handleGoogle = async () => {
+		await supabase.auth.signInWithOAuth({
+			provider: 'google',
+			options: { redirectTo: `${window.location.origin}/auth/callback` }
+		});
+	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -97,6 +108,21 @@ export default function Register() {
 					{loading ? 'creating account...' : 'sign up'}
 				</button>
 			</form>
+
+			<div className="my-4 flex items-center gap-3">
+				<div className="bg-border h-px flex-1" />
+				<span className="text-sub text-xs">or</span>
+				<div className="bg-border h-px flex-1" />
+			</div>
+
+			<button
+				type="button"
+				onClick={handleGoogle}
+				className="bg-sub-alt text-sub hover:text-main flex w-full items-center justify-center gap-2 rounded-lg py-2.5 text-sm transition"
+			>
+				<FcGoogle className="h-4 w-4" />
+				continue with google
+			</button>
 		</div>
 	);
 }
