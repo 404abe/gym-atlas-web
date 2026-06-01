@@ -20,7 +20,7 @@ export default function AdminPage() {
 	const [users, setUsers] = useState<AdminUser[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [actions, setActions] = useState<ActionState>({});
-	const [promotingId, setPromotingId] = useState<number | null>(null);
+	const [promotingId, setPromotingId] = useState<string | null>(null);
 	const [activeTab, setActiveTab] = useState<Tab>('equipment');
 	const [suggestions, setSuggestions] = useState<PendingSuggestion[]>([]);
 
@@ -91,7 +91,7 @@ export default function AdminPage() {
 		}
 	};
 
-	const handleMakeAdmin = async (userId: number) => {
+	const handleMakeAdmin = async (userId: string) => {
 		setPromotingId(userId);
 		try {
 			await makeAdmin(userId);

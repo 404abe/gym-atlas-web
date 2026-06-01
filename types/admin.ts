@@ -29,7 +29,7 @@ export interface PendingSuggestion {
 }
 
 export interface AdminUser {
-	id: number;
+	id: string;
 	email: string;
 	role: 'user' | 'admin' | 'super_admin';
 	created_at: string;

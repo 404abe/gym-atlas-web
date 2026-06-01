@@ -5,7 +5,7 @@ import type { Equipment } from './equipment';
 export type UserRole = 'user' | 'admin' | 'super_admin';
 
 export interface User {
-	id: number;
+	id: string;
 	email: string;
 	username: string;
 	role: UserRole;
