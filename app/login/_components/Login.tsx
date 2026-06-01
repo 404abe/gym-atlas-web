@@ -3,6 +3,10 @@
 import { useState } from 'react';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { LogIn } from 'lucide-react';
+import { FcGoogle } from 'react-icons/fc';
+import { createClient } from '@/lib/supabase';
+
+const supabase = createClient();
 
 export default function Login() {
 	const { login } = useAuth();
@@ -10,6 +14,13 @@ export default function Login() {
 	const [password, setPassword] = useState('');
 	const [error, setError] = useState('');
 	const [loading, setLoading] = useState(false);
+
+	const handleGoogle = async () => {
+		await supabase.auth.signInWithOAuth({
+			provider: 'google',
+			options: { redirectTo: 'http://localhost:3001' }
+		});
+	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -70,6 +81,21 @@ export default function Login() {
 					{loading ? 'signing in...' : 'sign in'}
 				</button>
 			</form>
+
+			<div className="my-4 flex items-center gap-3">
+				<div className="bg-border h-px flex-1" />
+				<span className="text-sub text-xs">or</span>
+				<div className="bg-border h-px flex-1" />
+			</div>
+
+			<button
+				type="button"
+				onClick={handleGoogle}
+				className="bg-sub-alt text-sub hover:text-main flex w-full items-center justify-center gap-2 rounded-lg py-2.5 text-sm transition"
+			>
+				<FcGoogle className="h-4 w-4" />
+				continue with google
+			</button>
 
 			<button className="text-sub mt-4 w-full text-right text-xs hover:underline">
 				forgot password?
