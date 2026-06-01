@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.10.3",
+    "@supabase/supabase-js": "^2.106.2",
     "lucide-react": "^1.14.0",
     "mapbox-gl": "^3.22.0",
     "next": "16.2.4",
