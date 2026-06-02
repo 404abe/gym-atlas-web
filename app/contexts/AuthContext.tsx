@@ -86,12 +86,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			.maybeSingle();
 		if (existing) throw new Error('Username already taken');
 
-		const { error } = await supabase.auth.signUp({
+		const { data, error } = await supabase.auth.signUp({
 			email,
 			password,
 			options: { data: { username } },
 		});
 		if (error) throw new Error(error.message);
+
+		if (data.user) {
+			const { error: profileError } = await supabase
+				.from('profiles')
+				.upsert({ id: data.user.id, username, role: 'user' });
+			if (profileError) throw new Error('Failed to create profile');
+		}
+
 		router.push('/');
 	};
 
