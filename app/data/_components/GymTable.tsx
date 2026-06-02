@@ -211,10 +211,10 @@ export default function GymTable({
 										<Building2 className="text-sub h-4 w-4 shrink-0" />
 										<div>
 											<span className="text-text text-sm font-medium">{gym.name}</span>
-											{gym.city && (
+											{(gym.city || gym.country) && (
 												<p className="text-sub mt-0.5 flex items-center gap-1 text-xs md:hidden">
 													<MapPin className="h-3 w-3" />
-													{gym.city}
+													{[gym.city, gym.country].filter(Boolean).join(', ')}
 												</p>
 											)}
 										</div>

@@ -97,6 +97,7 @@ export default function NewGymCard({ onCreated }: Props) {
 				name,
 				latitude: parseFloat(lat),
 				longitude: parseFloat(lng),
+				address,
 				city,
 				country
 			});

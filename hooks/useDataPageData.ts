@@ -9,7 +9,6 @@ import {
 	unfavouriteGym,
 	fetchAllEquipment,
 	fetchGyms,
-	fetchGymStats,
 	fetchBestInClassCategories,
 	rateEquipment,
 	rateGym
@@ -25,13 +24,11 @@ export function useDataPageData() {
 	useEffect(() => {
 		const load = async () => {
 			try {
-				const [eqData, gymsData, baseGyms, catsData] = await Promise.all([
+				const [eqData, gymsData, catsData] = await Promise.all([
 					fetchAllEquipment(),
-					fetchGymStats(),
 					fetchGyms(),
 					fetchBestInClassCategories()
 				]);
-				const imageMap = new Map(baseGyms.map((g: Gym) => [g.id, g.image_url]));
 				setEquipment(
 					eqData.map((item: Equipment) => ({
 						...item,
@@ -40,7 +37,7 @@ export function useDataPageData() {
 						rating: Number(item.user_rating) || Number(item.avg_rating) || 0
 					}))
 				);
-				setGyms(gymsData.map((g: Gym) => ({ ...g, image_url: imageMap.get(g.id) ?? g.image_url })));
+				setGyms(gymsData);
 				setCategories(catsData.categories ?? []);
 			} catch (err) {
 				console.error('Failed to load data:', err);

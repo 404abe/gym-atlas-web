@@ -207,10 +207,15 @@ export default function GymProfilePage() {
 										{gym.city} · {gym.country}
 									</p>
 									<h1 className="text-main text-2xl font-semibold leading-tight">{gym.name}</h1>
-									<div className="text-sub mt-2 flex items-center gap-1.5 text-sm">
+									<a
+										href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([gym.address, gym.city, gym.country].filter(Boolean).join(', '))}`}
+										target="_blank"
+										rel="noreferrer"
+										className="text-sub hover:text-main mt-2 flex items-center gap-1.5 text-sm transition"
+									>
 										<MapPin className="h-3.5 w-3.5 shrink-0" />
-										<span>{[gym.address, gym.city, gym.country].filter(Boolean).join(', ')}</span>
-									</div>
+										<span className="hover:underline">{[gym.address, gym.city, gym.country].filter(Boolean).join(', ')}</span>
+									</a>
 								</div>
 								<FavoriteButton isFavorite={isFavorite} onToggle={handleFavorite} />
 							</div>
@@ -300,10 +305,15 @@ export default function GymProfilePage() {
 										{gym.city} · {gym.country}
 									</p>
 									<h1 className="text-main text-xl font-semibold">{gym.name}</h1>
-									<div className="text-sub mt-2 flex items-center gap-1 text-sm">
+									<a
+										href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([gym.address, gym.city, gym.country].filter(Boolean).join(', '))}`}
+										target="_blank"
+										rel="noreferrer"
+										className="text-sub hover:text-main mt-2 flex items-center gap-1 text-sm transition"
+									>
 										<MapPin className="h-3.5 w-3.5 shrink-0" />
-										<span>{[gym.address, gym.city, gym.country].filter(Boolean).join(', ')}</span>
-									</div>
+										<span className="hover:underline">{[gym.address, gym.city, gym.country].filter(Boolean).join(', ')}</span>
+									</a>
 								</div>
 								<FavoriteButton isFavorite={isFavorite} onToggle={handleFavorite} />
 							</div>

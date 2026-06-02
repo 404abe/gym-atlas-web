@@ -46,8 +46,6 @@ export const fetchGymById = (id: number): Promise<Gym> => apiFetch(`/gyms/${id}`
 export const fetchGymEquipment = (id: number): Promise<GymEquipment[]> =>
 	apiFetch(`/gyms/${id}/equipment`);
 
-export const fetchGymStats = (): Promise<Gym[]> =>
-	apiFetch('/gyms/stats', { headers: authHeaders() });
 
 export const favouriteGym = (id: number): Promise<void> =>
 	apiFetch(`/gyms/${id}/favourite`, { method: 'POST', headers: authHeaders() });
@@ -77,6 +75,7 @@ export const createGym = (body: {
 	name: string;
 	latitude: number;
 	longitude: number;
+	address?: string;
 	city?: string;
 	country?: string;
 }): Promise<Gym> =>
