@@ -3,7 +3,7 @@ import { createContext, useState, useEffect, useContext, ReactNode } from 'react
 import { useRouter } from 'next/navigation';
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase';
-import { setAuthToken } from '@/lib/api';
+import { setAuthToken, syncUser } from '@/lib/api';
 import type { User } from '@/types/user';
 
 type AuthContextType = {
@@ -49,6 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 					// fires with loading=false, so the account page effect can run
 					// while fetchProfile is still in-flight — it needs a valid token.
 					setAuthToken(session.access_token);
+					if (_event === 'SIGNED_IN') await syncUser().catch(() => {});
 					const profile = await fetchProfile(session.user.id);
 					console.log('[AuthContext] fetchProfile resolved, calling setUser + setLoading(false)');
 					setUser({

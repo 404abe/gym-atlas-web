@@ -228,6 +228,9 @@ export const fetchLeaderboard = (): Promise<LeaderboardEntry[]> =>
 export const fetchLeaderboardUser = (id: string | number): Promise<unknown> =>
 	apiFetch(`/leaderboard/user/${id}`, { headers: authHeaders() });
 
+export const syncUser = (): Promise<unknown> =>
+	apiFetch('/users/sync', { method: 'POST', headers: authHeaders() });
+
 // ── Users ─────────────────────────────────────────────────────────────────────
 
 export const fetchUser = (id: string | number): Promise<unknown> =>
