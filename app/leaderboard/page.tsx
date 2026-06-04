@@ -1,12 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Trophy, Building2, Dumbbell, Link as LinkIcon, Medal } from 'lucide-react';
+import { Trophy, Building2, Dumbbell, Link as LinkIcon, Medal, ImageIcon } from 'lucide-react';
 import Link from 'next/link';
 import { fetchLeaderboard } from '@/lib/api';
 import { LeaderboardEntry } from '@/types/leaderboard';
 
-type SortKey = 'total' | 'gyms' | 'equipment' | 'linked';
+type SortKey = 'total' | 'gyms' | 'equipment' | 'linked' | 'photos';
 
 export default function LeaderboardPage() {
 	const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -31,12 +31,14 @@ export default function LeaderboardPage() {
 		if (sortBy === 'gyms') return parseInt(b.gyms_added) - parseInt(a.gyms_added);
 		if (sortBy === 'equipment') return parseInt(b.equipment_added) - parseInt(a.equipment_added);
 		if (sortBy === 'linked') return parseInt(b.equipment_linked) - parseInt(a.equipment_linked);
+		if (sortBy === 'photos') return parseInt(b.photos_added) - parseInt(a.photos_added);
 		return parseInt(b.total_contributions) - parseInt(a.total_contributions);
 	});
 
 	const totalGyms = leaderboard.reduce((s, e) => s + parseInt(e.gyms_added), 0);
 	const totalMachines = leaderboard.reduce((s, e) => s + parseInt(e.equipment_added), 0);
 	const totalLinks = leaderboard.reduce((s, e) => s + parseInt(e.equipment_linked), 0);
+	const totalPhotos = leaderboard.reduce((s, e) => s + parseInt(e.photos_added), 0);
 
 	const rankStyle = (rank: number) => {
 		if (rank === 1) return 'bg-yellow-500/20 text-yellow-500';
@@ -70,6 +72,7 @@ export default function LeaderboardPage() {
 				<span className="text-sub">{totalGyms} gyms</span>
 				<span className="text-sub">{totalMachines} machines</span>
 				<span className="text-sub">{totalLinks} linked</span>
+				<span className="text-sub">{totalPhotos} photos</span>
 			</div>
 
 			{/* Sort toggle */}
@@ -79,7 +82,8 @@ export default function LeaderboardPage() {
 						{ key: 'total', label: 'Total' },
 						{ key: 'gyms', label: 'Gyms' },
 						{ key: 'equipment', label: 'Machines' },
-						{ key: 'linked', label: 'Linked' }
+						{ key: 'linked', label: 'Linked' },
+						{ key: 'photos', label: 'Photos' }
 					] as { key: SortKey; label: string }[]
 				).map(({ key, label }) => (
 					<button
@@ -107,12 +111,14 @@ export default function LeaderboardPage() {
 						const gyms = parseInt(entry.gyms_added);
 						const equipment = parseInt(entry.equipment_added);
 						const linked = parseInt(entry.equipment_linked);
-						const scoreMap = { total, gyms, equipment, linked };
+						const photos = parseInt(entry.photos_added);
+						const scoreMap = { total, gyms, equipment, linked, photos };
 						const labelMap: Record<SortKey, string> = {
 							total: 'total',
 							gyms: 'gyms',
 							equipment: 'machines',
-							linked: 'links'
+							linked: 'links',
+							photos: 'photos'
 						};
 
 						return (
@@ -149,6 +155,12 @@ export default function LeaderboardPage() {
 											<span className="flex items-center gap-1">
 												<LinkIcon className="h-3 w-3" />
 												{linked} {linked === 1 ? 'link' : 'links'}
+											</span>
+										)}
+										{photos > 0 && (
+											<span className="flex items-center gap-1">
+												<ImageIcon className="h-3 w-3" />
+												{photos} {photos === 1 ? 'photo' : 'photos'}
 											</span>
 										)}
 									</div>

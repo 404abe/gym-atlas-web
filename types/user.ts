@@ -23,6 +23,7 @@ export interface ContributionSummary {
 	gyms_added: string;
 	equipment_added: string;
 	equipment_linked: string;
+	photos_added: string;
 	total_contributions: string;
 }
 
@@ -33,11 +34,21 @@ export interface EquipmentLink {
 	created_at: string;
 }
 
+export interface PhotoContribution {
+	id: number;
+	brand: string;
+	series: string | null;
+	name: string;
+	image_url: string;
+	uploaded_at: string;
+}
+
 export interface UserContributions {
 	summary: ContributionSummary;
 	recent: {
 		gyms: Gym[];
 		equipment: Equipment[];
 		links: EquipmentLink[];
+		photos: PhotoContribution[];
 	};
 }

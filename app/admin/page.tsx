@@ -3,13 +3,13 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/contexts/AuthContext';
-import { Check, X, Building2, Dumbbell, Clock, Users, ShieldCheck } from 'lucide-react';
-import { fetchAdminPending, fetchAdminUsers, adminAction, makeAdmin } from '@/lib/api';
-import { PendingGym, PendingEquipment, PendingSuggestion, AdminUser } from '@/types/admin';
+import { Check, X, Building2, Dumbbell, Clock, Users, ShieldCheck, ImageIcon } from 'lucide-react';
+import { fetchAdminPending, fetchAdminUsers, adminAction, adminPhotoAction, makeAdmin } from '@/lib/api';
+import { PendingGym, PendingEquipment, PendingSuggestion, PendingPhoto, AdminUser } from '@/types/admin';
 
 type ActionState = Record<string, 'approving' | 'rejecting' | 'done'>;
 
-const TABS = ['equipment', 'gyms', 'suggestions', 'users'] as const;
+const TABS = ['equipment', 'gyms', 'suggestions', 'photos', 'users'] as const;
 type Tab = (typeof TABS)[number];
 
 export default function AdminPage() {
@@ -23,6 +23,7 @@ export default function AdminPage() {
 	const [promotingId, setPromotingId] = useState<string | null>(null);
 	const [activeTab, setActiveTab] = useState<Tab>('equipment');
 	const [suggestions, setSuggestions] = useState<PendingSuggestion[]>([]);
+	const [photos, setPhotos] = useState<PendingPhoto[]>([]);
 
 	const isSuperAdmin = user?.role === 'super_admin';
 
@@ -50,6 +51,7 @@ export default function AdminPage() {
 			setGyms(data.gyms || []);
 			setEquipment(data.equipment || []);
 			setSuggestions(data.suggestions || []);
+			setPhotos(data.photos || []);
 		} catch (err) {
 			console.error('Failed to fetch pending:', err);
 		} finally {
@@ -91,6 +93,23 @@ export default function AdminPage() {
 		}
 	};
 
+	const handlePhotoAction = async (id: number, action: 'approve' | 'reject') => {
+		const key = `photo-${id}`;
+		setActions((prev) => ({ ...prev, [key]: action === 'approve' ? 'approving' : 'rejecting' }));
+		try {
+			await adminPhotoAction(action, id);
+			setActions((prev) => ({ ...prev, [key]: 'done' }));
+			setTimeout(() => setPhotos((prev) => prev.filter((p) => p.id !== id)), 600);
+		} catch (err) {
+			console.error(`Failed to ${action} photo:`, err);
+			setActions((prev) => {
+				const next = { ...prev };
+				delete next[key];
+				return next;
+			});
+		}
+	};
+
 	const handleMakeAdmin = async (userId: string) => {
 		setPromotingId(userId);
 		try {
@@ -108,8 +127,8 @@ export default function AdminPage() {
 
 	if (loading) return <div className="text-sub p-8 text-sm">Loading admin dashboard...</div>;
 
-	const totalPending = gyms.length + equipment.length + suggestions.length;
-	const visibleTabs = isSuperAdmin ? TABS : (['equipment', 'gyms', 'suggestions'] as const);
+	const totalPending = gyms.length + equipment.length + suggestions.length + photos.length;
+	const visibleTabs = isSuperAdmin ? TABS : (['equipment', 'gyms', 'suggestions', 'photos'] as const);
 
 	return (
 		<div id="pageAdmin" className="content-grid py-8">
@@ -147,6 +166,7 @@ export default function AdminPage() {
 							{tab === 'equipment' && <Dumbbell className="h-3.5 w-3.5" />}
 							{tab === 'gyms' && <Building2 className="h-3.5 w-3.5" />}
 							{tab === 'suggestions' && <Dumbbell className="h-3.5 w-3.5" />}
+							{tab === 'photos' && <ImageIcon className="h-3.5 w-3.5" />}
 							{tab === 'users' && <Users className="h-3.5 w-3.5" />}
 
 							<span className="capitalize">{tab}</span>
@@ -164,6 +184,11 @@ export default function AdminPage() {
 							{tab === 'suggestions' && suggestions.length > 0 && (
 								<span className="bg-sub-alt text-sub rounded-full px-1.5 py-0.5 text-xs">
 									{suggestions.length}
+								</span>
+							)}
+							{tab === 'photos' && photos.length > 0 && (
+								<span className="bg-sub-alt text-sub rounded-full px-1.5 py-0.5 text-xs">
+									{photos.length}
 								</span>
 							)}
 						</button>
@@ -304,6 +329,57 @@ export default function AdminPage() {
 											state={state}
 											onApprove={() => handleAction('suggestion', s.id, 'approve')}
 											onReject={() => handleAction('suggestion', s.id, 'reject')}
+										/>
+									</div>
+								);
+							})
+						)}
+					</div>
+				)}
+
+				{/* Photos Tab Content */}
+				{activeTab === 'photos' && (
+					<div className="space-y-2">
+						{photos.length === 0 ? (
+							<EmptyState label="No pending photo submissions" />
+						) : (
+							photos.map((p) => {
+								const key = `photo-${p.id}`;
+								const state = actions[key];
+								return (
+									<div
+										key={p.id}
+										className={`border-border bg-surface flex items-center gap-4 rounded-2xl border p-4 transition-opacity duration-300 ${
+											state === 'done' ? 'opacity-0' : 'opacity-100'
+										}`}
+									>
+										{p.image_url ? (
+											<img
+												src={p.image_url}
+												alt={p.name}
+												className="h-14 w-14 shrink-0 rounded-xl object-cover"
+											/>
+										) : (
+											<div className="bg-sub-alt flex h-14 w-14 shrink-0 items-center justify-center rounded-xl">
+												<ImageIcon className="text-sub h-5 w-5" />
+											</div>
+										)}
+										<div className="min-w-0 flex-1">
+											<p className="text-main text-sm font-medium">
+												{[p.brand, p.series, p.name].filter(Boolean).join(' ')}
+											</p>
+											<div className="text-sub mt-0.5 flex items-center gap-2 text-xs">
+												<span className="flex items-center gap-1">
+													<Clock className="h-3 w-3" />
+													{formatDate(p.photo_uploaded_at)}
+												</span>
+												{p.submitted_by && <span>by {p.submitted_by}</span>}
+											</div>
+										</div>
+										<ActionButtons
+											state={state}
+											onApprove={() => handlePhotoAction(p.id, 'approve')}
+											onReject={() => handlePhotoAction(p.id, 'reject')}
 										/>
 									</div>
 								);

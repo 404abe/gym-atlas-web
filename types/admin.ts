@@ -28,6 +28,16 @@ export interface PendingSuggestion {
 	submitted_by?: string;
 }
 
+export interface PendingPhoto {
+	id: number;
+	brand: string;
+	series: string | null;
+	name: string;
+	image_url: string;
+	photo_uploaded_at: string;
+	submitted_by?: string;
+}
+
 export interface AdminUser {
 	id: string;
 	email: string;

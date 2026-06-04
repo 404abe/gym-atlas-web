@@ -1,7 +1,7 @@
 import { API_URL } from './config';
 import type { Gym, GymEquipment, GymWithQuantity } from '@/types/gym';
 import type { Equipment } from '@/types/equipment';
-import type { PendingGym, PendingEquipment, PendingSuggestion, AdminUser } from '@/types/admin';
+import type { PendingGym, PendingEquipment, PendingSuggestion, PendingPhoto, AdminUser } from '@/types/admin';
 import type { LeaderboardEntry } from '@/types/leaderboard';
 import { BestInClassCategory, BestInClassEntry } from '@/types/bestInClass';
 
@@ -171,7 +171,14 @@ export const fetchAdminPending = (): Promise<{
 	gyms: PendingGym[];
 	equipment: PendingEquipment[];
 	suggestions: PendingSuggestion[];
+	photos: PendingPhoto[];
 }> => apiFetch('/admin/pending', { headers: authHeaders() });
+
+export const adminPhotoAction = (action: 'approve' | 'reject', id: number): Promise<void> =>
+	apiFetch(`/admin/${action}/photo/${id}`, {
+		method: 'POST',
+		headers: authHeaders()
+	});
 
 export const fetchAdminUsers = (): Promise<{ users: AdminUser[] }> =>
 	apiFetch('/admin/users', { headers: authHeaders() });

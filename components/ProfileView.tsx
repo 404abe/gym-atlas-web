@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Building2, Dumbbell, LinkIcon, Trophy, Calendar, ChevronRight } from 'lucide-react';
+import { Building2, Dumbbell, LinkIcon, Trophy, Calendar, ChevronRight, ImageIcon } from 'lucide-react';
 import { BestInClass } from '@/types/bestInClass';
 import { UserProfile, UserContributions } from '@/types/user';
 
@@ -48,6 +48,12 @@ export default function ProfileView({
 			value: contributions.summary.equipment_linked,
 			icon: LinkIcon,
 			color: 'text-purple-400'
+		},
+		{
+			label: 'photos added',
+			value: contributions.summary.photos_added,
+			icon: ImageIcon,
+			color: 'text-orange-400'
 		}
 	];
 
@@ -97,7 +103,7 @@ export default function ProfileView({
 			</div>
 
 			{/* ── Contribution counts ── */}
-			<div className="grid grid-cols-3 gap-3 sm:grid-cols-3">
+			<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
 				{contributionStats.map(({ label, value, icon: Icon, color }) => (
 					<div key={label} className="bg-sub-alt rounded-2xl p-4">
 						<div className={`text-sub mb-1 flex items-center gap-1.5 text-xs ${color}`}>
@@ -250,6 +256,47 @@ export default function ProfileView({
 					</div>
 				)}
 
+				{/* Photos added */}
+				{contributions.recent.photos.length > 0 && (
+					<div className="bg-sub-alt rounded-2xl p-4">
+						<div className="mb-3 flex items-center gap-2">
+							<ImageIcon className="h-3.5 w-3.5 text-orange-400" />
+							<h2 className="text-main text-sm font-semibold">Photos added</h2>
+							<span className="bg-main/10 text-sub rounded-full px-2 py-0.5 text-xs">
+								{contributions.summary.photos_added}
+							</span>
+						</div>
+						<div className="space-y-0.5">
+							{contributions.recent.photos.map((photo) => (
+								<Link
+									key={photo.id}
+									href={`/equipment/${photo.id}`}
+									className="hover:bg-main/5 flex items-center justify-between gap-3 rounded-lg px-3 py-2 transition"
+								>
+									<div className="flex items-center gap-3 min-w-0">
+										{photo.image_url && (
+											<img
+												src={photo.image_url}
+												alt={photo.name}
+												className="h-8 w-8 shrink-0 rounded object-cover"
+											/>
+										)}
+										<p className="text-main truncate text-sm">
+											{[photo.brand, photo.series, photo.name].filter(Boolean).join(' ')}
+										</p>
+									</div>
+									<span className="text-sub shrink-0 text-xs">
+										{new Date(photo.uploaded_at).toLocaleDateString('en-GB', {
+											day: 'numeric',
+											month: 'short'
+										})}
+									</span>
+								</Link>
+							))}
+						</div>
+					</div>
+				)}
+
 				{/* Equipment linked */}
 				{contributions.recent.links.length > 0 && (
 					<div className="bg-sub-alt rounded-2xl p-4">
@@ -285,7 +332,8 @@ export default function ProfileView({
 				{/* Empty state */}
 				{contributions.recent.gyms.length === 0 &&
 					contributions.recent.equipment.length === 0 &&
-					contributions.recent.links.length === 0 && (
+					contributions.recent.links.length === 0 &&
+					contributions.recent.photos.length === 0 && (
 						<div className="bg-sub-alt rounded-2xl p-10 text-center">
 							<Trophy className="text-sub mx-auto mb-3 h-10 w-10 opacity-20" />
 							<p className="text-main mb-1 text-sm font-medium">No contributions yet</p>
