@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { Plus, Trophy, UserCircle } from 'lucide-react';
 import { FaDatabase, FaMap } from 'react-icons/fa';
@@ -7,6 +8,9 @@ import { ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import NotificationDrawer from '../NotificationDrawer';
+import GymAtlasLogo from '../ui/GymAtlasLogo';
+
+
 
 const pillCls =
 	'flex items-center bg-[rgba(20,20,20,0.92)] border-[0.5px] border-[var(--border-color)] rounded-lg backdrop-blur pointer-events-auto';
@@ -25,7 +29,9 @@ export default function Topbar() {
 		<div className="left-5.5 pointer-events-none fixed right-6 z-[60] hidden items-start justify-between p-3 md:flex">
 			{' '}
 			{/* Logo */}
-			<Link href="/" className="pointer-events-auto mt-[9px] no-underline">
+			<Link href="/" className="pointer-events-auto mt-[9px] flex items-center gap-2 no-underline">
+				<GymAtlasLogo size={28} />
+
 				<span className="text-2xl font-medium uppercase tracking-[0.14em]">
 					<span className="text-text">GYM</span>
 					<span className="text-sub">ATLAS</span>

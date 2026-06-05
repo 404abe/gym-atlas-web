@@ -1,14 +1,14 @@
 // components/layout/MobileHeader.tsx
 import Link from 'next/link';
 import { UserCircle } from 'lucide-react';
-import { BsFillGlobeAmericasFill } from 'react-icons/bs';
+import GymAtlasLogo from '../ui/GymAtlasLogo';
 import NotificationDrawer from '@/components/NotificationDrawer';
 
 export default function MobileHeader() {
     return (
         <header className="flex h-12 shrink-0 items-center justify-between px-4">
             <Link href="/" className="flex items-center gap-2 no-underline">
-                <BsFillGlobeAmericasFill className="text-main text-xl" />
+                <GymAtlasLogo size={20} />
                 <span className="text-lg font-bold tracking-tight text-text">GymAtlas</span>
             </Link>
             <div className="flex items-center gap-1.5">
