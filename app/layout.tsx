@@ -4,7 +4,7 @@ import Topbar from '@/components/layout/Topbar';
 import Footer from '@/components/layout/Footer';
 import BottomNav from '@/components/layout/BottomNav';
 import Providers from '@/app/contexts/Providers';
-import Header from '@/components/layout/Header';
+// import Header from '@/components/layout/Header';
 import ApiWakeUp from '@/components/ApiWakeUp';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
