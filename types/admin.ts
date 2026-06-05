@@ -17,12 +17,14 @@ export interface PendingEquipment {
 	type: string;
 	created_at: string;
 	submitted_by?: string;
+	image_url?: string;
 }
 
 export interface PendingSuggestion {
 	id: number;
 	gym_name: string;
 	equipment_name: string;
+	equipment_image_url?: string;
 	quantity: number;
 	created_at: string;
 	submitted_by?: string;

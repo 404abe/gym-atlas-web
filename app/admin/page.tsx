@@ -211,8 +211,16 @@ export default function AdminPage() {
 											state === 'done' ? 'opacity-0' : 'opacity-100'
 										}`}
 									>
-										<div className="bg-sub-alt flex h-10 w-10 shrink-0 items-center justify-center rounded-xl">
-											<Dumbbell className="text-sub h-4 w-4" />
+										<div className="bg-sub-alt flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl">
+											{e.image_url ? (
+												<img
+													src={e.image_url}
+													alt={e.name}
+													className="h-full w-full object-cover"
+												/>
+											) : (
+												<Dumbbell className="text-sub h-4 w-4" />
+											)}
 										</div>
 										<div className="min-w-0 flex-1">
 											<p className="text-main text-sm font-medium">
@@ -308,8 +316,16 @@ export default function AdminPage() {
 											state === 'done' ? 'opacity-0' : 'opacity-100'
 										}`}
 									>
-										<div className="bg-sub-alt flex h-10 w-10 shrink-0 items-center justify-center rounded-xl">
-											<Dumbbell className="text-sub h-4 w-4" />
+										<div className="bg-sub-alt flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl">
+											{s.equipment_image_url ? (
+												<img
+													src={s.equipment_image_url}
+													alt={s.equipment_name}
+													className="h-full w-full object-cover"
+												/>
+											) : (
+												<Dumbbell className="text-sub h-4 w-4" />
+											)}
 										</div>
 										<div className="min-w-0 flex-1">
 											<p className="text-main text-sm font-medium">{s.equipment_name}</p>
