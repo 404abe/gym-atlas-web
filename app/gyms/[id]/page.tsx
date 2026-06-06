@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { MapPin, Star, Dumbbell, Minus } from 'lucide-react';
+import { MapPin, Star, Dumbbell, Minus, LayoutGrid, List } from 'lucide-react';
 import {
 	fetchGymById,
 	fetchGymEquipment,
@@ -34,6 +34,7 @@ export default function GymProfilePage() {
 	const [showAddPanel, setShowAddPanel] = useState(false);
 	const [masterEquipment, setMasterEquipment] = useState<Equipment[]>([]);
 	const [pendingRemoveId, setPendingRemoveId] = useState<number | null>(null);
+	const [equipmentView, setEquipmentView] = useState<'grid' | 'compact'>('grid');
 
 	useEffect(() => {
 		const load = async () => {
@@ -144,16 +145,73 @@ export default function GymProfilePage() {
 	);
 
 	const EquipmentList = () => (
-		<div className="max-h-100 overflow-y-auto">
+		<div>
 			{equipment.length === 0 ? (
 				<p className="text-sub text-sm">No equipment listed yet.</p>
+			) : equipmentView === 'grid' ? (
+				<div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+					{equipment.map((item) => (
+						<button
+							key={item.equipment_id}
+							onClick={() => router.push(`/equipment/${item.equipment_id}`)}
+							className="border-border bg-sub-alt hover:border-main/30 group flex flex-col gap-1.5 rounded-xl border p-3 text-left transition"
+						>
+							{item.image_url ? (
+								<img
+									src={item.image_url}
+									alt={item.full_name}
+									className="bg-main/5 mb-1 aspect-video w-full rounded-lg object-contain"
+								/>
+							) : (
+								<div className="bg-main/5 mb-1 flex aspect-video w-full items-center justify-center rounded-lg">
+									<Dumbbell className="text-sub h-5 w-5 opacity-30" />
+								</div>
+							)}
+							<p className="text-sub text-[10px] uppercase tracking-wide">
+								{item.brand} · {item.series}
+							</p>
+							<div className="flex items-center justify-between gap-1">
+								<p className="text-main min-w-0 flex-1 truncate text-xs font-medium leading-tight">
+									{item.name}
+								</p>
+								<div className="flex shrink-0 items-center gap-1">
+									<span className="text-sub bg-main/10 rounded-full px-1.5 py-0.5 text-[10px]">
+										×{item.quantity}
+									</span>
+									{isAdmin && (
+										<span
+											role="button"
+											onClick={(e) => {
+												e.stopPropagation();
+												handleRemove(item.equipment_id);
+											}}
+											className="text-sub transition hover:text-red-400"
+											aria-label="Remove one"
+										>
+											<Minus className="h-3 w-3" />
+										</span>
+									)}
+								</div>
+							</div>
+						</button>
+					))}
+				</div>
 			) : (
 				<div className="divide-border divide-y">
 					{equipment.map((item) => (
 						<div
 							key={item.equipment_id}
-							className="hover:bg-main/5 -mx-4 flex w-[calc(100%+2rem)] items-center justify-between px-4 py-2.5 transition"
+							className="hover:bg-main/5 -mx-4 flex w-[calc(100%+2rem)] items-center gap-3 px-4 py-2.5 transition"
 						>
+							<div className="border-border bg-main/5 h-9 w-9 shrink-0 overflow-hidden rounded-lg border">
+								{item.image_url ? (
+									<img src={item.image_url} alt={item.full_name} className="h-full w-full object-cover" />
+								) : (
+									<div className="flex h-full w-full items-center justify-center">
+										<Dumbbell className="text-sub h-4 w-4 opacity-30" />
+									</div>
+								)}
+							</div>
 							<button
 								className="min-w-0 flex-1 text-left"
 								onClick={() => router.push(`/equipment/${item.equipment_id}`)}
@@ -190,7 +248,7 @@ export default function GymProfilePage() {
 	return (
 		<>
 			<div id="pageGymProfile" className="content-grid py-8">
-				<div className="full-width-padding mx-auto max-w-4xl">
+				<div>
 					{/* Bento grid — desktop */}
 					<div
 						className="hidden sm:grid sm:grid-cols-4 sm:gap-3"
@@ -271,15 +329,33 @@ export default function GymProfilePage() {
 						<div className="border-border bg-surface col-span-4 rounded-2xl border p-4">
 							<div className="mb-3 flex items-center justify-between">
 								<h2 className="text-main text-sm font-semibold">Equipment ({equipment.length})</h2>
-								{user && (
-									<button
-										onClick={() => setShowAddPanel((v) => !v)}
-										className="text-sub hover:text-main hover:bg-main/5 flex items-center gap-1 rounded-lg px-2 py-1 text-xs transition"
-									>
-										<Plus className="h-3.5 w-3.5" />
-										Add
-									</button>
-								)}
+								<div className="flex items-center gap-1">
+									<div className="bg-main/5 flex items-center rounded-lg p-0.5">
+										<button
+											onClick={() => setEquipmentView('grid')}
+											className={`rounded-md p-1.5 transition ${equipmentView === 'grid' ? 'bg-main text-bg' : 'text-sub hover:text-main'}`}
+											aria-label="Grid view"
+										>
+											<LayoutGrid className="h-3 w-3" />
+										</button>
+										<button
+											onClick={() => setEquipmentView('compact')}
+											className={`rounded-md p-1.5 transition ${equipmentView === 'compact' ? 'bg-main text-bg' : 'text-sub hover:text-main'}`}
+											aria-label="Compact view"
+										>
+											<List className="h-3 w-3" />
+										</button>
+									</div>
+									{user && (
+										<button
+											onClick={() => setShowAddPanel((v) => !v)}
+											className="text-sub hover:text-main hover:bg-main/5 flex items-center gap-1 rounded-lg px-2 py-1 text-xs transition"
+										>
+											<Plus className="h-3.5 w-3.5" />
+											Add
+										</button>
+									)}
+								</div>
 							</div>
 							{showAddPanel && (
 								<AddEquipmentPanel
@@ -365,15 +441,33 @@ export default function GymProfilePage() {
 						<div className="border-border bg-surface rounded-2xl border p-4">
 							<div className="mb-3 flex items-center justify-between">
 								<h2 className="text-main text-sm font-semibold">Equipment ({equipment.length})</h2>
-								{user && (
-									<button
-										onClick={() => setShowAddPanel((v) => !v)}
-										className="text-sub hover:text-main hover:bg-main/5 flex items-center gap-1 rounded-lg px-2 py-1 text-xs transition"
-									>
-										<Plus className="h-3.5 w-3.5" />
-										Add
-									</button>
-								)}
+								<div className="flex items-center gap-1">
+									<div className="bg-main/5 flex items-center rounded-lg p-0.5">
+										<button
+											onClick={() => setEquipmentView('grid')}
+											className={`rounded-md p-1.5 transition ${equipmentView === 'grid' ? 'bg-main text-bg' : 'text-sub hover:text-main'}`}
+											aria-label="Grid view"
+										>
+											<LayoutGrid className="h-3 w-3" />
+										</button>
+										<button
+											onClick={() => setEquipmentView('compact')}
+											className={`rounded-md p-1.5 transition ${equipmentView === 'compact' ? 'bg-main text-bg' : 'text-sub hover:text-main'}`}
+											aria-label="Compact view"
+										>
+											<List className="h-3 w-3" />
+										</button>
+									</div>
+									{user && (
+										<button
+											onClick={() => setShowAddPanel((v) => !v)}
+											className="text-sub hover:text-main hover:bg-main/5 flex items-center gap-1 rounded-lg px-2 py-1 text-xs transition"
+										>
+											<Plus className="h-3.5 w-3.5" />
+											Add
+										</button>
+									)}
+								</div>
 							</div>
 							{showAddPanel && (
 								<AddEquipmentPanel

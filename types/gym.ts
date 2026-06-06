@@ -26,6 +26,7 @@ export interface GymEquipment {
 	name: string;
 	full_name: string;
 	quantity: number;
+	image_url?: string | null;
 }
 
 export interface GymWithQuantity {
