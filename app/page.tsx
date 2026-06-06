@@ -5,14 +5,13 @@ import { Dumbbell, Plus, X } from 'lucide-react';
 import MapView from '@/components/map/MapView';
 import GymSidebar from '@/components/sidebar/GymSidebar';
 import EquipmentSearch from '@/components/sidebar/EquipmentSearch';
-import MobileHeader from '@/components/layout/MobileHeader';
 import { MobileEquipmentModal } from '@/app/_components/MobileEquipmentModal';
 import { fetchGyms } from '@/lib/api';
 import { Gym } from '@/types/gym';
 import { useGymFilter } from '@/app/contexts/GymFilterContext';
 import { useUserLocation } from '@/hooks/useUserLocation';
 
-// ─── Page ────────────────────────────────────────────────────────────────────
+
 
 export default function Page() {
 	const router = useRouter();
@@ -33,8 +32,6 @@ export default function Page() {
 		<div className="flex h-full flex-col overflow-hidden bg-bg md:fixed md:inset-0 md:z-10">
 			{/* ── MOBILE LAYOUT ── */}
 			<div className="flex h-full flex-col md:hidden">
-				<MobileHeader />
-
 				{/* equipment chips row */}
 				<div
 					className="flex min-w-0 shrink-0 items-center gap-2 overflow-x-auto pb-1 pl-3 pt-2"
