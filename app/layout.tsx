@@ -9,7 +9,14 @@ import ApiWakeUp from '@/components/ApiWakeUp';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
 	return (
-		<html lang="en" className="h-full">
+		<html lang="en" className="h-full" suppressHydrationWarning>
+			<head>
+				<script
+					dangerouslySetInnerHTML={{
+						__html: `(function(){var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);})()`,
+					}}
+				/>
+			</head>
 			<body id="app" style={{ height: '100dvh', overflow: 'hidden' }}>
 				<Providers>
 					<ApiWakeUp />

@@ -9,11 +9,12 @@ import { useAuth } from '@/app/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import NotificationDrawer from '../NotificationDrawer';
 import GymAtlasLogo from '../ui/GymAtlasLogo';
+import ThemeToggle from '../ui/ThemeToggle';
 
 
 
 const pillCls =
-	'flex items-center bg-[rgba(20,20,20,0.92)] border-[0.5px] border-[var(--border-color)] rounded-lg backdrop-blur pointer-events-auto';
+	'flex items-center bg-[var(--pill-bg)] border-[0.5px] border-[var(--border-color)] rounded-lg backdrop-blur pointer-events-auto';
 
 const iconLinkCls =
 	'flex items-center justify-center w-[var(--hit-size)] h-[var(--hit-size)] rounded-[var(--roundness)] text-sub hover:text-text transition-colors duration-[0.22s] no-underline';
@@ -76,6 +77,7 @@ export default function Topbar() {
 						</Link>
 					)}
 					<NotificationDrawer />
+					<ThemeToggle className={iconLinkCls} />
 				</div>
 
 				<div className={pillCls}>

@@ -14,12 +14,12 @@ export function Button({ variant = 'icon', active = false, className, ...props }
 
 	const variants: Record<Variant, string> = {
 		icon: 'w-[var(--hit-size)] h-[var(--hit-size)] rounded-[var(--roundness)] bg-transparent text-sub hover:text-text',
-		pill: 'h-[var(--hit-size)] px-4 gap-2 rounded-lg bg-[rgba(20,20,20,0.92)] border border-[0.5px] border-[var(--border-color)] backdrop-blur text-sub hover:text-text',
+		pill: 'h-[var(--hit-size)] px-4 gap-2 rounded-lg bg-[var(--pill-bg)] border border-[0.5px] border-[var(--border-color)] backdrop-blur text-sub hover:text-text',
 		ghost: 'bg-transparent text-sub hover:text-text p-0 shrink-0',
 		nav: 'h-[var(--hit-size)] px-4 rounded-[var(--roundness)] bg-transparent text-sub hover:text-text'
 	};
 
-	const activeClass = active ? 'text-text bg-[#1e1e1e]' : '';
+	const activeClass = active ? 'text-text bg-sub-alt' : '';
 
 	return <button className={cn(base, variants[variant], activeClass, className)} {...props} />;
 }

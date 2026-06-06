@@ -14,11 +14,30 @@
 	--accent: #e7e7e7;
 	--success-color: #5c8f00;
 	--roundness: 6px;
+	--pill-bg: rgba(20, 20, 20, 0.92);
 
 	/* ── Hit targets ── */
 	--hit-size: 44px; /* touch (iPad default) */
 	--icon-size: 22px;
 	--logo-size: 14px;
+}
+
+[data-theme='light'] .gym-atlas-logo {
+	filter: invert(1);
+}
+
+[data-theme='light'] {
+	--bg-color: #f5f5f5;
+	--surface-color: #ebebeb;
+	--sub-alt-color: #e2e2e2;
+	--border-color: #d0d0d0;
+	--sub-color: #999999;
+	--text-color: #111111;
+	--main-color: #111111;
+	--caret-color: #111111;
+	--accent: #111111;
+	--success-color: #4a7200;
+	--pill-bg: rgba(235, 235, 235, 0.92);
 }
 
 @media (pointer: fine) {

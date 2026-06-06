@@ -62,7 +62,7 @@ export default function GymCard({
 			id={`gym-card-${gym.id}`}
 			onClick={handleCardClick}
 			className={`cursor-pointer rounded-xl px-3 py-3 transition-colors duration-[--default-transition-duration] ${
-				selected ? 'bg-[#1e1e1e]' : 'hover:bg-[#141414]'
+				selected ? 'bg-sub-alt' : 'hover:bg-surface'
 			}`}
 		>
 			<div className="flex items-start justify-between gap-3">

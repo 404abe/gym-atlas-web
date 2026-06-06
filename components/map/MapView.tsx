@@ -3,6 +3,7 @@
 import Map, { Marker } from 'react-map-gl/mapbox';
 import { useEffect, useRef, useState } from 'react';
 import { Gym } from '@/types/gym';
+import { useTheme } from '@/app/contexts/ThemeContext';
 
 export default function MapView({
 	gyms,
@@ -16,6 +17,8 @@ export default function MapView({
 	userLocation: { lat: number; lng: number } | null;
 }) {
 	const mapRef = useRef<any>(null);
+	const { theme } = useTheme();
+	const mapStyle = theme === 'light' ? 'mapbox://styles/mapbox/light-v11' : 'mapbox://styles/mapbox/dark-v11';
 
 	const [viewState, setViewState] = useState({
 		longitude: -3.1883,
@@ -48,7 +51,7 @@ export default function MapView({
 				{...viewState}
 				onMove={(evt) => setViewState(evt.viewState)}
 				mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
-				mapStyle="mapbox://styles/mapbox/dark-v11"
+				mapStyle={mapStyle}
 				style={{ width: '100%', height: '100%' }}
 			>
 				{gyms.map((gym) => (

@@ -5,19 +5,20 @@ import { usePathname } from 'next/navigation';
 import { FaMap, FaDatabase, FaTrophy } from 'react-icons/fa';
 import { Plus, UserCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import ThemeToggle from '../ui/ThemeToggle';
 
 export default function BottomNav() {
 	const pathname = usePathname();
 	const active = (href: string) => pathname === href;
 
 	return (
-		<nav className="flex shrink-0 items-end border-t border-[#1a1a1a] bg-[#0f0f0f] md:hidden">
+		<nav className="flex shrink-0 items-end border-t border-border bg-bg md:hidden">
 			{/* Map */}
 			<Link
 				href="/"
 				className={cn(
 					'flex flex-1 flex-col items-center justify-center gap-1 py-3',
-					active('/') ? 'text-[#e7e7e7]' : 'text-[#3a3a3a]'
+					active('/') ? 'text-text' : 'text-sub'
 				)}
 			>
 				<FaMap size={20} />
@@ -29,7 +30,7 @@ export default function BottomNav() {
 				href="/data"
 				className={cn(
 					'flex flex-1 flex-col items-center justify-center gap-1 py-3',
-					active('/data') ? 'text-[#e7e7e7]' : 'text-[#3a3a3a]'
+					active('/data') ? 'text-text' : 'text-sub'
 				)}
 			>
 				<FaDatabase size={20} />
@@ -43,12 +44,12 @@ export default function BottomNav() {
 						'-translate-y-3 flex h-12 w-12 items-center justify-center rounded-full border',
 						active('/add')
 							? 'border-main bg-main/20 text-main'
-							: 'border-[#2a2a2a] bg-[#1a1a1a] text-[#4c4c4c]'
+							: 'border-border bg-surface text-sub'
 					)}
 				>
 					<Plus size={22} />
 				</div>
-				<span className="-mt-1 text-[10px] text-[#3a3a3a]">Add</span>
+				<span className="-mt-1 text-[10px] text-sub">Add</span>
 			</Link>
 
 			{/* Leaderboard */}
@@ -56,7 +57,7 @@ export default function BottomNav() {
 				href="/leaderboard"
 				className={cn(
 					'flex flex-1 flex-col items-center justify-center gap-1 py-3',
-					active('/leaderboard') ? 'text-[#e7e7e7]' : 'text-[#3a3a3a]'
+					active('/leaderboard') ? 'text-text' : 'text-sub'
 				)}
 			>
 				<FaTrophy size={20} />
@@ -68,12 +69,15 @@ export default function BottomNav() {
 				href="/account"
 				className={cn(
 					'flex flex-1 flex-col items-center justify-center gap-1 py-3',
-					active('/account') ? 'text-[#e7e7e7]' : 'text-[#3a3a3a]'
+					active('/account') ? 'text-text' : 'text-sub'
 				)}
 			>
 				<UserCircle size={20} />
 				<span className="text-[10px]">Profile</span>
 			</Link>
+
+			{/* Theme toggle */}
+			<ThemeToggle className="flex flex-1 flex-col items-center justify-center gap-1 py-3 text-sub" />
 		</nav>
 	);
 }

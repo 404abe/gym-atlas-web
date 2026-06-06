@@ -170,8 +170,8 @@ export default function EquipmentSearch() {
 										key={item.id}
 										onClick={() => toggleEquipment(item)}
 										className={cn(
-											'flex cursor-pointer items-center gap-2.5 px-3 py-2 transition-colors hover:bg-white/[0.04]',
-											isSelected && 'bg-white/[0.04]'
+											'flex cursor-pointer items-center gap-2.5 px-3 py-2 transition-colors hover:bg-text/4',
+											isSelected && 'bg-text/4'
 										)}
 									>
 										<div
@@ -195,7 +195,7 @@ export default function EquipmentSearch() {
 											<p className="text-sub m-0 mt-0.5 text-[11px]">{item.series}</p>
 										</div>
 										{isSelected && (
-											<div className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[var(--roundness)] bg-white/10">
+											<div className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[var(--roundness)] bg-text/10">
 												<svg
 													width="12"
 													height="12"
@@ -218,7 +218,7 @@ export default function EquipmentSearch() {
 									<button
 										onClick={handleSearchClick}
 										disabled={loading}
-										className="text-text w-full rounded-[var(--roundness)] bg-white/[0.06] py-1.5 text-[12px] transition-colors hover:bg-white/[0.1] disabled:opacity-50"
+										className="text-text w-full rounded-[var(--roundness)] bg-text/6 py-1.5 text-[12px] transition-colors hover:bg-text/10 disabled:opacity-50"
 									>
 										{loading
 											? 'Searching...'
@@ -238,7 +238,7 @@ export default function EquipmentSearch() {
 							<button
 								onClick={handleSearchClick}
 								disabled={loading}
-								className="text-text w-full rounded-[var(--roundness)] bg-white/[0.06] py-1.5 text-[12px] transition-colors hover:bg-white/[0.1] disabled:opacity-50"
+								className="text-text w-full rounded-[var(--roundness)] bg-text/6 py-1.5 text-[12px] transition-colors hover:bg-text/10 disabled:opacity-50"
 							>
 								{loading
 									? 'Searching...'
@@ -259,7 +259,7 @@ export default function EquipmentSearch() {
 							{selectedEquipment.map((item) => (
 								<div
 									key={item.id}
-									className="flex items-center gap-2 rounded-[var(--roundness)] bg-white/[0.06] p-1.5"
+									className="flex items-center gap-2 rounded-[var(--roundness)] bg-text/6 p-1.5"
 								>
 									<div
 										className="bg-sub-alt flex shrink-0 items-center justify-center overflow-hidden rounded-[var(--roundness)]"
