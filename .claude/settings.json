@@ -1,7 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(xargs cat)"
+      "Bash(xargs cat)",
+      "Bash(xargs grep -l \"profile/\\\\${\")",
+      "Bash(grep -rn \"profile/\\\\${\" /Users/404abe/Development/gym-atlas-web --include=\"*.tsx\" --include=\"*.ts\" -l)",
+      "Bash(git -C /Users/404abe/Development/gym-atlas-web ls-files .claude/settings.json)",
+      "Bash(git -C /Users/404abe/Development/gym-atlas-web diff --cached --stat)",
+      "Bash(git -C /Users/404abe/Development/gym-atlas-web status --short)"
     ]
   }
 }
