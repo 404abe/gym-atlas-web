@@ -13,7 +13,7 @@ export default function MobileHeader() {
 	const { user } = useAuth();
 
 	return (
-		<header className="bg-bg border-border flex shrink-0 items-center justify-between border-b px-4 py-2 md:hidden">
+		<header className="bg-bg border-border flex shrink-0 items-center justify-between  px-4 py-2 md:hidden">
 			<Link href="/" className="flex items-center gap-2 no-underline">
 				<GymAtlasLogo size={24} />
 				<span className="text-xl font-medium uppercase tracking-[0.14em]">
