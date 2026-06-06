@@ -6,20 +6,22 @@ import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import ProfileView from '@/components/ProfileView';
 import type { ProfileViewProps } from '@/components/ProfileView';
-import { fetchLeaderboardUser, fetchUser, fetchUserBestInClass } from '@/lib/api';
+import { fetchLeaderboardUser, fetchUserByUsername, fetchUserBestInClass } from '@/lib/api';
 
 export default function ProfilePage() {
-	const { id } = useParams();
+	const { username } = useParams();
 	const [data, setData] = useState<Omit<ProfileViewProps, 'isOwn'> | null>(null);
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
 		const load = async () => {
 			try {
-				const [contribData, userData, bestData] = await Promise.all([
-					fetchLeaderboardUser(id as string),
-					fetchUser(id as string),
-					fetchUserBestInClass(id as string)
+				const userData = await fetchUserByUsername(username as string);
+				const userId = (userData as { id: string }).id;
+
+				const [contribData, bestData] = await Promise.all([
+					fetchLeaderboardUser(userId),
+					fetchUserBestInClass(userId)
 				]);
 				setData({
 					profile: userData as any,
@@ -33,7 +35,7 @@ export default function ProfilePage() {
 			}
 		};
 		load();
-	}, [id]);
+	}, [username]);
 
 	if (loading) return <div className="text-sub p-8 text-sm">Loading profile...</div>;
 	if (!data) return <div className="text-sub p-8 text-sm">Profile not found</div>;

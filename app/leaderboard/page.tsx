@@ -125,7 +125,7 @@ export default function LeaderboardPage() {
 							<Link
 								key={entry.id}
 								id={`leaderboard-entry-${entry.id}`}
-								href={`/profile/${entry.id}`}
+								href={`/profile/${entry.username}`}
 								className="border-border bg-surface hover:border-main/30 flex cursor-pointer items-center gap-4 rounded-xl border p-4 transition-colors"
 							>
 								{/* Rank */}
