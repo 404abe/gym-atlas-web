@@ -1,10 +1,8 @@
 'use client';
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { Plus, Trophy, UserCircle } from 'lucide-react';
+import { Plus, Trophy, UserCircle, ShieldCheck } from 'lucide-react';
 import { FaDatabase, FaMap } from 'react-icons/fa';
-import { ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import NotificationDrawer from '../NotificationDrawer';
@@ -26,7 +24,35 @@ export default function Topbar() {
 	const isMap = pathname === '/';
 	const isData = pathname === '/data';
 
+	const mobileIconCls =
+		'flex items-center justify-center w-10 h-10 rounded-lg text-sub hover:text-text transition-colors duration-[0.22s]';
+
 	return (
+		<>
+		{/* Mobile header */}
+		<div className="bg-bg border-border flex shrink-0 items-center justify-between border-b px-4 py-2 md:hidden">
+			<Link href="/" className="flex items-center gap-2 no-underline">
+				<GymAtlasLogo size={24} />
+				<span className="text-xl font-medium uppercase tracking-[0.14em]">
+					<span className="text-text">GYM</span>
+					<span className="text-sub">ATLAS</span>
+				</span>
+			</Link>
+			<div className="flex items-center gap-0.5">
+				<ThemeToggle className={mobileIconCls} />
+				{(user?.role === 'admin' || user?.role === 'super_admin') && (
+					<Link href="/admin" title="Admin" className={mobileIconCls}>
+						<ShieldCheck size={20} />
+					</Link>
+				)}
+				<NotificationDrawer buttonClassName={mobileIconCls} />
+				<Link href="/account" className={mobileIconCls}>
+					<UserCircle size={20} />
+				</Link>
+			</div>
+		</div>
+
+		{/* Desktop topbar */}
 		<div className="left-5.5 pointer-events-none fixed right-6 z-[60] hidden items-start justify-between p-3 md:flex">
 			{' '}
 			{/* Logo */}
@@ -87,5 +113,6 @@ export default function Topbar() {
 				</div>
 			</div>
 		</div>
+		</>
 	);
 }
