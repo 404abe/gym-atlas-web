@@ -2,9 +2,19 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Building2, Dumbbell, LinkIcon, Trophy, Calendar, ChevronRight, ImageIcon } from 'lucide-react';
+import {
+	Building2,
+	Dumbbell,
+	LinkIcon,
+	Trophy,
+	Calendar,
+	ChevronRight,
+	ImageIcon,
+	LogOut
+} from 'lucide-react';
 import { BestInClass } from '@/types/bestInClass';
 import { UserProfile, UserContributions } from '@/types/user';
+import { useAuth } from '@/app/contexts/AuthContext';
 
 export type ProfileViewProps = {
 	profile: UserProfile;
@@ -21,6 +31,8 @@ export default function ProfileView({
 	isOwn = false
 }: ProfileViewProps) {
 	const [bicTab, setBicTab] = useState<'exercise' | 'muscle_group'>('exercise');
+	const { user, loading, logout } = useAuth();
+
 
 	const joinedDate = new Date(profile.created_at).toLocaleDateString('en-GB', {
 		day: 'numeric',
@@ -81,6 +93,13 @@ export default function ProfileView({
 							</div>
 						</div>
 					</div>
+
+					<button
+						onClick={logout}
+						className="text-sub hover:text-main flex items-center gap-1.5 text-sm transition"
+					>
+						<LogOut className="h-4 w-4" /> Sign out
+					</button>
 
 					{/* Rank badge */}
 					{profile.leaderboard_rank != null && (
@@ -273,7 +292,7 @@ export default function ProfileView({
 									href={`/equipment/${photo.id}`}
 									className="hover:bg-main/5 flex items-center justify-between gap-3 rounded-lg px-3 py-2 transition"
 								>
-									<div className="flex items-center gap-3 min-w-0">
+									<div className="flex min-w-0 items-center gap-3">
 										{photo.image_url && (
 											<img
 												src={photo.image_url}

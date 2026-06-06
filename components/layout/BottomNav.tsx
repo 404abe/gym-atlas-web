@@ -5,7 +5,6 @@ import { usePathname } from 'next/navigation';
 import { FaMap, FaDatabase, FaTrophy } from 'react-icons/fa';
 import { Plus, UserCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import ThemeToggle from '../ui/ThemeToggle';
 
 export default function BottomNav() {
 	const pathname = usePathname();
@@ -76,8 +75,6 @@ export default function BottomNav() {
 				<span className="text-[10px]">Profile</span>
 			</Link>
 
-			{/* Theme toggle */}
-			<ThemeToggle className="flex flex-1 flex-col items-center justify-center gap-1 py-3 text-sub" />
 		</nav>
 	);
 }

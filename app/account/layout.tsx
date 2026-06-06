@@ -2,12 +2,12 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/app/contexts/AuthContext';
-import { Heart, Star, User, LogOut, Trophy } from 'lucide-react';
+import { Heart, Star, User, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import { fetchUserStats } from '@/lib/api';
 
 export default function AccountLayout({ children }: { children: React.ReactNode }) {
-	const { user, loading, logout } = useAuth();
+	const { user, loading } = useAuth();
 	const router = useRouter();
 	const pathname = usePathname();
 	const [counts, setCounts] = useState({
@@ -65,19 +65,6 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
 
 	return (
 		<div id="pageAccount" className="content-grid">
-			<div className="mb-6 flex items-center justify-between">
-				<div>
-					<h1 className="text-main text-xl font-semibold">{user.username}</h1>
-					<p className="text-sub mt-0.5 text-sm">Your account</p>
-				</div>
-				<button
-					onClick={logout}
-					className="text-sub hover:text-main flex items-center gap-1.5 text-sm transition"
-				>
-					<LogOut className="h-4 w-4" /> Sign out
-				</button>
-			</div>
-
 			<div className="grid grid-cols-12 gap-6">
 				{/* Sidebar */}
 				<div className="col-span-12 md:col-span-3">
