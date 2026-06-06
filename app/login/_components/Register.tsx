@@ -16,6 +16,7 @@ export default function Register() {
 	const [confirmPassword, setConfirmPassword] = useState('');
 	const [error, setError] = useState('');
 	const [loading, setLoading] = useState(false);
+	const [confirmationSent, setConfirmationSent] = useState(false);
 
 	const handleGoogle = async () => {
 		await supabase.auth.signInWithOAuth({
@@ -45,7 +46,8 @@ export default function Register() {
 
 		setLoading(true);
 		try {
-			await register(email, password, username);
+			const { needsConfirmation } = await register(email, password, username);
+			if (needsConfirmation) setConfirmationSent(true);
 		} catch (err: any) {
 			setError(err.message || 'Registration failed');
 		} finally {
@@ -55,6 +57,15 @@ export default function Register() {
 
 	const inputClass =
 		'bg-sub-alt border-0 text-main placeholder:text-sub w-full rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-1 focus:ring-main/20';
+
+	if (confirmationSent) {
+		return (
+			<div className="w-full max-w-xs space-y-3 text-center">
+				<p className="text-main text-sm">check your email</p>
+				<p className="text-sub text-xs">we sent a confirmation link to <span className="text-main">{email}</span>. click it to activate your account.</p>
+			</div>
+		);
+	}
 
 	return (
 		<div className="w-full max-w-xs">

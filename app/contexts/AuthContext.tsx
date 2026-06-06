@@ -10,7 +10,7 @@ type AuthContextType = {
 	user: User | null;
 	token: string | null;
 	login: (email: string, password: string) => Promise<void>;
-	register: (email: string, password: string, username: string) => Promise<void>;
+	register: (email: string, password: string, username: string) => Promise<{ needsConfirmation: boolean }>;
 	logout: () => Promise<void>;
 	loading: boolean;
 };
@@ -58,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 							await supabase.from('profiles').upsert(
 								{ id: session.user.id, username, role: 'user' },
 								{ onConflict: 'id', ignoreDuplicates: true }
-							).catch(() => {});
+							);
 						}
 					}
 					const profile = await fetchProfile(session.user.id);
@@ -98,14 +98,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			.maybeSingle();
 		if (existing) throw new Error('Username already taken');
 
-		const { error } = await supabase.auth.signUp({
+		const { data, error } = await supabase.auth.signUp({
 			email,
 			password,
 			options: { data: { username } },
 		});
 		if (error) throw new Error(error.message);
 
-		router.push('/');
+		if (data.session) {
+			router.push('/');
+			return { needsConfirmation: false };
+		}
+		return { needsConfirmation: true };
 	};
 
 	const logout = async () => {
