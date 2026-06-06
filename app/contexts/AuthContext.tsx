@@ -49,7 +49,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 					// fires with loading=false, so the account page effect can run
 					// while fetchProfile is still in-flight — it needs a valid token.
 					setAuthToken(session.access_token);
-					if (_event === 'SIGNED_IN') await syncUser().catch(() => {});
+					if (_event === 'SIGNED_IN') {
+						await syncUser().catch(() => {});
+						// Create profile for new users — username stored in metadata during signUp.
+						// Runs with a valid JWT so RLS INSERT policy (auth.uid() = id) passes.
+						const username = session.user.user_metadata?.username as string | undefined;
+						if (username) {
+							await supabase.from('profiles').upsert(
+								{ id: session.user.id, username, role: 'user' },
+								{ onConflict: 'id', ignoreDuplicates: true }
+							).catch(() => {});
+						}
+					}
 					const profile = await fetchProfile(session.user.id);
 					console.log('[AuthContext] fetchProfile resolved, calling setUser + setLoading(false)');
 					setUser({
@@ -87,19 +98,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			.maybeSingle();
 		if (existing) throw new Error('Username already taken');
 
-		const { data, error } = await supabase.auth.signUp({
+		const { error } = await supabase.auth.signUp({
 			email,
 			password,
 			options: { data: { username } },
 		});
 		if (error) throw new Error(error.message);
-
-		if (data.user) {
-			const { error: profileError } = await supabase
-				.from('profiles')
-				.upsert({ id: data.user.id, username, role: 'user' });
-			if (profileError) throw new Error('Failed to create profile');
-		}
 
 		router.push('/');
 	};
