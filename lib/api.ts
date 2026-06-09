@@ -120,10 +120,10 @@ export const updateWeightStack = (id: string | number, weightStack: number | nul
 		body: JSON.stringify({ weight_stack: weightStack })
 	});
 
-export const fetchEquipmentBrands = (): Promise<{ brands: string[] }> =>
+export const fetchEquipmentBrands = (): Promise<string[]> =>
 	apiFetch('/equipment/brands');
 
-export const fetchEquipmentSeries = (brand: string): Promise<{ series: string[] }> =>
+export const fetchEquipmentSeries = (brand: string): Promise<string[]> =>
 	apiFetch(`/equipment/series?brand=${encodeURIComponent(brand)}`);
 
 export const searchEquipment = (query: string): Promise<unknown[]> =>

@@ -129,7 +129,7 @@ export default function NewMachineCard({ onCreated }: Props) {
 	useEffect(() => {
 		setBrandsLoading(true);
 		fetchEquipmentBrands()
-			.then((data) => setBrands(data.brands ?? []))
+			.then((data) => setBrands(data ?? []))
 			.catch(() => addToast('Failed to load brands', 'error'))
 			.finally(() => setBrandsLoading(false));
 	}, []);
@@ -143,7 +143,7 @@ export default function NewMachineCard({ onCreated }: Props) {
 		}
 		setSeriesLoading(true);
 		fetchEquipmentSeries(matched)
-			.then((data) => setSeriesOptions(data.series ?? []))
+			.then((data) => setSeriesOptions(data ?? []))
 			.catch(() => addToast('Failed to load series', 'error'))
 			.finally(() => setSeriesLoading(false));
 	}, [brand, brands]);
