@@ -113,6 +113,13 @@ export const fetchEquipmentById = (id: string | number): Promise<Equipment> =>
 export const fetchEquipmentGyms = (slug: string): Promise<{ gyms: GymWithQuantity[] }> =>
 	apiFetch(`/equipment/${slug}/gyms`, { headers: authHeaders() });
 
+export const updateWeightStack = (id: string | number, weightStack: number | null): Promise<{ id: number; weight_stack: number | null }> =>
+	apiFetch(`/equipment/${id}/weight-stack`, {
+		method: 'PATCH',
+		headers: { 'Content-Type': 'application/json', ...authHeaders() },
+		body: JSON.stringify({ weight_stack: weightStack })
+	});
+
 export const fetchEquipmentBrands = (): Promise<{ brands: string[] }> =>
 	apiFetch('/equipment/brands');
 

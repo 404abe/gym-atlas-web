@@ -13,7 +13,8 @@ import {
 	uploadEquipmentImage,
 	rateEquipment,
 	favouriteEquipment,
-	unfavouriteEquipment
+	unfavouriteEquipment,
+	updateWeightStack
 } from '@/lib/api';
 import { Star, Dumbbell, Plus, Trophy, X, ChevronDown } from 'lucide-react';
 import { Equipment } from '@/types/equipment';
@@ -39,6 +40,8 @@ export default function EquipmentProfilePage() {
 		null
 	);
 	const [showAllCategories, setShowAllCategories] = useState(false);
+	const [editingWeightStack, setEditingWeightStack] = useState(false);
+	const [weightStackInput, setWeightStackInput] = useState('');
 
 	const canConfirm = selectedMuscle || selectedExercise;
 
@@ -145,6 +148,19 @@ export default function EquipmentProfilePage() {
 			await rateEquipment(id as string, rating);
 		} catch (err) {
 			console.error('Failed to rate:', err);
+		}
+	};
+
+	const handleSaveWeightStack = async () => {
+		const val = parseInt(weightStackInput, 10);
+		if (!val || val <= 0) return;
+		try {
+			await updateWeightStack(id as string, val);
+			setItem((prev) => (prev ? { ...prev, weight_stack: val } : prev));
+			setEditingWeightStack(false);
+			setWeightStackInput('');
+		} catch (err) {
+			console.error('Failed to update weight stack:', err);
 		}
 	};
 
@@ -270,11 +286,41 @@ export default function EquipmentProfilePage() {
 						<p className="text-main text-xl font-semibold">{gyms.length}</p>
 					</div>
 
-					<div className="border-border bg-sub-alt col-span-1 row-span-1 flex flex-col justify-between rounded-2xl border p-3">
+					<div className="border-border bg-sub-alt relative col-span-1 row-span-1 flex flex-col justify-between rounded-2xl border p-3">
 						<p className="text-sub text-[11px]">type</p>
-						<p className="text-main text-sm font-semibold">
-							{item.type === 'pin_loaded' ? 'Pin loaded' : 'Plate loaded'}
-						</p>
+						<div>
+							<p className="text-sub text-xs">
+								{item.type === 'pin_loaded' ? 'Pin loaded' : 'Plate loaded'}
+							</p>
+							{item.weight_stack && (
+								<p className="text-main text-xl font-semibold">{item.weight_stack}kg</p>
+							)}
+						</div>
+						{user && item.type === 'pin_loaded' && !item.weight_stack && (
+							editingWeightStack ? (
+								<div className="absolute bottom-3 right-3 flex items-center gap-1">
+									<input
+										type="number"
+										autoFocus
+										min={1}
+										value={weightStackInput}
+										onChange={(e) => setWeightStackInput(e.target.value)}
+										onKeyDown={(e) => { if (e.key === 'Enter') handleSaveWeightStack(); if (e.key === 'Escape') setEditingWeightStack(false); }}
+										placeholder="kg"
+										className="bg-surface border-border text-main w-14 rounded-md border px-2 py-1 text-xs outline-none"
+									/>
+									<button onClick={handleSaveWeightStack} className="text-sub hover:text-main text-xs transition">✓</button>
+									<button onClick={() => setEditingWeightStack(false)} className="text-sub hover:text-main text-xs transition">✕</button>
+								</div>
+							) : (
+								<button
+									onClick={() => setEditingWeightStack(true)}
+									className="border-border bg-surface/80 text-sub hover:text-main absolute bottom-3 right-3 rounded-lg border px-3 py-1.5 text-xs backdrop-blur-sm transition"
+								>
+									Add weight stack
+								</button>
+							)
+						)}
 					</div>
 
 					<div className="border-border bg-sub-alt col-span-1 row-span-1 flex flex-col justify-between rounded-2xl border p-3">
@@ -376,11 +422,41 @@ export default function EquipmentProfilePage() {
 							<p className="text-sub text-[11px]">in gyms</p>
 							<p className="text-main text-xl font-semibold">{gyms.length}</p>
 						</div>
-						<div className="border-border bg-sub-alt flex flex-col justify-between rounded-2xl border p-3">
+						<div className="border-border bg-sub-alt relative flex flex-col justify-between rounded-2xl border p-3">
 							<p className="text-sub text-[11px]">type</p>
-							<p className="text-main text-sm font-semibold">
-								{item.type === 'pin_loaded' ? 'Pin loaded' : 'Plate loaded'}
-							</p>
+							<div>
+								<p className="text-sub text-xs">
+									{item.type === 'pin_loaded' ? 'Pin loaded' : 'Plate loaded'}
+								</p>
+								{item.weight_stack && (
+									<p className="text-main text-xl font-semibold">{item.weight_stack}kg</p>
+								)}
+							</div>
+							{user && item.type === 'pin_loaded' && !item.weight_stack && (
+								editingWeightStack ? (
+									<div className="absolute bottom-3 right-3 flex items-center gap-1">
+										<input
+											type="number"
+											autoFocus
+											min={1}
+											value={weightStackInput}
+											onChange={(e) => setWeightStackInput(e.target.value)}
+											onKeyDown={(e) => { if (e.key === 'Enter') handleSaveWeightStack(); if (e.key === 'Escape') setEditingWeightStack(false); }}
+											placeholder="kg"
+											className="bg-surface border-border text-main w-14 rounded-md border px-2 py-1 text-xs outline-none"
+										/>
+										<button onClick={handleSaveWeightStack} className="text-sub hover:text-main text-xs transition">✓</button>
+										<button onClick={() => setEditingWeightStack(false)} className="text-sub hover:text-main text-xs transition">✕</button>
+									</div>
+								) : (
+									<button
+										onClick={() => setEditingWeightStack(true)}
+										className="border-border bg-surface/80 text-sub hover:text-main absolute bottom-3 right-3 rounded-lg border px-3 py-1.5 text-xs backdrop-blur-sm transition"
+									>
+										Add weight stack
+									</button>
+								)
+							)}
 						</div>
 						<div className="border-border bg-sub-alt flex flex-col justify-between rounded-2xl border p-3">
 							<p className="text-sub text-[11px]">resistance</p>

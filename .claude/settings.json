@@ -7,6 +7,10 @@
       "Bash(git -C /Users/404abe/Development/gym-atlas-web ls-files .claude/settings.json)",
       "Bash(git -C /Users/404abe/Development/gym-atlas-web diff --cached --stat)",
       "Bash(git -C /Users/404abe/Development/gym-atlas-web status --short)"
+    ],
+    "additionalDirectories": [
+      "/Users/404abe/Development/gym-atlas-api/controllers",
+      "/Users/404abe/Development/gym-atlas-api/services"
     ]
   }
 }

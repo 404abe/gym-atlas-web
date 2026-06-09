@@ -7,6 +7,7 @@ export interface Equipment {
 	name: string;
 	slug: string;
 	type: 'pin_loaded' | 'plate_loaded';
+	weight_stack?: number | null;
 	resistance_profile?: 'constant' | 'ascending' | 'descending';
 	rating?: number;
 	avg_rating?: number;
