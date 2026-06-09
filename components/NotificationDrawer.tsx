@@ -21,7 +21,7 @@ interface Props {
 }
 
 export default function NotificationDrawer({ buttonClassName }: Props) {
-	const { user } = useAuth();
+	const { user, token } = useAuth();
 	const [isOpen, setIsOpen] = useState(false);
 	const [notifications, setNotifications] = useState<Notification[]>([]);
 	const [loading, setLoading] = useState(false);
@@ -41,7 +41,7 @@ export default function NotificationDrawer({ buttonClassName }: Props) {
 		setLoading(true);
 		try {
 			const res = await fetch(`${API_URL}/notifications`, {
-				headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` }
+				headers: { Authorization: `Bearer ${token}` }
 			});
 			const data = await res.json();
 			setNotifications(data.data?.notifications || []);
@@ -56,7 +56,7 @@ export default function NotificationDrawer({ buttonClassName }: Props) {
 		try {
 			await fetch(`${API_URL}/notifications/${id}/read`, {
 				method: 'POST',
-				headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` }
+				headers: { Authorization: `Bearer ${token}` }
 			});
 			setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
 		} catch (err) {
@@ -68,7 +68,7 @@ export default function NotificationDrawer({ buttonClassName }: Props) {
 		try {
 			await fetch(`${API_URL}/notifications/read-all`, {
 				method: 'POST',
-				headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` }
+				headers: { Authorization: `Bearer ${token}` }
 			});
 			setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
 		} catch (err) {
