@@ -299,7 +299,7 @@ export default function EquipmentProfilePage() {
 								Found in ({gyms.length} {gyms.length === 1 ? 'gym' : 'gyms'})
 							</h2>
 							<button
-								onClick={() => router.push('/add')}
+								onClick={() => router.push(`/add?equipmentId=${item.id}`)}
 								className="text-sub hover:text-main flex items-center gap-1 text-xs transition"
 							>
 								<Plus className="h-3.5 w-3.5" />
@@ -405,7 +405,7 @@ export default function EquipmentProfilePage() {
 								Found in ({gyms.length} {gyms.length === 1 ? 'gym' : 'gyms'})
 							</h2>
 							<button
-								onClick={() => router.push('/add')}
+								onClick={() => router.push(`/add?equipmentId=${item.id}`)}
 								className="text-sub hover:text-main flex items-center gap-1 text-xs transition"
 							>
 								<Plus className="h-3.5 w-3.5" />

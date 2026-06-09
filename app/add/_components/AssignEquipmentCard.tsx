@@ -11,9 +11,10 @@ import type { Equipment } from '@/types/equipment';
 type Props = {
 	gyms: Gym[];
 	equipment: Equipment[];
+	preselectedEquipmentId?: number;
 };
 
-export default function AssignEquipmentCard({ gyms, equipment }: Props) {
+export default function AssignEquipmentCard({ gyms, equipment, preselectedEquipmentId }: Props) {
 	const { addToast } = useToastContext();
 	const { user } = useAuth();
 	const [selectedGym, setSelectedGym] = useState<number | null>(null);
@@ -36,6 +37,15 @@ export default function AssignEquipmentCard({ gyms, equipment }: Props) {
 		document.addEventListener('mousedown', handler);
 		return () => document.removeEventListener('mousedown', handler);
 	}, []);
+
+	useEffect(() => {
+		if (!preselectedEquipmentId || equipment.length === 0) return;
+		const match = equipment.find((e) => e.id === preselectedEquipmentId);
+		if (match) {
+			setSelectedEquipment(match.id);
+			setEquipSearch([match.brand, match.series, match.name].filter(Boolean).join(' '));
+		}
+	}, [preselectedEquipmentId, equipment]);
 
 	const filteredGyms = useMemo(
 		() => gyms.filter((g) => g?.name?.toLowerCase().includes(gymSearch.toLowerCase())),
