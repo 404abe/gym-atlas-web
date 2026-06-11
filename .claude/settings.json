@@ -6,11 +6,22 @@
       "Bash(grep -rn \"profile/\\\\${\" /Users/404abe/Development/gym-atlas-web --include=\"*.tsx\" --include=\"*.ts\" -l)",
       "Bash(git -C /Users/404abe/Development/gym-atlas-web ls-files .claude/settings.json)",
       "Bash(git -C /Users/404abe/Development/gym-atlas-web diff --cached --stat)",
-      "Bash(git -C /Users/404abe/Development/gym-atlas-web status --short)"
+      "Bash(git -C /Users/404abe/Development/gym-atlas-web status --short)",
+      "Bash(find . -path ./node_modules -prune -o -name \"*quipment*\" -print)",
+      "Bash(ls routes/)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:3000/equipment)",
+      "Bash(curl -s http://localhost:3000/equipment)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:3000/equipment/5)",
+      "Bash(curl -s http://localhost:3000/equipment/5)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\)['data']; print\\('variants:', d.get\\('variants'\\)\\); print\\('weight_stack:', d.get\\('weight_stack'\\)\\)\")",
+      "Bash(grep -niA 12 \"CREATE TABLE public.equipment_variants\" /Users/404abe/Development/gym-atlas-api/schema.sql)",
+      "Bash(node -e \"require\\('./app.js'\\); console.log\\('app.js loads OK — all routes/controllers/repos wired'\\);\")"
     ],
     "additionalDirectories": [
       "/Users/404abe/Development/gym-atlas-api/controllers",
-      "/Users/404abe/Development/gym-atlas-api/services"
+      "/Users/404abe/Development/gym-atlas-api/services",
+      "/Users/404abe/Development/gym-atlas-api/migrations",
+      "/Users/404abe/Development/gym-atlas-api"
     ]
   }
 }
