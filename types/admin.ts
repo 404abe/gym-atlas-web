@@ -63,6 +63,17 @@ export interface PendingWeightStack {
 	submitted_by?: string;
 }
 
+export interface PendingGymInstagram {
+	id: number;
+	name: string;
+	city?: string;
+	country?: string;
+	image_url?: string;
+	instagram: string | null;
+	pending_instagram: string;
+	submitted_by?: string;
+}
+
 export interface AdminUser {
 	id: string;
 	email: string;

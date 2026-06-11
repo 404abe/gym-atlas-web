@@ -4,12 +4,13 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { Check, X, Building2, Dumbbell, Clock, Users, ShieldCheck, ImageIcon, Layers, Weight } from 'lucide-react';
+import { FaInstagram } from 'react-icons/fa';
 import { fetchAdminPending, fetchAdminUsers, adminAction, adminPhotoAction, makeAdmin } from '@/lib/api';
-import { PendingGym, PendingEquipment, PendingSuggestion, PendingPhoto, PendingVariant, PendingWeightStack, AdminUser } from '@/types/admin';
+import { PendingGym, PendingEquipment, PendingSuggestion, PendingPhoto, PendingVariant, PendingWeightStack, PendingGymInstagram, AdminUser } from '@/types/admin';
 
 type ActionState = Record<string, 'approving' | 'rejecting' | 'done'>;
 
-const TABS = ['equipment', 'gyms', 'suggestions', 'photos', 'variants', 'weights', 'users'] as const;
+const TABS = ['equipment', 'gyms', 'suggestions', 'photos', 'variants', 'weights', 'instagram', 'users'] as const;
 type Tab = (typeof TABS)[number];
 
 const TAB_LABELS: Record<Tab, string> = {
@@ -19,6 +20,7 @@ const TAB_LABELS: Record<Tab, string> = {
 	photos: 'photos',
 	variants: 'variants',
 	weights: 'weight stacks',
+	instagram: 'instagram',
 	users: 'users'
 };
 
@@ -36,6 +38,7 @@ export default function AdminPage() {
 	const [photos, setPhotos] = useState<PendingPhoto[]>([]);
 	const [variants, setVariants] = useState<PendingVariant[]>([]);
 	const [weightStacks, setWeightStacks] = useState<PendingWeightStack[]>([]);
+	const [gymInstagrams, setGymInstagrams] = useState<PendingGymInstagram[]>([]);
 
 	const isSuperAdmin = user?.role === 'super_admin';
 
@@ -66,6 +69,7 @@ export default function AdminPage() {
 			setPhotos(data.photos || []);
 			setVariants(data.variants || []);
 			setWeightStacks(data.weightStacks || []);
+			setGymInstagrams(data.gymInstagrams || []);
 		} catch (err) {
 			console.error('Failed to fetch pending:', err);
 		} finally {
@@ -83,7 +87,7 @@ export default function AdminPage() {
 	};
 
 	const handleAction = async (
-		type: 'gym' | 'equipment' | 'suggestion' | 'variant' | 'weight-stack',
+		type: 'gym' | 'equipment' | 'suggestion' | 'variant' | 'weight-stack' | 'gym-instagram',
 		id: number,
 		action: 'approve' | 'reject'
 	) => {
@@ -97,6 +101,7 @@ export default function AdminPage() {
 				else if (type === 'equipment') setEquipment((prev) => prev.filter((e) => e.id !== id));
 				else if (type === 'variant') setVariants((prev) => prev.filter((v) => v.id !== id));
 				else if (type === 'weight-stack') setWeightStacks((prev) => prev.filter((w) => w.id !== id));
+				else if (type === 'gym-instagram') setGymInstagrams((prev) => prev.filter((gi) => gi.id !== id));
 				else setSuggestions((prev) => prev.filter((s) => s.id !== id));
 			}, 600);
 		} catch (err) {
@@ -143,8 +148,8 @@ export default function AdminPage() {
 
 	if (loading) return <div className="text-sub p-8 text-sm">Loading admin dashboard...</div>;
 
-	const totalPending = gyms.length + equipment.length + suggestions.length + photos.length + variants.length + weightStacks.length;
-	const visibleTabs = isSuperAdmin ? TABS : (['equipment', 'gyms', 'suggestions', 'photos', 'variants', 'weights'] as const);
+	const totalPending = gyms.length + equipment.length + suggestions.length + photos.length + variants.length + weightStacks.length + gymInstagrams.length;
+	const visibleTabs = isSuperAdmin ? TABS : (['equipment', 'gyms', 'suggestions', 'photos', 'variants', 'weights', 'instagram'] as const);
 
 	return (
 		<div id="pageAdmin" className="content-grid py-8">
@@ -185,6 +190,7 @@ export default function AdminPage() {
 							{tab === 'photos' && <ImageIcon className="h-3.5 w-3.5" />}
 							{tab === 'variants' && <Layers className="h-3.5 w-3.5" />}
 							{tab === 'weights' && <Weight className="h-3.5 w-3.5" />}
+							{tab === 'instagram' && <FaInstagram className="h-3.5 w-3.5" />}
 							{tab === 'users' && <Users className="h-3.5 w-3.5" />}
 
 							<span className="capitalize">{TAB_LABELS[tab]}</span>
@@ -217,6 +223,11 @@ export default function AdminPage() {
 							{tab === 'weights' && weightStacks.length > 0 && (
 								<span className="bg-sub-alt text-sub rounded-full px-1.5 py-0.5 text-xs">
 									{weightStacks.length}
+								</span>
+							)}
+							{tab === 'instagram' && gymInstagrams.length > 0 && (
+								<span className="bg-sub-alt text-sub rounded-full px-1.5 py-0.5 text-xs">
+									{gymInstagrams.length}
 								</span>
 							)}
 						</button>
@@ -527,6 +538,62 @@ export default function AdminPage() {
 											state={state}
 											onApprove={() => handleAction('weight-stack', w.id, 'approve')}
 											onReject={() => handleAction('weight-stack', w.id, 'reject')}
+										/>
+									</div>
+								);
+							})
+						)}
+					</div>
+				)}
+
+				{/* Instagram Tab Content */}
+				{activeTab === 'instagram' && (
+					<div className="space-y-2">
+						{gymInstagrams.length === 0 ? (
+							<EmptyState label="No pending Instagram suggestions" />
+						) : (
+							gymInstagrams.map((gi) => {
+								const key = `gym-instagram-${gi.id}`;
+								const state = actions[key];
+								return (
+									<div
+										key={gi.id}
+										className={`border-border bg-surface flex items-center gap-4 rounded-2xl border p-4 transition-opacity duration-300 ${
+											state === 'done' ? 'opacity-0' : 'opacity-100'
+										}`}
+									>
+										<div className="bg-sub-alt flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl">
+											{gi.image_url ? (
+												<img
+													src={gi.image_url}
+													alt={gi.name}
+													className="h-full w-full object-cover"
+												/>
+											) : (
+												<FaInstagram className="text-sub h-4 w-4" />
+											)}
+										</div>
+										<div className="min-w-0 flex-1">
+											<p className="text-main text-sm font-medium">{gi.name}</p>
+											<div className="text-sub mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
+												<a
+													href={`https://instagram.com/${gi.pending_instagram}`}
+													target="_blank"
+													rel="noreferrer"
+													className="text-main font-medium hover:underline"
+												>
+													@{gi.pending_instagram}
+												</a>
+												{[gi.city, gi.country].filter(Boolean).length > 0 && (
+													<span>{[gi.city, gi.country].filter(Boolean).join(', ')}</span>
+												)}
+												{gi.submitted_by && <span>by {gi.submitted_by}</span>}
+											</div>
+										</div>
+										<ActionButtons
+											state={state}
+											onApprove={() => handleAction('gym-instagram', gi.id, 'approve')}
+											onReject={() => handleAction('gym-instagram', gi.id, 'reject')}
 										/>
 									</div>
 								);

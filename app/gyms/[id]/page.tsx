@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { MapPin, Star, Dumbbell, Minus, LayoutGrid, List, Plus, Navigation } from 'lucide-react';
+import { MapPin, Star, Dumbbell, Minus, LayoutGrid, List, Plus, Navigation, Check, X, Loader2 } from 'lucide-react';
 import {
 	fetchGymById,
 	fetchGymEquipment,
@@ -10,6 +10,7 @@ import {
 	favouriteGym,
 	unfavouriteGym,
 	uploadGymImage,
+	updateGymInstagram,
 	removeGymEquipment
 } from '@/lib/api';
 import { Gym, GymEquipment } from '@/types/gym';
@@ -18,6 +19,7 @@ import { FaInstagram } from 'react-icons/fa';
 import FavoriteButton from '@/components/ui/FavoriteButton';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { useAuthGate } from '@/app/contexts/AuthGateContext';
+import { useToastContext } from '@/app/contexts/ToastContext';
 import AddEquipmentPanel from '@/app/add/_components/AddEquipmentPanel';
 
 export default function GymProfilePage() {
@@ -25,6 +27,7 @@ export default function GymProfilePage() {
 	const router = useRouter();
 	const { user } = useAuth();
 	const { requireAuth } = useAuthGate();
+	const { addToast } = useToastContext();
 
 	const [gym, setGym] = useState<Gym | null>(null);
 	const [equipment, setEquipment] = useState<GymEquipment[]>([]);
@@ -36,6 +39,12 @@ export default function GymProfilePage() {
 	const [masterEquipment, setMasterEquipment] = useState<Equipment[]>([]);
 	const [pendingRemoveId, setPendingRemoveId] = useState<number | null>(null);
 	const [equipmentView, setEquipmentView] = useState<'grid' | 'compact'>('grid');
+
+	// Instagram suggestion (for gyms with no handle yet) — staged for admin review.
+	const [instaOpen, setInstaOpen] = useState(false);
+	const [instaValue, setInstaValue] = useState('');
+	const [instaSubmitting, setInstaSubmitting] = useState(false);
+	const [instaSubmitted, setInstaSubmitted] = useState(false);
 
 	useEffect(() => {
 		const load = async () => {
@@ -106,6 +115,29 @@ export default function GymProfilePage() {
 			console.error('Failed to upload image:', err);
 		} finally {
 			setUploading(false);
+		}
+	};
+
+	const openInstagramEditor = () => {
+		if (!requireAuth('suggest an Instagram')) return;
+		setInstaOpen(true);
+	};
+
+	const handleSubmitInstagram = async () => {
+		const handle = instaValue.trim().replace(/^@/, '');
+		if (!handle || instaSubmitting) return;
+		setInstaSubmitting(true);
+		try {
+			await updateGymInstagram(Number(id), handle);
+			setInstaSubmitted(true);
+			setInstaOpen(false);
+			setInstaValue('');
+			addToast('Instagram suggestion submitted for review', 'success');
+		} catch (err) {
+			console.error('Failed to submit Instagram:', err);
+			addToast('Failed to submit Instagram', 'error');
+		} finally {
+			setInstaSubmitting(false);
 		}
 	};
 
@@ -191,6 +223,68 @@ export default function GymProfilePage() {
 							<FaInstagram className="h-3 w-3" />
 							Instagram
 						</a>
+					)}
+
+					{/* No Instagram yet — let users suggest one (staged for admin review) */}
+					{!gym.instagram && !instaSubmitted && !instaOpen && (
+						<button
+							onClick={openInstagramEditor}
+							className="flex items-center gap-1.5 rounded-full border border-dashed border-white/40 bg-white/5 px-3 py-1.5 text-xs text-white/80 backdrop-blur-sm transition hover:bg-white/15 hover:text-white"
+						>
+							<FaInstagram className="h-3 w-3" />
+							Add Instagram
+						</button>
+					)}
+
+					{!gym.instagram && !instaSubmitted && instaOpen && (
+						<div className="flex items-center gap-1 rounded-full border border-white/25 bg-white/15 py-1 pl-3 pr-1 text-xs text-white backdrop-blur-sm">
+							<FaInstagram className="h-3 w-3 shrink-0" />
+							<span className="text-white/50">@</span>
+							<input
+								value={instaValue}
+								onChange={(e) => setInstaValue(e.target.value)}
+								onKeyDown={(e) => {
+									if (e.key === 'Enter') handleSubmitInstagram();
+									if (e.key === 'Escape') {
+										setInstaOpen(false);
+										setInstaValue('');
+									}
+								}}
+								autoFocus
+								placeholder="handle"
+								spellCheck={false}
+								className="w-24 bg-transparent text-white outline-none placeholder:text-white/40"
+							/>
+							<button
+								onClick={handleSubmitInstagram}
+								disabled={instaSubmitting || !instaValue.trim()}
+								aria-label="Submit Instagram"
+								className="flex h-6 w-6 items-center justify-center rounded-full bg-white/20 transition hover:bg-white/30 disabled:opacity-40"
+							>
+								{instaSubmitting ? (
+									<Loader2 className="h-3 w-3 animate-spin" />
+								) : (
+									<Check className="h-3 w-3" />
+								)}
+							</button>
+							<button
+								onClick={() => {
+									setInstaOpen(false);
+									setInstaValue('');
+								}}
+								aria-label="Cancel"
+								className="flex h-6 w-6 items-center justify-center rounded-full transition hover:bg-white/20"
+							>
+								<X className="h-3 w-3" />
+							</button>
+						</div>
+					)}
+
+					{!gym.instagram && instaSubmitted && (
+						<span className="flex items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-3 py-1.5 text-xs text-white/70 backdrop-blur-sm">
+							<FaInstagram className="h-3 w-3" />
+							Instagram pending review
+						</span>
 					)}
 				</div>
 			</div>

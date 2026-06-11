@@ -1,7 +1,7 @@
 import { API_URL } from './config';
 import type { Gym, GymEquipment, GymWithQuantity } from '@/types/gym';
 import type { Equipment, EquipmentVariant } from '@/types/equipment';
-import type { PendingGym, PendingEquipment, PendingSuggestion, PendingPhoto, PendingVariant, PendingWeightStack, AdminUser } from '@/types/admin';
+import type { PendingGym, PendingEquipment, PendingSuggestion, PendingPhoto, PendingVariant, PendingWeightStack, PendingGymInstagram, AdminUser } from '@/types/admin';
 import type { LeaderboardEntry } from '@/types/leaderboard';
 import { BestInClassCategory, BestInClassEntry } from '@/types/bestInClass';
 
@@ -58,6 +58,18 @@ export const rateGym = (id: number, rating: number): Promise<void> =>
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json', ...authHeaders() },
 		body: JSON.stringify({ rating })
+	});
+
+// Suggests an Instagram handle for a gym; staged for admin review, not live until approved.
+export const updateGymInstagram = (
+	id: number,
+	instagram: string
+): Promise<{ id: number; instagram: string | null; pending_instagram: string; instagram_status: string }> =>
+	apiFetch(`/gyms/${id}/instagram`, {
+		method: 'PATCH',
+		headers: { 'Content-Type': 'application/json', ...authHeaders() },
+		body: JSON.stringify(
+			{ instagram })
 	});
 
 export const uploadGymImage = async (id: number, file: File): Promise<string> => {
@@ -204,6 +216,7 @@ export const fetchAdminPending = (): Promise<{
 	photos: PendingPhoto[];
 	variants: PendingVariant[];
 	weightStacks: PendingWeightStack[];
+	gymInstagrams: PendingGymInstagram[];
 }> => apiFetch('/admin/pending', { headers: authHeaders() });
 
 export const adminPhotoAction = (action: 'approve' | 'reject', id: number): Promise<void> =>
@@ -217,7 +230,7 @@ export const fetchAdminUsers = (): Promise<{ users: AdminUser[] }> =>
 
 export const adminAction = (
 	action: 'approve' | 'reject',
-	type: 'gym' | 'equipment' | 'suggestion' | 'variant' | 'weight-stack',
+	type: 'gym' | 'equipment' | 'suggestion' | 'variant' | 'weight-stack' | 'gym-instagram',
 	id: number
 ): Promise<void> =>
 	apiFetch(`/admin/${action}/${type}/${id}`, {
