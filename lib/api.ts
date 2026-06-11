@@ -1,7 +1,7 @@
 import { API_URL } from './config';
 import type { Gym, GymEquipment, GymWithQuantity } from '@/types/gym';
-import type { Equipment } from '@/types/equipment';
-import type { PendingGym, PendingEquipment, PendingSuggestion, PendingPhoto, AdminUser } from '@/types/admin';
+import type { Equipment, EquipmentVariant } from '@/types/equipment';
+import type { PendingGym, PendingEquipment, PendingSuggestion, PendingPhoto, PendingVariant, PendingWeightStack, AdminUser } from '@/types/admin';
 import type { LeaderboardEntry } from '@/types/leaderboard';
 import { BestInClassCategory, BestInClassEntry } from '@/types/bestInClass';
 
@@ -113,11 +113,34 @@ export const fetchEquipmentById = (id: string | number): Promise<Equipment> =>
 export const fetchEquipmentGyms = (slug: string): Promise<{ gyms: GymWithQuantity[] }> =>
 	apiFetch(`/equipment/${slug}/gyms`, { headers: authHeaders() });
 
-export const updateWeightStack = (id: string | number, weightStack: number | null): Promise<{ id: number; weight_stack: number | null }> =>
+// Submits a weight-stack change for admin review; the live value is unchanged until approved.
+export const updateWeightStack = (id: string | number, weightStack: number | null): Promise<{ id: number; pending_weight_stack: number | null; weight_stack_status: string }> =>
 	apiFetch(`/equipment/${id}/weight-stack`, {
 		method: 'PATCH',
 		headers: { 'Content-Type': 'application/json', ...authHeaders() },
 		body: JSON.stringify({ weight_stack: weightStack })
+	});
+
+// ── Variants ──────────────────────────────────────────────────────────────────
+
+export const fetchEquipmentVariants = (equipmentId: string | number): Promise<EquipmentVariant[]> =>
+	apiFetch(`/equipment/${equipmentId}/variants`);
+
+// Submits a variant for admin review; it is not visible publicly until approved.
+export const createVariant = (
+	equipmentId: string | number,
+	body: { label: string; variation_type: EquipmentVariant['variation_type']; is_default?: boolean }
+): Promise<EquipmentVariant> =>
+	apiFetch(`/equipment/${equipmentId}/variants`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json', ...authHeaders() },
+		body: JSON.stringify(body)
+	});
+
+export const deleteVariant = (variantId: number): Promise<void> =>
+	apiFetch(`/equipment/variants/${variantId}`, {
+		method: 'DELETE',
+		headers: authHeaders()
 	});
 
 export const fetchEquipmentBrands = (): Promise<string[]> =>
@@ -179,6 +202,8 @@ export const fetchAdminPending = (): Promise<{
 	equipment: PendingEquipment[];
 	suggestions: PendingSuggestion[];
 	photos: PendingPhoto[];
+	variants: PendingVariant[];
+	weightStacks: PendingWeightStack[];
 }> => apiFetch('/admin/pending', { headers: authHeaders() });
 
 export const adminPhotoAction = (action: 'approve' | 'reject', id: number): Promise<void> =>
@@ -192,7 +217,7 @@ export const fetchAdminUsers = (): Promise<{ users: AdminUser[] }> =>
 
 export const adminAction = (
 	action: 'approve' | 'reject',
-	type: 'gym' | 'equipment' | 'suggestion',
+	type: 'gym' | 'equipment' | 'suggestion' | 'variant' | 'weight-stack',
 	id: number
 ): Promise<void> =>
 	apiFetch(`/admin/${action}/${type}/${id}`, {

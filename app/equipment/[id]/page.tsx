@@ -14,10 +14,12 @@ import {
 	rateEquipment,
 	favouriteEquipment,
 	unfavouriteEquipment,
-	updateWeightStack
+	updateWeightStack,
+	createVariant,
+	deleteVariant
 } from '@/lib/api';
 import { Star, Dumbbell, Plus, Trophy, X, ChevronDown } from 'lucide-react';
-import { Equipment } from '@/types/equipment';
+import { Equipment, EquipmentVariant } from '@/types/equipment';
 import { GymWithQuantity } from '@/types/gym';
 import type { BestInClassCategory } from '@/types/bestInClass';
 
@@ -42,6 +44,7 @@ export default function EquipmentProfilePage() {
 	const [showAllCategories, setShowAllCategories] = useState(false);
 	const [editingWeightStack, setEditingWeightStack] = useState(false);
 	const [weightStackInput, setWeightStackInput] = useState('');
+	const [weightStackPending, setWeightStackPending] = useState(false);
 
 	const canConfirm = selectedMuscle || selectedExercise;
 
@@ -156,9 +159,9 @@ export default function EquipmentProfilePage() {
 		if (!val || val <= 0) return;
 		try {
 			await updateWeightStack(id as string, val);
-			setItem((prev) => (prev ? { ...prev, weight_stack: val } : prev));
 			setEditingWeightStack(false);
 			setWeightStackInput('');
+			setWeightStackPending(true);
 		} catch (err) {
 			console.error('Failed to update weight stack:', err);
 		}
@@ -179,39 +182,37 @@ export default function EquipmentProfilePage() {
 
 	const avgRating = item.avg_rating ? Number(item.avg_rating) : null;
 
-	const ImageTile = ({ mobile = false }: { mobile?: boolean }) => (
-		<div
-			className={
-				mobile
-					? 'border-border bg-sub-alt relative aspect-square w-full overflow-hidden rounded-2xl border'
-					: 'border-border bg-sub-alt relative col-span-2 row-span-2 overflow-hidden rounded-2xl border'
-			}
-		>
+	// ── Hero ── shared across breakpoints; image-first with overlaid title + actions
+	const Hero = () => (
+		<div className="border-border bg-sub-alt relative aspect-[4/3] w-full overflow-hidden rounded-2xl border sm:aspect-[16/9]">
 			{imageUrl ? (
 				<img src={imageUrl} alt={item.name} className="h-full w-full object-cover" />
 			) : (
 				<div className="flex h-full w-full items-center justify-center">
-					<Dumbbell className="text-sub h-10 w-10 opacity-30" />
+					<Dumbbell className="text-sub h-12 w-12 opacity-30" />
 				</div>
 			)}
+
 			{uploading && (
 				<div className="absolute inset-0 flex items-center justify-center bg-black/40">
 					<span className="text-xs text-white">Uploading...</span>
 				</div>
 			)}
+
+			{/* Photo control — top left */}
 			{user ? (
-				<label className="absolute bottom-3 right-3 cursor-pointer">
-					<div className="border-border bg-surface/80 text-sub hover:text-main rounded-lg border px-3 py-1.5 text-xs backdrop-blur-sm">
+				<label className="absolute left-3 top-3 cursor-pointer">
+					<div className="border-border bg-surface/80 text-sub hover:text-main rounded-lg border px-3 py-1.5 text-xs backdrop-blur-sm transition">
 						{uploading ? 'Uploading...' : imageUrl ? 'Change photo' : 'Add photo'}
 					</div>
 					<input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
 				</label>
 			) : (
-				<div className="group absolute bottom-3 right-3">
+				<div className="group absolute left-3 top-3">
 					<div className="border-border bg-surface/80 text-sub rounded-lg border px-3 py-1.5 text-xs backdrop-blur-sm">
 						Add photo
 					</div>
-					<div className="bg-surface pointer-events-none absolute bottom-full right-0 z-10 mb-2 w-44 rounded-lg px-3 py-2 text-center text-xs opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+					<div className="bg-surface pointer-events-none absolute left-0 top-full z-10 mt-2 w-44 rounded-lg px-3 py-2 text-center text-xs opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
 						<a href="/login" className="text-main underline">
 							Sign in
 						</a>
@@ -219,6 +220,33 @@ export default function EquipmentProfilePage() {
 					</div>
 				</div>
 			)}
+
+			{/* Actions — top right */}
+			<div className="absolute right-3 top-3 flex items-center gap-2">
+				{user && (
+					<button
+						onClick={() => setShowBestInClass(true)}
+						className="flex h-9 items-center gap-1.5 rounded-full border border-white/25 bg-white/15 px-3.5 text-sm text-white backdrop-blur-sm transition hover:bg-white/25"
+					>
+						<Trophy className="h-3.5 w-3.5" />
+						Best in class
+					</button>
+				)}
+				<div className="flex h-9 w-9 items-center justify-center rounded-full border border-white/25 bg-white/15 backdrop-blur-sm">
+					<FavoriteButton isFavorite={isFavorite} onToggle={handleFavorite} />
+				</div>
+			</div>
+
+			{/* Title overlay — bottom */}
+			<div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 to-transparent p-5">
+				<span className="mb-2 inline-flex items-center rounded-full border border-white/25 bg-white/15 px-2.5 py-1 text-[11px] text-white backdrop-blur-sm">
+					{item.type === 'pin_loaded' ? 'Pin loaded' : 'Plate loaded'}
+				</span>
+				<h1 className="text-2xl font-semibold leading-tight text-white">{item.name || item.slug}</h1>
+				<p className="text-sm text-white/70">
+					{item.brand} · {item.series}
+				</p>
+			</div>
 		</div>
 	);
 
@@ -234,174 +262,12 @@ export default function EquipmentProfilePage() {
 	return (
 		<div id="pageEquipmentProfile" className="content-grid py-8">
 			<div className="full-width-padding mx-auto max-w-4xl">
-				{/* ── Desktop Bento Grid ── */}
-				<div
-					className="hidden sm:grid sm:grid-cols-4 sm:gap-3"
-					style={{ gridTemplateRows: '160px 160px 160px auto auto' }}
-				>
-					<ImageTile />
+				<div className="flex flex-col gap-3">
+					<Hero />
 
-					<div className="border-border bg-surface col-span-2 row-span-2 flex flex-col justify-between rounded-2xl border p-5">
-						<div className="flex items-start justify-between gap-2">
-							<div>
-								<p className="text-sub mb-1 text-xs">
-									{item.brand} · {item.series}
-								</p>
-								<h1 className="text-main text-2xl font-semibold leading-tight">
-									{item.name || item.slug}
-								</h1>
-							</div>
-							<FavoriteButton isFavorite={isFavorite} onToggle={handleFavorite} />
-						</div>
-						{user && (
-							<button
-								onClick={() => setShowBestInClass(true)}
-								className="text-sub hover:text-main border-border mt-auto flex w-fit items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition"
-							>
-								<Trophy className="h-3.5 w-3.5" />
-								Set as best in class
-							</button>
-						)}
-					</div>
-
-					<div className="border-border bg-sub-alt col-span-1 row-span-1 flex flex-col justify-between rounded-2xl border p-3">
-						<p className="text-sub text-[11px]">avg rating</p>
-						<p className="text-main text-xl font-semibold">
-							{avgRating ? avgRating.toFixed(1) : '—'}
-						</p>
-						{avgRating && (
-							<div className="flex gap-0.5">
-								{[1, 2, 3, 4, 5].map((s) => (
-									<Star
-										key={s}
-										className={`h-2.5 w-2.5 ${s <= Math.round(avgRating) ? 'fill-amber-400 text-amber-400' : 'text-sub'}`}
-									/>
-								))}
-							</div>
-						)}
-					</div>
-
-					<div className="border-border bg-sub-alt col-span-1 row-span-1 flex flex-col justify-between rounded-2xl border p-3">
-						<p className="text-sub text-[11px]">in gyms</p>
-						<p className="text-main text-xl font-semibold">{gyms.length}</p>
-					</div>
-
-					<div className="border-border bg-sub-alt relative col-span-1 row-span-1 flex flex-col justify-between rounded-2xl border p-3">
-						<p className="text-sub text-[11px]">type</p>
-						<div>
-							<p className="text-sub text-xs">
-								{item.type === 'pin_loaded' ? 'Pin loaded' : 'Plate loaded'}
-							</p>
-							{item.weight_stack && (
-								<p className="text-main text-xl font-semibold">{item.weight_stack}kg</p>
-							)}
-						</div>
-						{user && item.type === 'pin_loaded' && !item.weight_stack && (
-							editingWeightStack ? (
-								<div className="absolute bottom-3 right-3 flex items-center gap-1">
-									<input
-										type="number"
-										autoFocus
-										min={1}
-										value={weightStackInput}
-										onChange={(e) => setWeightStackInput(e.target.value)}
-										onKeyDown={(e) => { if (e.key === 'Enter') handleSaveWeightStack(); if (e.key === 'Escape') setEditingWeightStack(false); }}
-										placeholder="kg"
-										className="bg-surface border-border text-main w-14 rounded-md border px-2 py-1 text-xs outline-none"
-									/>
-									<button onClick={handleSaveWeightStack} className="text-sub hover:text-main text-xs transition">✓</button>
-									<button onClick={() => setEditingWeightStack(false)} className="text-sub hover:text-main text-xs transition">✕</button>
-								</div>
-							) : (
-								<button
-									onClick={() => setEditingWeightStack(true)}
-									className="border-border bg-surface/80 text-sub hover:text-main absolute bottom-3 right-3 rounded-lg border px-3 py-1.5 text-xs backdrop-blur-sm transition"
-								>
-									Add weight stack
-								</button>
-							)
-						)}
-					</div>
-
-					<div className="border-border bg-sub-alt col-span-1 row-span-1 flex flex-col justify-between rounded-2xl border p-3">
-						<p className="text-sub text-[11px]">resistance</p>
-						<div className="mt-1">
-							<ResistanceProfile profile={item.resistance_profile} />
-						</div>
-					</div>
-
-					<div className="border-border bg-sub-alt col-span-4 row-span-1 flex items-center gap-4 rounded-2xl border px-4 py-3">
-						<p className="text-sub shrink-0 text-xs">your rating</p>
-						<RatingStars
-							avgRating={avgRating || 0}
-							userRating={item.user_rating ? Number(item.user_rating) : undefined}
-							onRate={handleRate}
-						/>
-					</div>
-
-					<div className="border-border bg-surface col-span-4 rounded-2xl border p-4">
-						<div className="mb-3 flex items-center justify-between">
-							<h2 className="text-main text-sm font-semibold">
-								Found in ({gyms.length} {gyms.length === 1 ? 'gym' : 'gyms'})
-							</h2>
-							<button
-								onClick={() => router.push(`/add?equipmentId=${item.id}`)}
-								className="text-sub hover:text-main flex items-center gap-1 text-xs transition"
-							>
-								<Plus className="h-3.5 w-3.5" />
-								Add gym
-							</button>
-						</div>
-						{gyms.length === 0 ? (
-							<p className="text-sub text-sm">Not listed in any gym yet.</p>
-						) : (
-							<div className="divide-border divide-y">
-								{gyms.map((gym) => (
-									<button
-										key={gym.id}
-										onClick={() => router.push(`/gyms/${gym.id}`)}
-										className="hover:bg-main/5 -mx-4 flex w-[calc(100%+2rem)] items-center justify-between px-4 py-2.5 transition"
-									>
-										<div className="text-left">
-											<p className="text-main text-sm font-medium">{gym.name}</p>
-											{gym.city && <p className="text-sub text-xs">{gym.city}</p>}
-										</div>
-										<span className="text-sub bg-main/10 rounded-full px-2.5 py-0.5 text-xs">
-											×{gym.quantity}
-										</span>
-									</button>
-								))}
-							</div>
-						)}
-					</div>
-				</div>
-
-				{/* ── Mobile Stack ── */}
-				<div className="flex flex-col gap-3 sm:hidden">
-					<ImageTile mobile />
-
-					<div className="border-border bg-surface flex flex-col gap-3 rounded-2xl border p-4">
-						<div className="flex items-start justify-between gap-2">
-							<div>
-								<p className="text-sub mb-0.5 text-xs">
-									{item.brand} · {item.series}
-								</p>
-								<h1 className="text-main text-xl font-semibold">{item.name || item.slug}</h1>
-							</div>
-							<FavoriteButton isFavorite={isFavorite} onToggle={handleFavorite} />
-						</div>
-						{user && (
-							<button
-								onClick={() => setShowBestInClass(true)}
-								className="text-sub hover:text-main border-border flex w-fit items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition"
-							>
-								<Trophy className="h-3.5 w-3.5" />
-								Set as best in class
-							</button>
-						)}
-					</div>
-
-					<div className="grid grid-cols-2 gap-3">
+					{/* ── Stats ── */}
+					<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+						{/* avg rating */}
 						<div className="border-border bg-sub-alt flex flex-col justify-between rounded-2xl border p-3">
 							<p className="text-sub text-[11px]">avg rating</p>
 							<p className="text-main text-xl font-semibold">
@@ -418,22 +284,35 @@ export default function EquipmentProfilePage() {
 								</div>
 							)}
 						</div>
+
+						{/* in gyms */}
 						<div className="border-border bg-sub-alt flex flex-col justify-between rounded-2xl border p-3">
 							<p className="text-sub text-[11px]">in gyms</p>
 							<p className="text-main text-xl font-semibold">{gyms.length}</p>
 						</div>
+
+						{/* weight stack */}
 						<div className="border-border bg-sub-alt relative flex flex-col justify-between rounded-2xl border p-3">
-							<p className="text-sub text-[11px]">type</p>
+							<p className="text-sub text-[11px]">weight stack</p>
 							<div>
-								<p className="text-sub text-xs">
-									{item.type === 'pin_loaded' ? 'Pin loaded' : 'Plate loaded'}
-								</p>
-								{item.weight_stack && (
-									<p className="text-main text-xl font-semibold">{item.weight_stack}kg</p>
+								{item.type === 'pin_loaded' ? (
+									item.weight_stack ? (
+										<p className="text-main text-xl font-semibold">{item.weight_stack}kg</p>
+									) : (
+										<p className="text-sub text-sm">—</p>
+									)
+								) : (
+									<p className="text-sub text-sm">Plate loaded</p>
 								)}
 							</div>
-							{user && item.type === 'pin_loaded' && !item.weight_stack && (
-								editingWeightStack ? (
+							{user &&
+								item.type === 'pin_loaded' &&
+								!item.weight_stack &&
+								(weightStackPending ? (
+									<span className="text-sub absolute bottom-3 right-3 text-[11px] italic">
+										Pending review
+									</span>
+								) : editingWeightStack ? (
 									<div className="absolute bottom-3 right-3 flex items-center gap-1">
 										<input
 											type="number"
@@ -441,12 +320,25 @@ export default function EquipmentProfilePage() {
 											min={1}
 											value={weightStackInput}
 											onChange={(e) => setWeightStackInput(e.target.value)}
-											onKeyDown={(e) => { if (e.key === 'Enter') handleSaveWeightStack(); if (e.key === 'Escape') setEditingWeightStack(false); }}
+											onKeyDown={(e) => {
+												if (e.key === 'Enter') handleSaveWeightStack();
+												if (e.key === 'Escape') setEditingWeightStack(false);
+											}}
 											placeholder="kg"
 											className="bg-surface border-border text-main w-14 rounded-md border px-2 py-1 text-xs outline-none"
 										/>
-										<button onClick={handleSaveWeightStack} className="text-sub hover:text-main text-xs transition">✓</button>
-										<button onClick={() => setEditingWeightStack(false)} className="text-sub hover:text-main text-xs transition">✕</button>
+										<button
+											onClick={handleSaveWeightStack}
+											className="text-sub hover:text-main text-xs transition"
+										>
+											✓
+										</button>
+										<button
+											onClick={() => setEditingWeightStack(false)}
+											className="text-sub hover:text-main text-xs transition"
+										>
+											✕
+										</button>
 									</div>
 								) : (
 									<button
@@ -455,9 +347,10 @@ export default function EquipmentProfilePage() {
 									>
 										Add weight stack
 									</button>
-								)
-							)}
+								))}
 						</div>
+
+						{/* resistance */}
 						<div className="border-border bg-sub-alt flex flex-col justify-between rounded-2xl border p-3">
 							<p className="text-sub text-[11px]">resistance</p>
 							<div className="mt-1">
@@ -466,6 +359,7 @@ export default function EquipmentProfilePage() {
 						</div>
 					</div>
 
+					{/* ── Your rating ── */}
 					<div className="border-border bg-sub-alt flex items-center gap-4 rounded-2xl border px-4 py-3">
 						<p className="text-sub shrink-0 text-xs">your rating</p>
 						<RatingStars
@@ -475,6 +369,7 @@ export default function EquipmentProfilePage() {
 						/>
 					</div>
 
+					{/* ── Found in ── */}
 					<div className="border-border bg-surface rounded-2xl border p-4">
 						<div className="mb-3 flex items-center justify-between">
 							<h2 className="text-main text-sm font-semibold">
@@ -510,6 +405,14 @@ export default function EquipmentProfilePage() {
 							</div>
 						)}
 					</div>
+
+					{/* ── Variations ── */}
+					<VariantsCard
+						equipmentId={item.id}
+						variants={item.variants || []}
+						canSubmit={!!user}
+						canDelete={user?.role === 'admin' || user?.role === 'super_admin'}
+					/>
 				</div>
 			</div>
 
@@ -564,9 +467,7 @@ export default function EquipmentProfilePage() {
 
 						{/* Suggested exercise */}
 						<div className="mb-4">
-							<p className="text-sub mb-2 text-[11px] uppercase tracking-wide">
-								Suggested exercise
-							</p>
+							<p className="text-sub mb-2 text-[11px] uppercase tracking-wide">Suggested exercise</p>
 							<div className="flex flex-wrap gap-2">
 								{categories
 									.filter((c) => c.type === 'exercise' && getSuggested().exercises.includes(c.name))
@@ -672,6 +573,225 @@ export default function EquipmentProfilePage() {
 							}`}
 						>
 							{justSaved ? '✓ Saved!' : saving ? '...' : 'Confirm'}
+						</button>
+					</div>
+				</div>
+			)}
+		</div>
+	);
+}
+
+/* ── Variants ── */
+
+const VARIATION_TYPES: EquipmentVariant['variation_type'][] = ['grip', 'unilateral', 'incline'];
+
+const VARIATION_GROUP_LABEL: Record<EquipmentVariant['variation_type'], string> = {
+	grip: 'grips',
+	unilateral: 'arms',
+	incline: 'incline'
+};
+
+/* Maps a free-form variant label to a small line glyph. Falls back to a dot. */
+function VariantGlyph({ variant }: { variant: EquipmentVariant }) {
+	const l = variant.label.toLowerCase();
+	const has = (...keys: string[]) => keys.some((k) => l.includes(k));
+
+	// Unilateral arms render as two independent bars vs. a single fixed bar.
+	if (variant.variation_type === 'unilateral') {
+		const split = !has('bi', 'together', 'fixed', 'converg');
+		return (
+			<svg viewBox="0 0 32 32" className="h-7 w-12" fill="none" stroke="currentColor">
+				{split ? (
+					<>
+						<line x1="11" y1="9" x2="11" y2="23" strokeWidth="3" strokeLinecap="round" />
+						<line x1="21" y1="9" x2="21" y2="23" strokeWidth="3" strokeLinecap="round" />
+					</>
+				) : (
+					<line x1="16" y1="9" x2="16" y2="23" strokeWidth="3" strokeLinecap="round" />
+				)}
+			</svg>
+		);
+	}
+
+	// Grip and incline render as a single bar rotated to suggest orientation/angle.
+	let angle: number | null = null;
+	if (variant.variation_type === 'grip') {
+		if (has('horizontal')) angle = 90;
+		else if (has('angl', '45', 'diagonal')) angle = 45;
+		else if (has('neutral', 'vertical', 'parallel')) angle = 0;
+		else angle = 0;
+	} else {
+		// incline
+		if (has('flat', 'horizontal')) angle = 90;
+		else if (has('decline')) angle = 135;
+		else if (has('vertical', 'upright', '90')) angle = 0;
+		else if (has('incline', '45', 'angl')) angle = 45;
+		else angle = 45;
+	}
+
+	if (angle === null) {
+		return (
+			<svg viewBox="0 0 32 32" className="h-7 w-12" fill="currentColor">
+				<circle cx="16" cy="16" r="3.5" />
+			</svg>
+		);
+	}
+
+	return (
+		<svg viewBox="0 0 32 32" className="h-7 w-12" fill="none" stroke="currentColor">
+			<line
+				x1="16"
+				y1="8"
+				x2="16"
+				y2="24"
+				strokeWidth="3"
+				strokeLinecap="round"
+				transform={`rotate(${angle} 16 16)`}
+			/>
+		</svg>
+	);
+}
+
+function VariantsCard({
+	equipmentId,
+	variants,
+	canSubmit,
+	canDelete
+}: {
+	equipmentId: number;
+	variants: EquipmentVariant[];
+	canSubmit: boolean;
+	canDelete: boolean;
+}) {
+	const [list, setList] = useState<EquipmentVariant[]>(variants);
+	const [open, setOpen] = useState(false);
+	const [label, setLabel] = useState('');
+	const [type, setType] = useState<EquipmentVariant['variation_type']>('grip');
+	const [submitting, setSubmitting] = useState(false);
+	const [submitted, setSubmitted] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+
+	const handleSubmit = async () => {
+		if (!label.trim()) return;
+		setSubmitting(true);
+		setError(null);
+		try {
+			await createVariant(equipmentId, {
+				label: label.trim(),
+				variation_type: type
+			});
+			setSubmitted(true);
+			setOpen(false);
+			setLabel('');
+			setType('grip');
+		} catch (err) {
+			setError(err instanceof Error ? err.message : 'Failed to submit');
+		} finally {
+			setSubmitting(false);
+		}
+	};
+
+	const handleDelete = async (variantId: number) => {
+		try {
+			await deleteVariant(variantId);
+			setList((prev) => prev.filter((v) => v.id !== variantId));
+		} catch (err) {
+			console.error('Failed to delete variant:', err);
+		}
+	};
+
+	return (
+		<div className="border-border bg-surface rounded-2xl border p-4">
+			<div className="mb-3 flex items-center justify-between">
+				<h2 className="text-main text-sm font-semibold">Variations</h2>
+				{canSubmit && !open && (
+					<button
+						onClick={() => {
+							setOpen(true);
+							setSubmitted(false);
+						}}
+						className="text-sub hover:text-main flex items-center gap-1 text-xs transition"
+					>
+						<Plus className="h-3.5 w-3.5" />
+						Suggest
+					</button>
+				)}
+			</div>
+
+			{list.length === 0 ? (
+				<p className="text-sub text-sm">No variations listed yet.</p>
+			) : (
+				<div className="space-y-2">
+					{VARIATION_TYPES.map((groupType) => {
+						const items = list.filter((v) => v.variation_type === groupType);
+						if (items.length === 0) return null;
+						return (
+							<div key={groupType} className="bg-sub-alt rounded-xl p-3">
+								<p className="text-main mb-3 text-xs font-semibold lowercase">
+									{VARIATION_GROUP_LABEL[groupType]}
+								</p>
+								<div className="flex flex-wrap gap-x-5 gap-y-3">
+									{items.map((v) => (
+										<div
+											key={v.id}
+											className="group/var relative flex flex-col items-center gap-1.5"
+										>
+											<span className="text-main flex h-7 items-center justify-center">
+												<VariantGlyph variant={v} />
+											</span>
+											<span className="text-sub text-[11px]">{v.label}</span>
+											{v.is_default && (
+												<span className="text-sub text-[9px] uppercase tracking-wide">default</span>
+											)}
+											{canDelete && (
+												<button
+													onClick={() => handleDelete(v.id)}
+													className="border-border bg-surface text-sub absolute -top-1.5 -right-1.5 hidden h-4 w-4 items-center justify-center rounded-full border transition group-hover/var:flex hover:text-red-400"
+												>
+													<X className="h-2.5 w-2.5" />
+												</button>
+											)}
+										</div>
+									))}
+								</div>
+							</div>
+						);
+					})}
+				</div>
+			)}
+
+			{submitted && <p className="mt-3 text-xs text-green-400">Variation submitted for review.</p>}
+
+			{open && (
+				<div className="mt-3 space-y-2">
+					<input
+						value={label}
+						onChange={(e) => setLabel(e.target.value)}
+						placeholder="Label (e.g. Wide grip)"
+						className="bg-sub-alt border-border text-main w-full rounded-lg border px-3 py-2 text-xs outline-none"
+					/>
+					<select
+						value={type}
+						onChange={(e) => setType(e.target.value as EquipmentVariant['variation_type'])}
+						className="bg-sub-alt border-border text-main w-full rounded-lg border px-3 py-2 text-xs outline-none"
+					>
+						{VARIATION_TYPES.map((t) => (
+							<option key={t} value={t}>
+								{t}
+							</option>
+						))}
+					</select>
+					{error && <p className="text-xs text-red-400">{error}</p>}
+					<div className="flex justify-end gap-2">
+						<button onClick={() => setOpen(false)} className="text-sub hover:text-main text-xs">
+							Cancel
+						</button>
+						<button
+							onClick={handleSubmit}
+							disabled={submitting || !label.trim()}
+							className="bg-main text-surface rounded-lg px-3 py-1.5 text-xs font-medium disabled:opacity-40"
+						>
+							{submitting ? '...' : 'Submit'}
 						</button>
 					</div>
 				</div>
