@@ -19,9 +19,13 @@ export default function Register() {
 	const [confirmationSent, setConfirmationSent] = useState(false);
 
 	const handleGoogle = async () => {
+		const redirect = new URLSearchParams(window.location.search).get('redirect');
+		const callback = `${window.location.origin}/auth/callback${
+			redirect ? `?redirect=${encodeURIComponent(redirect)}` : ''
+		}`;
 		await supabase.auth.signInWithOAuth({
 			provider: 'google',
-			options: { redirectTo: `${window.location.origin}/auth/callback` }
+			options: { redirectTo: callback }
 		});
 	};
 

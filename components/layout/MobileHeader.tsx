@@ -6,6 +6,7 @@ import GymAtlasLogo from '../ui/GymAtlasLogo';
 import NotificationDrawer from '@/components/NotificationDrawer';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 import { useAuth } from '@/app/contexts/AuthContext';
+import { useAuthGate } from '@/app/contexts/AuthGateContext';
 import { cn } from '@/lib/utils';
 
 const iconCls =
@@ -13,6 +14,7 @@ const iconCls =
 
 export default function MobileHeader() {
 	const { user } = useAuth();
+	const { requireAuth } = useAuthGate();
 	const pathname = usePathname();
 	const active = (href: string) => pathname === href;
 
@@ -29,7 +31,13 @@ export default function MobileHeader() {
 				<Link href="/data" className={cn(iconCls, active('/data') ? 'text-text' : '')}>
 					<Database size={18} />
 				</Link>
-				<Link href="/add" className={cn(iconCls, active('/add') ? 'text-text' : '')}>
+				<Link
+					href="/add"
+					onClick={(e) => {
+						if (!requireAuth('make a contribution')) e.preventDefault();
+					}}
+					className={cn(iconCls, active('/add') ? 'text-text' : '')}
+				>
 					<BadgePlus size={20} />
 				</Link>
 				<Link

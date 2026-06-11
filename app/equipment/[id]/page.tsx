@@ -5,6 +5,7 @@ import RatingStars from '@/components/ui/RatingStars';
 import FavoriteButton from '@/components/ui/FavoriteButton';
 import ResistanceProfile from '@/components/ui/ResistanceProfile';
 import { useAuth } from '@/app/contexts/AuthContext';
+import { useAuthGate } from '@/app/contexts/AuthGateContext';
 import {
 	fetchEquipmentById,
 	fetchBestInClassCategories,
@@ -33,6 +34,7 @@ export default function EquipmentProfilePage() {
 	const [imageUrl, setImageUrl] = useState<string | null>(null);
 	const [uploading, setUploading] = useState(false);
 	const { user } = useAuth();
+	const { requireAuth } = useAuthGate();
 	const [categories, setCategories] = useState<BestInClassCategory[]>([]);
 	const [showBestInClass, setShowBestInClass] = useState(false);
 	const [saving, setSaving] = useState(false);
@@ -146,6 +148,7 @@ export default function EquipmentProfilePage() {
 
 	const handleRate = async (rating: number) => {
 		if (!item) return;
+		if (!requireAuth('rate equipment')) return;
 		setItem((prev) => (prev ? { ...prev, user_rating: rating } : prev));
 		try {
 			await rateEquipment(id as string, rating);
@@ -208,17 +211,12 @@ export default function EquipmentProfilePage() {
 					<input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
 				</label>
 			) : (
-				<div className="group absolute left-3 top-3">
-					<div className="border-border bg-surface/80 text-sub rounded-lg border px-3 py-1.5 text-xs backdrop-blur-sm">
-						Add photo
-					</div>
-					<div className="bg-surface pointer-events-none absolute left-0 top-full z-10 mt-2 w-44 rounded-lg px-3 py-2 text-center text-xs opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-						<a href="/login" className="text-main underline">
-							Sign in
-						</a>
-						<span className="text-sub"> to add photos</span>
-					</div>
-				</div>
+				<button
+					onClick={() => requireAuth('add a photo')}
+					className="border-border bg-surface/80 text-sub hover:text-main absolute left-3 top-3 rounded-lg border px-3 py-1.5 text-xs backdrop-blur-sm transition"
+				>
+					Add photo
+				</button>
 			)}
 
 			{/* Actions — top right */}
@@ -376,7 +374,10 @@ export default function EquipmentProfilePage() {
 								Found in ({gyms.length} {gyms.length === 1 ? 'gym' : 'gyms'})
 							</h2>
 							<button
-								onClick={() => router.push(`/add?equipmentId=${item.id}`)}
+								onClick={() =>
+									requireAuth('assign equipment to a gym') &&
+									router.push(`/add?equipmentId=${item.id}`)
+								}
 								className="text-sub hover:text-main flex items-center gap-1 text-xs transition"
 							>
 								<Plus className="h-3.5 w-3.5" />

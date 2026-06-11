@@ -1,6 +1,7 @@
 'use client';
 import { Search, Filter, X, LayoutList, List, Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useAuthGate } from '@/app/contexts/AuthGateContext';
 
 type Props = {
 	search: string;
@@ -50,6 +51,7 @@ export default function EquipmentToolbar({
 	onViewModeChange
 }: Props) {
 	const router = useRouter();
+	const { requireAuth } = useAuthGate();
 
 	return (
 		<div id="equipment-toolbar" className="xs:px-6 xs:py-4 shrink-0 px-2 py-3">
@@ -65,7 +67,7 @@ export default function EquipmentToolbar({
 				{/* Add button — top right on mobile */}
 				<button
 					id="equipment-add-btn"
-					onClick={() => router.push('/equipment/new')}
+					onClick={() => requireAuth('add equipment') && router.push('/equipment/new')}
 					className="bg-main text-bg flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition hover:opacity-90"
 				>
 					<Plus className="h-3.5 w-3.5" />

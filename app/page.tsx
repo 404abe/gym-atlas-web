@@ -9,12 +9,14 @@ import { MobileEquipmentModal } from '@/app/_components/MobileEquipmentModal';
 import { fetchGyms } from '@/lib/api';
 import { Gym } from '@/types/gym';
 import { useGymFilter } from '@/app/contexts/GymFilterContext';
+import { useAuthGate } from '@/app/contexts/AuthGateContext';
 import { useUserLocation } from '@/hooks/useUserLocation';
 
 
 
 export default function Page() {
 	const router = useRouter();
+	const { requireAuth } = useAuthGate();
 	const [gyms, setGyms] = useState<Gym[]>([]);
 	const [selectedGym, setSelectedGym] = useState<Gym | null>(null);
 	const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
@@ -80,7 +82,7 @@ export default function Page() {
 				<div className="flex shrink-0 items-center justify-between px-3 py-2.5">
 					<span className="text-sm text-sub">{countLabel}</span>
 					<button
-						onClick={() => router.push('/add')}
+						onClick={() => requireAuth('add a gym') && router.push('/add')}
 						className="flex items-center gap-1.5 rounded border border-border bg-sub-alt px-2.5 py-1 text-xs text-sub transition hover:text-text"
 					>
 						<Plus size={11} />

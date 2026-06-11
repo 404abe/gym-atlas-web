@@ -17,12 +17,14 @@ import type { Equipment } from '@/types/equipment';
 import { FaInstagram } from 'react-icons/fa';
 import FavoriteButton from '@/components/ui/FavoriteButton';
 import { useAuth } from '@/app/contexts/AuthContext';
+import { useAuthGate } from '@/app/contexts/AuthGateContext';
 import AddEquipmentPanel from '@/app/add/_components/AddEquipmentPanel';
 
 export default function GymProfilePage() {
 	const { id } = useParams();
 	const router = useRouter();
 	const { user } = useAuth();
+	const { requireAuth } = useAuthGate();
 
 	const [gym, setGym] = useState<Gym | null>(null);
 	const [equipment, setEquipment] = useState<GymEquipment[]>([]);
@@ -132,13 +134,20 @@ export default function GymProfilePage() {
 			)}
 
 			{/* Photo control — top left */}
-			{user && (
+			{user ? (
 				<label className="absolute left-3 top-3 cursor-pointer">
 					<div className="border-border bg-surface/80 text-sub hover:text-main rounded-lg border px-3 py-1.5 text-xs backdrop-blur-sm transition">
 						{uploading ? 'Uploading...' : imageUrl ? 'Change photo' : 'Add photo'}
 					</div>
 					<input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
 				</label>
+			) : (
+				<button
+					onClick={() => requireAuth('add a photo')}
+					className="border-border bg-surface/80 text-sub hover:text-main absolute left-3 top-3 rounded-lg border px-3 py-1.5 text-xs backdrop-blur-sm transition"
+				>
+					{imageUrl ? 'Change photo' : 'Add photo'}
+				</button>
 			)}
 
 			{/* Favourite — top right */}

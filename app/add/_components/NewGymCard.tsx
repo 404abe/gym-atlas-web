@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { MapPin, Plus, Loader2 } from 'lucide-react';
 import { Gym } from '@/types/gym';
 import { useToastContext } from '@/app/contexts/ToastContext';
+import { useAuthGate } from '@/app/contexts/AuthGateContext';
 import { createGym } from '@/lib/api';
 
 type Props = {
@@ -20,6 +21,7 @@ interface SearchSuggestion {
 
 export default function NewGymCard({ onCreated }: Props) {
 	const { addToast } = useToastContext();
+	const { requireAuth } = useAuthGate();
 	const [name, setName] = useState('');
 	const [address, setAddress] = useState('');
 	const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
@@ -91,6 +93,7 @@ export default function NewGymCard({ onCreated }: Props) {
 
 	const handleCreate = async () => {
 		if (!isValid || isCreating) return;
+		if (!requireAuth('add a gym')) return;
 		setIsCreating(true);
 		try {
 			const created = await createGym({
@@ -112,7 +115,7 @@ export default function NewGymCard({ onCreated }: Props) {
 			setCity('');
 			setCountry('');
 		} catch {
-			alert('Failed to create gym');
+			addToast('Failed to create gym', 'error');
 		} finally {
 			setIsCreating(false);
 		}

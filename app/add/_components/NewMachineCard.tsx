@@ -16,6 +16,7 @@ import TypeButtons from './TypeButtons';
 import ResistanceButtons from './ResistanceButtons';
 import RatingRow from './RatingRow';
 import { useToastContext } from '@/app/contexts/ToastContext';
+import { useAuthGate } from '@/app/contexts/AuthGateContext';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -110,6 +111,7 @@ function BrandSeriesRow({
 
 export default function NewMachineCard({ onCreated }: Props) {
 	const { addToast } = useToastContext();
+	const { requireAuth } = useAuthGate();
 
 	const [brand, setBrand] = useState('');
 	const [series, setSeries] = useState('');
@@ -167,6 +169,7 @@ export default function NewMachineCard({ onCreated }: Props) {
 
 	const handleCreate = async () => {
 		if (!isValid || isCreating) return;
+		if (!requireAuth('add a machine')) return;
 		setIsCreating(true);
 		try {
 			const created = await createEquipment({
