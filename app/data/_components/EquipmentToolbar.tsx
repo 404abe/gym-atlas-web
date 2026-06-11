@@ -177,6 +177,7 @@ export default function EquipmentToolbar({
 						<option value="constant">Constant</option>
 						<option value="ascending">Ascending</option>
 						<option value="descending">Descending</option>
+						<option value="adjustable">Adjustable</option>
 					</select>
 
 					<label className="text-sub flex items-center gap-2 text-sm">

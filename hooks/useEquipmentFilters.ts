@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Equipment } from '@/types/equipment';
 import type { BestInClassCategory as Category } from '@/types/bestInClass';
 
@@ -19,12 +19,11 @@ export function useEquipmentFilters(
 	const [showFilters, setShowFilters] = useState(false);
 	const [sortField, setSortField] = useState<EquipmentSortField>('id');
 	const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-	const [viewMode, setViewMode] = useState<'expanded' | 'compact'>('expanded');
-
-	useEffect(() => {
-		const saved = localStorage.getItem('equipment_view_mode');
-		if (saved === 'compact' || saved === 'expanded') setViewMode(saved);
-	}, []);
+	const [viewMode, setViewMode] = useState<'expanded' | 'compact'>(() => {
+		if (typeof window === 'undefined') return 'expanded';
+		const saved = window.localStorage.getItem('equipment_view_mode');
+		return saved === 'compact' || saved === 'expanded' ? saved : 'expanded';
+	});
 
 	const brands = useMemo(
 		() => [...new Set(equipment.map((e) => e.brand).filter(Boolean))].sort(),
@@ -70,7 +69,7 @@ export function useEquipmentFilters(
 				if (sortField === 'brand') comparison = (a.brand || '').localeCompare(b.brand || '');
 				if (sortField === 'name') comparison = (a.name || '').localeCompare(b.name || '');
 				if (sortField === 'resistance_profile') {
-					const order = { constant: 0, ascending: 1, descending: 2 };
+					const order = { constant: 0, ascending: 1, descending: 2, adjustable: 3 };
 					comparison =
 						(order[a.resistance_profile || 'constant'] || 0) -
 						(order[b.resistance_profile || 'constant'] || 0);
