@@ -43,12 +43,22 @@ export default function AddEquipmentPanel({
 		if (adding !== null) return;
 		setAdding(item.id);
 		try {
-			const newItem = await addGymEquipment(gymId, item.id, 1) as GymEquipment;
-			onEquipmentAdded(newItem);
+			await addGymEquipment(gymId, item.id, 1);
+			const isSuperAdmin = user?.role === 'super_admin';
+			onEquipmentAdded({
+				equipment_id: item.id,
+				brand: item.brand,
+				series: item.series,
+				name: item.name,
+				full_name: [item.brand, item.series, item.name].filter(Boolean).join(' '),
+				quantity: 1,
+				image_url: item.image_url,
+				status: isSuperAdmin ? 'approved' : 'pending'
+			});
 			setJustAdded(item.id);
 			setTimeout(() => setJustAdded(null), 1500);
 			addToast(
-				user?.role === 'admin'
+				isSuperAdmin
 					? `${item.brand} ${item.name} added successfully`
 					: `${item.brand} ${item.name} submitted for review`,
 				'success'

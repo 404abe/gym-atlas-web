@@ -25,7 +25,7 @@ import AddEquipmentPanel from '@/app/add/_components/AddEquipmentPanel';
 export default function GymProfilePage() {
 	const { id } = useParams();
 	const router = useRouter();
-	const { user } = useAuth();
+	const { user, loading: authLoading } = useAuth();
 	const { requireAuth } = useAuthGate();
 	const { addToast } = useToastContext();
 
@@ -47,6 +47,7 @@ export default function GymProfilePage() {
 	const [instaSubmitted, setInstaSubmitted] = useState(false);
 
 	useEffect(() => {
+		if (authLoading) return;
 		const load = async () => {
 			try {
 				const [gymData, equipmentData, masterData] = await Promise.all([
@@ -66,7 +67,7 @@ export default function GymProfilePage() {
 			}
 		};
 		load();
-	}, [id]);
+	}, [id, authLoading]);
 
 	const handleFavorite = async () => {
 		setIsFavorite((prev) => !prev);
@@ -297,100 +298,127 @@ export default function GymProfilePage() {
 				<p className="text-sub text-sm">No equipment listed yet.</p>
 			) : equipmentView === 'grid' ? (
 				<div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-					{equipment.map((item) => (
-						<button
-							key={item.equipment_id}
-							onClick={() => router.push(`/equipment/${item.equipment_id}`)}
-							className="border-border bg-sub-alt hover:border-main/30 group flex flex-col gap-1.5 rounded-xl border p-3 text-left transition"
-						>
-							{item.image_url ? (
-								<img
-									src={item.image_url}
-									alt={item.full_name}
-									className="bg-main/5 mb-1 aspect-video w-full rounded-lg object-contain"
-								/>
-							) : (
-								<div className="bg-main/5 mb-1 flex aspect-video w-full items-center justify-center rounded-lg">
-									<Dumbbell className="text-sub h-5 w-5 opacity-30" />
-								</div>
-							)}
-							<p className="text-sub text-[10px] uppercase tracking-wide">
-								{item.brand} · {item.series}
-							</p>
-							<div className="flex items-center justify-between gap-1">
-								<p className="text-main min-w-0 flex-1 truncate text-xs font-medium leading-tight">
-									{item.name}
-								</p>
-								<div className="flex shrink-0 items-center gap-1">
-									<span className="text-sub bg-main/10 rounded-full px-1.5 py-0.5 text-[10px]">
-										×{item.quantity}
-									</span>
-									{isAdmin && (
-										<span
-											role="button"
-											onClick={(e) => {
-												e.stopPropagation();
-												handleRemove(item.equipment_id);
-											}}
-											className="text-sub transition hover:text-red-400"
-											aria-label="Remove one"
-										>
-											<Minus className="h-3 w-3" />
-										</span>
-									)}
-								</div>
-							</div>
-						</button>
-					))}
-				</div>
-			) : (
-				<div className="divide-border divide-y">
-					{equipment.map((item) => (
-						<div
-							key={item.equipment_id}
-							className="hover:bg-main/5 -mx-4 flex w-[calc(100%+2rem)] items-center gap-3 px-4 py-2.5 transition"
-						>
-							<div className="border-border bg-main/5 h-9 w-9 shrink-0 overflow-hidden rounded-lg border">
+					{equipment.map((item) => {
+						const isPending = item.status === 'pending';
+						return (
+							<button
+								key={item.equipment_id}
+								onClick={() => !isPending && router.push(`/equipment/${item.equipment_id}`)}
+								className={`border-border bg-sub-alt group relative flex flex-col gap-1.5 rounded-xl border p-3 text-left transition ${
+									isPending ? 'cursor-default opacity-50' : 'hover:border-main/30'
+								}`}
+							>
 								{item.image_url ? (
 									<img
 										src={item.image_url}
 										alt={item.full_name}
-										className="h-full w-full object-cover"
+										className="bg-main/5 mb-1 aspect-video w-full rounded-lg object-contain"
 									/>
 								) : (
-									<div className="flex h-full w-full items-center justify-center">
-										<Dumbbell className="text-sub h-4 w-4 opacity-30" />
+									<div className="bg-main/5 mb-1 flex aspect-video w-full items-center justify-center rounded-lg">
+										<Dumbbell className="text-sub h-5 w-5 opacity-30" />
 									</div>
 								)}
-							</div>
-							<button
-								className="min-w-0 flex-1 text-left"
-								onClick={() => router.push(`/equipment/${item.equipment_id}`)}
-							>
-								<p className="text-main text-sm font-medium">{item.full_name}</p>
-								<p className="text-sub text-xs">
+								<p className="text-sub text-[10px] uppercase tracking-wide">
 									{item.brand} · {item.series}
 								</p>
+								<div className="flex items-center justify-between gap-1">
+									<p className="text-main min-w-0 flex-1 truncate text-xs font-medium leading-tight">
+										{item.name}
+									</p>
+									<div className="flex shrink-0 items-center gap-1">
+										{isPending ? (
+											<span className="text-sub bg-main/10 rounded-full px-1.5 py-0.5 text-[9px]">
+												Pending
+											</span>
+										) : (
+											<>
+												<span className="text-sub bg-main/10 rounded-full px-1.5 py-0.5 text-[10px]">
+													×{item.quantity}
+												</span>
+												{isAdmin && (
+													<span
+														role="button"
+														onClick={(e) => {
+															e.stopPropagation();
+															handleRemove(item.equipment_id);
+														}}
+														className="text-sub transition hover:text-red-400"
+														aria-label="Remove one"
+													>
+														<Minus className="h-3 w-3" />
+													</span>
+												)}
+											</>
+										)}
+									</div>
+								</div>
 							</button>
-							<div className="flex shrink-0 items-center gap-2">
-								<span className="text-sub bg-main/10 rounded-full px-2.5 py-0.5 text-xs">
-									×{item.quantity}
-								</span>
-								{isAdmin && (
-									<button
-										onClick={(e) => {
-											e.stopPropagation();
-											handleRemove(item.equipment_id);
-										}}
-										className="text-sub transition hover:text-red-400"
-										aria-label="Remove one"
-									>
-										<Minus className="h-3.5 w-3.5" />
-									</button>
-								)}
+						);
+					})}
+				</div>
+			) : (
+				<div className="divide-border divide-y">
+					{equipment.map((item) => {
+						const isPending = item.status === 'pending';
+						return (
+							<div
+								key={item.equipment_id}
+								className={`-mx-4 flex w-[calc(100%+2rem)] items-center gap-3 px-4 py-2.5 transition ${
+									isPending ? 'opacity-50' : 'hover:bg-main/5'
+								}`}
+							>
+								<div className="border-border bg-main/5 h-9 w-9 shrink-0 overflow-hidden rounded-lg border">
+									{item.image_url ? (
+										<img
+											src={item.image_url}
+											alt={item.full_name}
+											className="h-full w-full object-cover"
+										/>
+									) : (
+										<div className="flex h-full w-full items-center justify-center">
+											<Dumbbell className="text-sub h-4 w-4 opacity-30" />
+										</div>
+									)}
+								</div>
+								<button
+									className="min-w-0 flex-1 text-left"
+									disabled={isPending}
+									onClick={() => !isPending && router.push(`/equipment/${item.equipment_id}`)}
+								>
+									<p className="text-main text-sm font-medium">{item.full_name}</p>
+									<p className="text-sub text-xs">
+										{item.brand} · {item.series}
+									</p>
+								</button>
+								<div className="flex shrink-0 items-center gap-2">
+									{isPending ? (
+										<span className="text-sub bg-main/10 rounded-full px-2 py-0.5 text-[9px]">
+											Pending
+										</span>
+									) : (
+										<>
+											<span className="text-sub bg-main/10 rounded-full px-2.5 py-0.5 text-xs">
+												×{item.quantity}
+											</span>
+											{isAdmin && (
+												<button
+													onClick={(e) => {
+														e.stopPropagation();
+														handleRemove(item.equipment_id);
+													}}
+													className="text-sub transition hover:text-red-400"
+													aria-label="Remove one"
+												>
+													<Minus className="h-3.5 w-3.5" />
+												</button>
+											)}
+										</>
+									)}
+								</div>
 							</div>
-						</div>
-					))}
+						);
+					})}
 				</div>
 			)}
 		</div>
