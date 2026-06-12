@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/app/contexts/AuthContext';
+import { useAuth, getRedirectTarget } from '@/app/contexts/AuthContext';
 import Login from './_components/Login';
 import Register from './_components/Register';
 
@@ -11,7 +11,7 @@ export default function LoginPage() {
 	const router = useRouter();
 
 	useEffect(() => {
-		if (!loading && user) router.push('/account');
+		if (!loading && user) router.push(getRedirectTarget('/account'));
 	}, [user, loading, router]);
 
 	if (loading || user) {

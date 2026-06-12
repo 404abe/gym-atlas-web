@@ -21,6 +21,15 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // onAuthStateChange subscription exists for the lifetime of the app.
 const supabase = createClient();
 
+// Reads the post-auth destination from the current URL's `redirect` param.
+// Only internal paths are honoured, so a crafted `?redirect=https://evil.com`
+// can't turn the login flow into an open redirect.
+export function getRedirectTarget(fallback = '/'): string {
+	if (typeof window === 'undefined') return fallback;
+	const target = new URLSearchParams(window.location.search).get('redirect');
+	return target && target.startsWith('/') && !target.startsWith('//') ? target : fallback;
+}
+
 async function fetchProfile(userId: string): Promise<{ username: string; role: string }> {
 	const { data } = await supabase
 		.from('profiles')
@@ -85,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	const login = async (email: string, password: string) => {
 		const { error } = await supabase.auth.signInWithPassword({ email, password });
 		if (error) throw new Error(error.message);
-		router.push('/');
+		router.push(getRedirectTarget());
 	};
 
 	const register = async (email: string, password: string, username: string) => {
@@ -106,7 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		if (error) throw new Error(error.message);
 
 		if (data.session) {
-			router.push('/');
+			router.push(getRedirectTarget());
 			return { needsConfirmation: false };
 		}
 		return { needsConfirmation: true };

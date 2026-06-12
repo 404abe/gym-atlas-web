@@ -3,14 +3,26 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/contexts/AuthContext';
-import { Check, X, Building2, Dumbbell, Clock, Users, ShieldCheck, ImageIcon } from 'lucide-react';
+import { Check, X, Building2, Dumbbell, Clock, Users, ShieldCheck, ImageIcon, Layers, Weight } from 'lucide-react';
+import { FaInstagram } from 'react-icons/fa';
 import { fetchAdminPending, fetchAdminUsers, adminAction, adminPhotoAction, makeAdmin } from '@/lib/api';
-import { PendingGym, PendingEquipment, PendingSuggestion, PendingPhoto, AdminUser } from '@/types/admin';
+import { PendingGym, PendingEquipment, PendingSuggestion, PendingPhoto, PendingVariant, PendingWeightStack, PendingGymInstagram, AdminUser } from '@/types/admin';
 
 type ActionState = Record<string, 'approving' | 'rejecting' | 'done'>;
 
-const TABS = ['equipment', 'gyms', 'suggestions', 'photos', 'users'] as const;
+const TABS = ['equipment', 'gyms', 'suggestions', 'photos', 'variants', 'weights', 'instagram', 'users'] as const;
 type Tab = (typeof TABS)[number];
+
+const TAB_LABELS: Record<Tab, string> = {
+	equipment: 'equipment',
+	gyms: 'gyms',
+	suggestions: 'suggestions',
+	photos: 'photos',
+	variants: 'variants',
+	weights: 'weight stacks',
+	instagram: 'instagram',
+	users: 'users'
+};
 
 export default function AdminPage() {
 	const { user } = useAuth();
@@ -24,6 +36,9 @@ export default function AdminPage() {
 	const [activeTab, setActiveTab] = useState<Tab>('equipment');
 	const [suggestions, setSuggestions] = useState<PendingSuggestion[]>([]);
 	const [photos, setPhotos] = useState<PendingPhoto[]>([]);
+	const [variants, setVariants] = useState<PendingVariant[]>([]);
+	const [weightStacks, setWeightStacks] = useState<PendingWeightStack[]>([]);
+	const [gymInstagrams, setGymInstagrams] = useState<PendingGymInstagram[]>([]);
 
 	const isSuperAdmin = user?.role === 'super_admin';
 
@@ -52,6 +67,9 @@ export default function AdminPage() {
 			setEquipment(data.equipment || []);
 			setSuggestions(data.suggestions || []);
 			setPhotos(data.photos || []);
+			setVariants(data.variants || []);
+			setWeightStacks(data.weightStacks || []);
+			setGymInstagrams(data.gymInstagrams || []);
 		} catch (err) {
 			console.error('Failed to fetch pending:', err);
 		} finally {
@@ -69,7 +87,7 @@ export default function AdminPage() {
 	};
 
 	const handleAction = async (
-		type: 'gym' | 'equipment' | 'suggestion',
+		type: 'gym' | 'equipment' | 'suggestion' | 'variant' | 'weight-stack' | 'gym-instagram',
 		id: number,
 		action: 'approve' | 'reject'
 	) => {
@@ -81,6 +99,9 @@ export default function AdminPage() {
 			setTimeout(() => {
 				if (type === 'gym') setGyms((prev) => prev.filter((g) => g.id !== id));
 				else if (type === 'equipment') setEquipment((prev) => prev.filter((e) => e.id !== id));
+				else if (type === 'variant') setVariants((prev) => prev.filter((v) => v.id !== id));
+				else if (type === 'weight-stack') setWeightStacks((prev) => prev.filter((w) => w.id !== id));
+				else if (type === 'gym-instagram') setGymInstagrams((prev) => prev.filter((gi) => gi.id !== id));
 				else setSuggestions((prev) => prev.filter((s) => s.id !== id));
 			}, 600);
 		} catch (err) {
@@ -127,8 +148,8 @@ export default function AdminPage() {
 
 	if (loading) return <div className="text-sub p-8 text-sm">Loading admin dashboard...</div>;
 
-	const totalPending = gyms.length + equipment.length + suggestions.length + photos.length;
-	const visibleTabs = isSuperAdmin ? TABS : (['equipment', 'gyms', 'suggestions', 'photos'] as const);
+	const totalPending = gyms.length + equipment.length + suggestions.length + photos.length + variants.length + weightStacks.length + gymInstagrams.length;
+	const visibleTabs = isSuperAdmin ? TABS : (['equipment', 'gyms', 'suggestions', 'photos', 'variants', 'weights', 'instagram'] as const);
 
 	return (
 		<div id="pageAdmin" className="content-grid py-8">
@@ -167,9 +188,12 @@ export default function AdminPage() {
 							{tab === 'gyms' && <Building2 className="h-3.5 w-3.5" />}
 							{tab === 'suggestions' && <Dumbbell className="h-3.5 w-3.5" />}
 							{tab === 'photos' && <ImageIcon className="h-3.5 w-3.5" />}
+							{tab === 'variants' && <Layers className="h-3.5 w-3.5" />}
+							{tab === 'weights' && <Weight className="h-3.5 w-3.5" />}
+							{tab === 'instagram' && <FaInstagram className="h-3.5 w-3.5" />}
 							{tab === 'users' && <Users className="h-3.5 w-3.5" />}
 
-							<span className="capitalize">{tab}</span>
+							<span className="capitalize">{TAB_LABELS[tab]}</span>
 
 							{tab === 'equipment' && equipment.length > 0 && (
 								<span className="bg-sub-alt text-sub rounded-full px-1.5 py-0.5 text-xs">
@@ -189,6 +213,21 @@ export default function AdminPage() {
 							{tab === 'photos' && photos.length > 0 && (
 								<span className="bg-sub-alt text-sub rounded-full px-1.5 py-0.5 text-xs">
 									{photos.length}
+								</span>
+							)}
+							{tab === 'variants' && variants.length > 0 && (
+								<span className="bg-sub-alt text-sub rounded-full px-1.5 py-0.5 text-xs">
+									{variants.length}
+								</span>
+							)}
+							{tab === 'weights' && weightStacks.length > 0 && (
+								<span className="bg-sub-alt text-sub rounded-full px-1.5 py-0.5 text-xs">
+									{weightStacks.length}
+								</span>
+							)}
+							{tab === 'instagram' && gymInstagrams.length > 0 && (
+								<span className="bg-sub-alt text-sub rounded-full px-1.5 py-0.5 text-xs">
+									{gymInstagrams.length}
 								</span>
 							)}
 						</button>
@@ -396,6 +435,165 @@ export default function AdminPage() {
 											state={state}
 											onApprove={() => handlePhotoAction(p.id, 'approve')}
 											onReject={() => handlePhotoAction(p.id, 'reject')}
+										/>
+									</div>
+								);
+							})
+						)}
+					</div>
+				)}
+
+				{/* Variants Tab Content */}
+				{activeTab === 'variants' && (
+					<div className="space-y-2">
+						{variants.length === 0 ? (
+							<EmptyState label="No pending variant submissions" />
+						) : (
+							variants.map((v) => {
+								const key = `variant-${v.id}`;
+								const state = actions[key];
+								return (
+									<div
+										key={v.id}
+										className={`border-border bg-surface flex items-center gap-4 rounded-2xl border p-4 transition-opacity duration-300 ${
+											state === 'done' ? 'opacity-0' : 'opacity-100'
+										}`}
+									>
+										<div className="bg-sub-alt flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl">
+											{v.equipment_image_url ? (
+												<img
+													src={v.equipment_image_url}
+													alt={v.equipment_name}
+													className="h-full w-full object-cover"
+												/>
+											) : (
+												<Layers className="text-sub h-4 w-4" />
+											)}
+										</div>
+										<div className="min-w-0 flex-1">
+											<p className="text-main text-sm font-medium">{v.label}</p>
+											<div className="text-sub mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs">
+												<span className="text-main font-medium">{v.equipment_name}</span>
+												<span className="bg-sub-alt text-main rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase">
+													{v.variation_type}
+												</span>
+												<span className="flex items-center gap-1">
+													<Clock className="h-3 w-3" />
+													{formatDate(v.created_at)}
+												</span>
+												{v.submitted_by && <span>by {v.submitted_by}</span>}
+											</div>
+										</div>
+										<ActionButtons
+											state={state}
+											onApprove={() => handleAction('variant', v.id, 'approve')}
+											onReject={() => handleAction('variant', v.id, 'reject')}
+										/>
+									</div>
+								);
+							})
+						)}
+					</div>
+				)}
+
+				{/* Weight Stacks Tab Content */}
+				{activeTab === 'weights' && (
+					<div className="space-y-2">
+						{weightStacks.length === 0 ? (
+							<EmptyState label="No pending weight stack changes" />
+						) : (
+							weightStacks.map((w) => {
+								const key = `weight-stack-${w.id}`;
+								const state = actions[key];
+								return (
+									<div
+										key={w.id}
+										className={`border-border bg-surface flex items-center gap-4 rounded-2xl border p-4 transition-opacity duration-300 ${
+											state === 'done' ? 'opacity-0' : 'opacity-100'
+										}`}
+									>
+										<div className="bg-sub-alt flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl">
+											{w.image_url ? (
+												<img
+													src={w.image_url}
+													alt={w.name}
+													className="h-full w-full object-cover"
+												/>
+											) : (
+												<Weight className="text-sub h-4 w-4" />
+											)}
+										</div>
+										<div className="min-w-0 flex-1">
+											<p className="text-main text-sm font-medium">
+												{[w.brand, w.series, w.name].filter(Boolean).join(' ')}
+											</p>
+											<div className="text-sub mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
+												<span className="text-main font-medium">
+													{w.weight_stack != null ? `${w.weight_stack}kg` : 'none'} → {w.pending_weight_stack}kg
+												</span>
+												{w.submitted_by && <span>by {w.submitted_by}</span>}
+											</div>
+										</div>
+										<ActionButtons
+											state={state}
+											onApprove={() => handleAction('weight-stack', w.id, 'approve')}
+											onReject={() => handleAction('weight-stack', w.id, 'reject')}
+										/>
+									</div>
+								);
+							})
+						)}
+					</div>
+				)}
+
+				{/* Instagram Tab Content */}
+				{activeTab === 'instagram' && (
+					<div className="space-y-2">
+						{gymInstagrams.length === 0 ? (
+							<EmptyState label="No pending Instagram suggestions" />
+						) : (
+							gymInstagrams.map((gi) => {
+								const key = `gym-instagram-${gi.id}`;
+								const state = actions[key];
+								return (
+									<div
+										key={gi.id}
+										className={`border-border bg-surface flex items-center gap-4 rounded-2xl border p-4 transition-opacity duration-300 ${
+											state === 'done' ? 'opacity-0' : 'opacity-100'
+										}`}
+									>
+										<div className="bg-sub-alt flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl">
+											{gi.image_url ? (
+												<img
+													src={gi.image_url}
+													alt={gi.name}
+													className="h-full w-full object-cover"
+												/>
+											) : (
+												<FaInstagram className="text-sub h-4 w-4" />
+											)}
+										</div>
+										<div className="min-w-0 flex-1">
+											<p className="text-main text-sm font-medium">{gi.name}</p>
+											<div className="text-sub mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
+												<a
+													href={`https://instagram.com/${gi.pending_instagram}`}
+													target="_blank"
+													rel="noreferrer"
+													className="text-main font-medium hover:underline"
+												>
+													@{gi.pending_instagram}
+												</a>
+												{[gi.city, gi.country].filter(Boolean).length > 0 && (
+													<span>{[gi.city, gi.country].filter(Boolean).join(', ')}</span>
+												)}
+												{gi.submitted_by && <span>by {gi.submitted_by}</span>}
+											</div>
+										</div>
+										<ActionButtons
+											state={state}
+											onApprove={() => handleAction('gym-instagram', gi.id, 'approve')}
+											onReject={() => handleAction('gym-instagram', gi.id, 'reject')}
 										/>
 									</div>
 								);

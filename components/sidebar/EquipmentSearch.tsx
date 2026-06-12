@@ -79,9 +79,11 @@ export default function EquipmentSearch() {
 
 	const results = query.trim()
 		? equipment
-				.filter((e) =>
-					`${e.brand} ${e.series} ${e.name}`.toLowerCase().includes(query.toLowerCase())
-				)
+				.filter((e) => {
+					const full = `${e.brand} ${e.series} ${e.name}`.toLowerCase();
+					const words = query.toLowerCase().replace(/-/g, ' ').split(/\s+/).filter(Boolean);
+					return words.every((w) => full.includes(w));
+				})
 				.slice(0, 8)
 		: [];
 

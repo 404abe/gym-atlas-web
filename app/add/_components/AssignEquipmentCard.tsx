@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { Building2, Dumbbell, MapPin, X, Plus, Loader2 } from 'lucide-react';
 import { useToastContext } from '@/app/contexts/ToastContext';
+import { useAuthGate } from '@/app/contexts/AuthGateContext';
 import { addGymEquipment } from '@/lib/api';
 import type { Gym } from '@/types/gym';
 import type { Equipment } from '@/types/equipment';
@@ -17,6 +18,7 @@ type Props = {
 export default function AssignEquipmentCard({ gyms, equipment, preselectedEquipmentId }: Props) {
 	const { addToast } = useToastContext();
 	const { user } = useAuth();
+	const { requireAuth } = useAuthGate();
 	const [selectedGym, setSelectedGym] = useState<number | null>(null);
 	const [selectedEquipment, setSelectedEquipment] = useState<number | null>(null);
 	const [quantity, setQuantity] = useState(1);
@@ -64,6 +66,7 @@ export default function AssignEquipmentCard({ gyms, equipment, preselectedEquipm
 
 	const handleAdd = async () => {
 		if (!selectedGym || !selectedEquipment) return;
+		if (!requireAuth('assign equipment to a gym')) return;
 		setIsAdding(true);
 		try {
 			await addGymEquipment(selectedGym, selectedEquipment, quantity);

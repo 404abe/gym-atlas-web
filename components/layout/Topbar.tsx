@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import { Plus, Trophy, UserCircle, ShieldCheck } from 'lucide-react';
 import { FaDatabase, FaMap } from 'react-icons/fa';
 import { useAuth } from '@/app/contexts/AuthContext';
+import { useAuthGate } from '@/app/contexts/AuthGateContext';
 import { cn } from '@/lib/utils';
 import NotificationDrawer from '../NotificationDrawer';
 import GymAtlasLogo from '../ui/GymAtlasLogo';
@@ -19,6 +20,7 @@ const iconLinkCls =
 
 export default function Topbar() {
 	const { user } = useAuth();
+	const { requireAuth } = useAuthGate();
 	const pathname = usePathname();
 
 	const isMap = pathname === '/';
@@ -58,7 +60,13 @@ export default function Topbar() {
 						<FaDatabase size={18} />
 					</Link>
 					<div className="bg-sub mx-1 h-4 w-px shrink-0" />
-					<Link href="/add" className={iconLinkCls}>
+					<Link
+						href="/add"
+						onClick={(e) => {
+							if (!requireAuth('make a contribution')) e.preventDefault();
+						}}
+						className={iconLinkCls}
+					>
 						<Plus size={18} />
 					</Link>
 				</div>

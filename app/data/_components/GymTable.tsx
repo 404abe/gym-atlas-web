@@ -6,6 +6,7 @@ import { FaExpandAlt } from 'react-icons/fa';
 import RatingStars from '@/components/ui/RatingStars';
 import FavoriteButton from '@/components/ui/FavoriteButton';
 import { useRouter } from 'next/navigation';
+import { useAuthGate } from '@/app/contexts/AuthGateContext';
 import { Gym } from '@/types/gym';
 
 type GymTableProps = {
@@ -32,6 +33,7 @@ export default function GymTable({
 	onToggleFavorite
 }: GymTableProps) {
 	const router = useRouter();
+	const { requireAuth } = useAuthGate();
 
 	const SortIcon = ({ field }: { field: string }) =>
 		sortField === field ? (
@@ -59,7 +61,7 @@ export default function GymTable({
 					</button>
 				) : (
 					<button
-						onClick={() => router.push('/add')}
+						onClick={() => requireAuth('add a gym') && router.push('/add')}
 						className="bg-main text-bg mt-4 flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-medium transition hover:opacity-90"
 					>
 						<Plus className="h-3.5 w-3.5" />

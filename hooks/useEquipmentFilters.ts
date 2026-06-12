@@ -34,12 +34,12 @@ export function useEquipmentFilters(
 	const filtered = useMemo(() => {
 		return equipment
 			.filter((e) => {
-				const matchesSearch =
-					search === '' ||
-					e.brand?.toLowerCase().includes(search.toLowerCase()) ||
-					e.series?.toLowerCase().includes(search.toLowerCase()) ||
-					e.name?.toLowerCase().includes(search.toLowerCase()) ||
-					e.slug?.toLowerCase().includes(search.toLowerCase());
+				const matchesSearch = (() => {
+					if (search === '') return true;
+					const full = `${e.brand ?? ''} ${e.series ?? ''} ${e.name ?? ''}`.toLowerCase();
+					const words = search.toLowerCase().replace(/-/g, ' ').split(/\s+/).filter(Boolean);
+					return words.every((w) => full.includes(w));
+				})();
 				const matchesType = selectedType === 'all' || e.type === selectedType;
 				const matchesBrand = selectedBrand === 'all' || e.brand === selectedBrand;
 				const matchesResistance =

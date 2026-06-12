@@ -4,10 +4,12 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { FaMap, FaDatabase, FaTrophy } from 'react-icons/fa';
 import { Plus, UserCircle } from 'lucide-react';
+import { useAuthGate } from '@/app/contexts/AuthGateContext';
 import { cn } from '@/lib/utils';
 
 export default function BottomNav() {
 	const pathname = usePathname();
+	const { requireAuth } = useAuthGate();
 	const active = (href: string) => pathname === href;
 
 	return (
@@ -37,7 +39,13 @@ export default function BottomNav() {
 			</Link>
 
 			{/* Add — raised FAB */}
-			<Link href="/add" className="flex flex-1 flex-col items-center pb-2 pt-1">
+			<Link
+				href="/add"
+				onClick={(e) => {
+					if (!requireAuth('make a contribution')) e.preventDefault();
+				}}
+				className="flex flex-1 flex-col items-center pb-2 pt-1"
+			>
 				<div
 					className={cn(
 						'-translate-y-3 flex h-12 w-12 items-center justify-center rounded-full border',

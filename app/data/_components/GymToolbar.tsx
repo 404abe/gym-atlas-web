@@ -1,7 +1,8 @@
 'use client';
 
 import { Search, Filter, X, LayoutList, List, Plus } from 'lucide-react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuthGate } from '@/app/contexts/AuthGateContext';
 
 type GymToolbarProps = {
 	search: string;
@@ -42,6 +43,9 @@ export default function GymToolbar({
 	viewMode,
 	onViewModeChange
 }: GymToolbarProps) {
+	const router = useRouter();
+	const { requireAuth } = useAuthGate();
+
 	return (
 		<div id="gym-toolbar" className="xs:px-6 xs:py-4 shrink-0 px-2 py-3">
 			{/* Title row */}
@@ -53,15 +57,15 @@ export default function GymToolbar({
 					</p>
 				</div>
 
-				<Link
+				<button
 					id="gym-add-btn"
-					href="/gyms/new"
+					onClick={() => requireAuth('add a gym') && router.push('/gyms/new')}
 					className="bg-main text-bg flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition hover:opacity-90"
 				>
 					<Plus className="h-3.5 w-3.5" />
 					<span className="xs:inline hidden">Add gym</span>
 					<span className="xs:hidden">Add</span>
-				</Link>
+				</button>
 			</div>
 
 			{/* Search + controls row */}

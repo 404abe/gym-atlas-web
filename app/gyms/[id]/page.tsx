@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { MapPin, Star, Dumbbell, Minus, LayoutGrid, List } from 'lucide-react';
+import { MapPin, Star, Dumbbell, Minus, LayoutGrid, List, Plus, Navigation, Check, X, Loader2 } from 'lucide-react';
 import {
 	fetchGymById,
 	fetchGymEquipment,
@@ -10,6 +10,7 @@ import {
 	favouriteGym,
 	unfavouriteGym,
 	uploadGymImage,
+	updateGymInstagram,
 	removeGymEquipment
 } from '@/lib/api';
 import { Gym, GymEquipment } from '@/types/gym';
@@ -17,13 +18,16 @@ import type { Equipment } from '@/types/equipment';
 import { FaInstagram } from 'react-icons/fa';
 import FavoriteButton from '@/components/ui/FavoriteButton';
 import { useAuth } from '@/app/contexts/AuthContext';
-import { Plus } from 'lucide-react';
+import { useAuthGate } from '@/app/contexts/AuthGateContext';
+import { useToastContext } from '@/app/contexts/ToastContext';
 import AddEquipmentPanel from '@/app/add/_components/AddEquipmentPanel';
 
 export default function GymProfilePage() {
 	const { id } = useParams();
 	const router = useRouter();
 	const { user } = useAuth();
+	const { requireAuth } = useAuthGate();
+	const { addToast } = useToastContext();
 
 	const [gym, setGym] = useState<Gym | null>(null);
 	const [equipment, setEquipment] = useState<GymEquipment[]>([]);
@@ -35,6 +39,12 @@ export default function GymProfilePage() {
 	const [masterEquipment, setMasterEquipment] = useState<Equipment[]>([]);
 	const [pendingRemoveId, setPendingRemoveId] = useState<number | null>(null);
 	const [equipmentView, setEquipmentView] = useState<'grid' | 'compact'>('grid');
+
+	// Instagram suggestion (for gyms with no handle yet) — staged for admin review.
+	const [instaOpen, setInstaOpen] = useState(false);
+	const [instaValue, setInstaValue] = useState('');
+	const [instaSubmitting, setInstaSubmitting] = useState(false);
+	const [instaSubmitted, setInstaSubmitted] = useState(false);
 
 	useEffect(() => {
 		const load = async () => {
@@ -108,39 +118,176 @@ export default function GymProfilePage() {
 		}
 	};
 
+	const openInstagramEditor = () => {
+		if (!requireAuth('suggest an Instagram')) return;
+		setInstaOpen(true);
+	};
+
+	const handleSubmitInstagram = async () => {
+		const handle = instaValue.trim().replace(/^@/, '');
+		if (!handle || instaSubmitting) return;
+		setInstaSubmitting(true);
+		try {
+			await updateGymInstagram(Number(id), handle);
+			setInstaSubmitted(true);
+			setInstaOpen(false);
+			setInstaValue('');
+			addToast('Instagram suggestion submitted for review', 'success');
+		} catch (err) {
+			console.error('Failed to submit Instagram:', err);
+			addToast('Failed to submit Instagram', 'error');
+		} finally {
+			setInstaSubmitting(false);
+		}
+	};
+
 	if (loading) return <div className="p-8 text-sm">Loading...</div>;
 	if (!gym) return <div className="p-8 text-sm">Gym not found.</div>;
 
 	const avgRating = gym.rating ? Number(gym.rating) : null;
+	const fullAddress = [gym.address, gym.city, gym.country].filter(Boolean).join(', ');
+	const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`;
 
-	const ImageTile = ({ mobile = false }: { mobile?: boolean }) => (
-		<div
-			className={
-				mobile
-					? 'border-border bg-sub-alt relative aspect-square w-full overflow-hidden rounded-2xl border'
-					: 'border-border bg-sub-alt relative col-span-2 row-span-2 overflow-hidden rounded-2xl border'
-			}
-		>
+	// ── Hero ── image-first; gym name, location, address + socials overlaid
+	const Hero = () => (
+		<div className="border-border bg-sub-alt relative aspect-[4/3] w-full overflow-hidden rounded-2xl border sm:aspect-[16/9]">
 			{imageUrl ? (
 				<img src={imageUrl} alt={gym.name} className="h-full w-full object-cover" />
 			) : (
 				<div className="flex h-full w-full items-center justify-center">
-					<Dumbbell className="text-sub h-10 w-10 opacity-30" />
+					<Dumbbell className="text-sub h-12 w-12 opacity-30" />
 				</div>
 			)}
+
 			{uploading && (
 				<div className="absolute inset-0 flex items-center justify-center bg-black/40">
 					<span className="text-xs text-white">Uploading...</span>
 				</div>
 			)}
+
+			{/* Photo control — top left */}
 			{user ? (
-				<label className="absolute bottom-3 right-3 cursor-pointer">
-					<div className="border-border bg-surface/80 text-sub hover:text-main rounded-lg border px-3 py-1.5 text-xs backdrop-blur-sm">
-						{imageUrl ? 'Change photo' : 'Add photo'}
+				<label className="absolute left-3 top-3 cursor-pointer">
+					<div className="border-border bg-surface/80 text-sub hover:text-main rounded-lg border px-3 py-1.5 text-xs backdrop-blur-sm transition">
+						{uploading ? 'Uploading...' : imageUrl ? 'Change photo' : 'Add photo'}
 					</div>
 					<input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
 				</label>
-			) : null}
+			) : (
+				<button
+					onClick={() => requireAuth('add a photo')}
+					className="border-border bg-surface/80 text-sub hover:text-main absolute left-3 top-3 rounded-lg border px-3 py-1.5 text-xs backdrop-blur-sm transition"
+				>
+					{imageUrl ? 'Change photo' : 'Add photo'}
+				</button>
+			)}
+
+			{/* Favourite — top right */}
+			<div className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full border border-white/25 bg-white/15 backdrop-blur-sm">
+				<FavoriteButton isFavorite={isFavorite} onToggle={handleFavorite} />
+			</div>
+
+			{/* Detail overlay — bottom */}
+			<div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent p-5">
+				{(gym.city || gym.country) && (
+					<p className="text-xs text-white/70">
+						{[gym.city, gym.country].filter(Boolean).join(' · ')}
+					</p>
+				)}
+				<h1 className="mt-1 text-2xl font-semibold leading-tight text-white">{gym.name}</h1>
+				{fullAddress && (
+					<div className="mt-2 flex items-start gap-1.5 text-sm text-white/85">
+						<MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+						<span>{fullAddress}</span>
+					</div>
+				)}
+				<div className="mt-3 flex flex-wrap gap-2">
+					{fullAddress && (
+						<a
+							href={mapHref}
+							target="_blank"
+							rel="noreferrer"
+							className="flex items-center gap-1.5 rounded-full border border-white/25 bg-white/15 px-3 py-1.5 text-xs text-white backdrop-blur-sm transition hover:bg-white/25"
+						>
+							<Navigation className="h-3 w-3" />
+							Directions
+						</a>
+					)}
+					{gym.instagram && (
+						<a
+							href={`https://instagram.com/${gym.instagram}`}
+							target="_blank"
+							rel="noreferrer"
+							className="flex items-center gap-1.5 rounded-full border border-white/25 bg-white/15 px-3 py-1.5 text-xs text-white backdrop-blur-sm transition hover:bg-white/25"
+						>
+							<FaInstagram className="h-3 w-3" />
+							Instagram
+						</a>
+					)}
+
+					{/* No Instagram yet — let users suggest one (staged for admin review) */}
+					{!gym.instagram && !instaSubmitted && !instaOpen && (
+						<button
+							onClick={openInstagramEditor}
+							className="flex items-center gap-1.5 rounded-full border border-dashed border-white/40 bg-white/5 px-3 py-1.5 text-xs text-white/80 backdrop-blur-sm transition hover:bg-white/15 hover:text-white"
+						>
+							<FaInstagram className="h-3 w-3" />
+							Add Instagram
+						</button>
+					)}
+
+					{!gym.instagram && !instaSubmitted && instaOpen && (
+						<div className="flex items-center gap-1 rounded-full border border-white/25 bg-white/15 py-1 pl-3 pr-1 text-xs text-white backdrop-blur-sm">
+							<FaInstagram className="h-3 w-3 shrink-0" />
+							<span className="text-white/50">@</span>
+							<input
+								value={instaValue}
+								onChange={(e) => setInstaValue(e.target.value)}
+								onKeyDown={(e) => {
+									if (e.key === 'Enter') handleSubmitInstagram();
+									if (e.key === 'Escape') {
+										setInstaOpen(false);
+										setInstaValue('');
+									}
+								}}
+								autoFocus
+								placeholder="handle"
+								spellCheck={false}
+								className="w-24 bg-transparent text-white outline-none placeholder:text-white/40"
+							/>
+							<button
+								onClick={handleSubmitInstagram}
+								disabled={instaSubmitting || !instaValue.trim()}
+								aria-label="Submit Instagram"
+								className="flex h-6 w-6 items-center justify-center rounded-full bg-white/20 transition hover:bg-white/30 disabled:opacity-40"
+							>
+								{instaSubmitting ? (
+									<Loader2 className="h-3 w-3 animate-spin" />
+								) : (
+									<Check className="h-3 w-3" />
+								)}
+							</button>
+							<button
+								onClick={() => {
+									setInstaOpen(false);
+									setInstaValue('');
+								}}
+								aria-label="Cancel"
+								className="flex h-6 w-6 items-center justify-center rounded-full transition hover:bg-white/20"
+							>
+								<X className="h-3 w-3" />
+							</button>
+						</div>
+					)}
+
+					{!gym.instagram && instaSubmitted && (
+						<span className="flex items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-3 py-1.5 text-xs text-white/70 backdrop-blur-sm">
+							<FaInstagram className="h-3 w-3" />
+							Instagram pending review
+						</span>
+					)}
+				</div>
+			</div>
 		</div>
 	);
 
@@ -205,7 +352,11 @@ export default function GymProfilePage() {
 						>
 							<div className="border-border bg-main/5 h-9 w-9 shrink-0 overflow-hidden rounded-lg border">
 								{item.image_url ? (
-									<img src={item.image_url} alt={item.full_name} className="h-full w-full object-cover" />
+									<img
+										src={item.image_url}
+										alt={item.full_name}
+										className="h-full w-full object-cover"
+									/>
 								) : (
 									<div className="flex h-full w-full items-center justify-center">
 										<Dumbbell className="text-sub h-4 w-4 opacity-30" />
@@ -248,165 +399,12 @@ export default function GymProfilePage() {
 	return (
 		<>
 			<div id="pageGymProfile" className="content-grid py-8">
-				<div>
-					{/* Bento grid — desktop */}
-					<div
-						className="hidden sm:grid sm:grid-cols-4 sm:gap-3"
-						style={{ gridTemplateRows: '160px 160px 160px auto auto' }}
-					>
-						{/* Image — 2×2 */}
-						<ImageTile />
+				<div className="full-width-padding mx-auto max-w-4xl">
+					<div className="flex flex-col gap-3">
+						<Hero />
 
-						{/* Name + info — 2×2 */}
-						<div className="border-border bg-surface col-span-2 row-span-2 flex flex-col justify-between rounded-2xl border p-5">
-							<div className="flex items-start justify-between gap-2">
-								<div className="flex-1">
-									<p className="text-sub mb-1 text-xs">
-										{gym.city} · {gym.country}
-									</p>
-									<h1 className="text-main text-2xl font-semibold leading-tight">{gym.name}</h1>
-									<a
-										href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([gym.address, gym.city, gym.country].filter(Boolean).join(', '))}`}
-										target="_blank"
-										rel="noreferrer"
-										className="text-sub hover:text-main mt-2 flex items-center gap-1.5 text-sm transition"
-									>
-										<MapPin className="h-3.5 w-3.5 shrink-0" />
-										<span className="hover:underline">{[gym.address, gym.city, gym.country].filter(Boolean).join(', ')}</span>
-									</a>
-								</div>
-								<FavoriteButton isFavorite={isFavorite} onToggle={handleFavorite} />
-							</div>
-							{gym.instagram && (
-								<a
-									href={`https://instagram.com/${gym.instagram}`}
-									target="_blank"
-									rel="noreferrer"
-									className="text-sub hover:text-main w-fit transition"
-								>
-									<FaInstagram className="h-4 w-4" />
-								</a>
-							)}
-						</div>
-
-						{/* Rating — 1×1 */}
-						<div className="border-border bg-sub-alt col-span-1 row-span-1 flex flex-col justify-between rounded-2xl border p-3">
-							<p className="text-sub text-[11px]">rating</p>
-							<p className="text-main text-xl font-semibold">
-								{avgRating ? avgRating.toFixed(1) : '—'}
-							</p>
-							{avgRating && (
-								<div className="flex gap-0.5">
-									{[1, 2, 3, 4, 5].map((s) => (
-										<Star
-											key={s}
-											className={`h-2.5 w-2.5 ${s <= Math.round(avgRating) ? 'fill-amber-400 text-amber-400' : 'text-sub'}`}
-										/>
-									))}
-								</div>
-							)}
-						</div>
-
-						{/* Favourites — 1×1 */}
-						<div className="border-border bg-sub-alt col-span-1 row-span-1 flex flex-col justify-between rounded-2xl border p-3">
-							<p className="text-sub text-[11px]">favourites</p>
-							<p className="text-main text-xl font-semibold">{gym.favourites ?? 0}</p>
-						</div>
-
-						{/* Equipment count — 1×1 */}
-						<div className="border-border bg-sub-alt col-span-1 row-span-1 flex flex-col justify-between rounded-2xl border p-3">
-							<p className="text-sub text-[11px]">equipment</p>
-							<p className="text-main text-xl font-semibold">{gym.total_equipment}</p>
-						</div>
-
-						{/* Unique machines — 1×1 */}
-						<div className="border-border bg-sub-alt col-span-1 row-span-1 flex flex-col justify-between rounded-2xl border p-3">
-							<p className="text-sub text-[11px]">unique</p>
-							<p className="text-main text-xl font-semibold">{gym.unique_machines}</p>
-						</div>
-
-						{/* Equipment list — full width */}
-						<div className="border-border bg-surface col-span-4 rounded-2xl border p-4">
-							<div className="mb-3 flex items-center justify-between">
-								<h2 className="text-main text-sm font-semibold">Equipment ({equipment.length})</h2>
-								<div className="flex items-center gap-1">
-									<div className="bg-main/5 flex items-center rounded-lg p-0.5">
-										<button
-											onClick={() => setEquipmentView('grid')}
-											className={`rounded-md p-1.5 transition ${equipmentView === 'grid' ? 'bg-main text-bg' : 'text-sub hover:text-main'}`}
-											aria-label="Grid view"
-										>
-											<LayoutGrid className="h-3 w-3" />
-										</button>
-										<button
-											onClick={() => setEquipmentView('compact')}
-											className={`rounded-md p-1.5 transition ${equipmentView === 'compact' ? 'bg-main text-bg' : 'text-sub hover:text-main'}`}
-											aria-label="Compact view"
-										>
-											<List className="h-3 w-3" />
-										</button>
-									</div>
-									{user && (
-										<button
-											onClick={() => setShowAddPanel((v) => !v)}
-											className="text-sub hover:text-main hover:bg-main/5 flex items-center gap-1 rounded-lg px-2 py-1 text-xs transition"
-										>
-											<Plus className="h-3.5 w-3.5" />
-											Add
-										</button>
-									)}
-								</div>
-							</div>
-							{showAddPanel && (
-								<AddEquipmentPanel
-									gymId={Number(id)}
-									masterEquipment={masterEquipment}
-									onEquipmentAdded={(item) => setEquipment((prev) => [...prev, item])}
-									onClose={() => setShowAddPanel(false)}
-								/>
-							)}
-							<EquipmentList />
-						</div>
-					</div>
-
-					{/* Mobile layout — stacked */}
-					<div className="flex flex-col gap-3 sm:hidden">
-						<ImageTile mobile />
-
-						{/* Name + info */}
-						<div className="border-border bg-surface flex flex-col gap-3 rounded-2xl border p-4">
-							<div className="flex items-start justify-between gap-2">
-								<div className="flex-1">
-									<p className="text-sub mb-0.5 text-xs">
-										{gym.city} · {gym.country}
-									</p>
-									<h1 className="text-main text-xl font-semibold">{gym.name}</h1>
-									<a
-										href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([gym.address, gym.city, gym.country].filter(Boolean).join(', '))}`}
-										target="_blank"
-										rel="noreferrer"
-										className="text-sub hover:text-main mt-2 flex items-center gap-1 text-sm transition"
-									>
-										<MapPin className="h-3.5 w-3.5 shrink-0" />
-										<span className="hover:underline">{[gym.address, gym.city, gym.country].filter(Boolean).join(', ')}</span>
-									</a>
-								</div>
-								<FavoriteButton isFavorite={isFavorite} onToggle={handleFavorite} />
-							</div>
-							{gym.instagram && (
-								<a
-									href={`https://instagram.com/${gym.instagram}`}
-									target="_blank"
-									rel="noreferrer"
-									className="text-sub hover:text-main w-fit transition"
-								>
-									<FaInstagram className="h-4 w-4" />
-								</a>
-							)}
-						</div>
-
-						{/* Stats grid 2×2 */}
-						<div className="grid grid-cols-2 gap-3">
+						{/* ── Stats ── */}
+						<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
 							<div className="border-border bg-sub-alt flex flex-col justify-between rounded-2xl border p-3">
 								<p className="text-sub text-[11px]">rating</p>
 								<p className="text-main text-xl font-semibold">
@@ -437,7 +435,7 @@ export default function GymProfilePage() {
 							</div>
 						</div>
 
-						{/* Equipment list */}
+						{/* ── Equipment ── */}
 						<div className="border-border bg-surface rounded-2xl border p-4">
 							<div className="mb-3 flex items-center justify-between">
 								<h2 className="text-main text-sm font-semibold">Equipment ({equipment.length})</h2>

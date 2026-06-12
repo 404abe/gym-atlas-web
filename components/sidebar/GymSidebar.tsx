@@ -7,6 +7,7 @@ import { Plus } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useGymFilter } from '@/app/contexts/GymFilterContext';
+import { useAuthGate } from '@/app/contexts/AuthGateContext';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { cn } from '@/lib/utils';
 
@@ -25,6 +26,7 @@ export default function GymSidebar({
 	listOnly?: boolean;
 }) {
 	const router = useRouter();
+	const { requireAuth } = useAuthGate();
 	const scrollRef = useRef<HTMLDivElement>(null);
 	const userLocation = useUserLocation();
 	const { filteredGyms } = useGymFilter();
@@ -74,7 +76,7 @@ export default function GymSidebar({
 							{filteredGyms ? `${displayGyms.length} results` : `${gyms.length} gyms`}
 						</span>
 						<button
-							onClick={() => router.push('/add/gym')}
+							onClick={() => requireAuth('add a gym') && router.push('/add/gym')}
 							className="text-sub hover:text-text flex items-center gap-2 text-xs font-medium uppercase tracking-[0.08em] transition-colors duration-[0.22s]"
 						>
 							<Plus className="h-4 w-4" />

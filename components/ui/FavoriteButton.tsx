@@ -1,8 +1,7 @@
 'use client';
 
 import { Heart } from 'lucide-react';
-import { useAuth } from '@/app/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useAuthGate } from '@/app/contexts/AuthGateContext';
 
 type FavoriteButtonProps = {
 	isFavorite?: boolean;
@@ -13,16 +12,12 @@ type FavoriteButtonProps = {
 export default function FavoriteButton({
 	isFavorite,
 	onToggle,
-	requireAuth = true
+	requireAuth: gated = true
 }: FavoriteButtonProps) {
-	const { user } = useAuth();
-	const router = useRouter();
+	const { requireAuth } = useAuthGate();
 
 	const handleClick = () => {
-		if (requireAuth && !user) {
-			router.push('/login');
-			return;
-		}
+		if (gated && !requireAuth('save favourites')) return;
 		onToggle?.();
 	};
 
