@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Plus, Loader2 } from 'lucide-react';
+import { useMemo, useState, useEffect } from 'react';
+import { Plus, Loader2, Search } from 'lucide-react';
 import Combobox from '@/components/ui/Combobox';
 import { Equipment } from '@/types/equipment';
 import {
@@ -121,6 +121,13 @@ function MuscleGroupButtons({
 	onToggle: (id: number) => void;
 	loading: boolean;
 }) {
+	const [query, setQuery] = useState('');
+	const filteredCategories = useMemo(() => {
+		const normalizedQuery = query.trim().toLowerCase();
+		if (!normalizedQuery) return categories;
+		return categories.filter((category) => category.name.toLowerCase().includes(normalizedQuery));
+	}, [categories, query]);
+
 	if (loading) {
 		return <p className="text-sub mt-2 text-xs">Loading muscle groups...</p>;
 	}
@@ -130,25 +137,40 @@ function MuscleGroupButtons({
 	}
 
 	return (
-		<div className="mt-2 flex max-h-28 flex-wrap gap-2 overflow-y-auto pr-1">
-			{categories.map((category) => {
-				const selected = selectedIds.includes(category.id);
+		<div className="mt-2 flex flex-col gap-2">
+			<div className="border-border flex items-center gap-2 rounded-lg border px-2.5 py-2">
+				<Search className="text-sub h-3.5 w-3.5 shrink-0" />
+				<input
+					value={query}
+					onChange={(event) => setQuery(event.target.value)}
+					placeholder="Search muscle groups"
+					className="text-main placeholder:text-sub w-full bg-transparent text-xs outline-none"
+				/>
+			</div>
 
-				return (
-					<button
-						key={category.id}
-						type="button"
-						onClick={() => onToggle(category.id)}
-						className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition ${
-							selected
-								? 'bg-main text-bg border-transparent'
-								: 'border-border text-sub hover:text-main'
-						}`}
-					>
-						{category.name}
-					</button>
-				);
-			})}
+			<div className="flex max-h-28 flex-wrap gap-2 overflow-y-auto pr-1">
+				{filteredCategories.map((category) => {
+					const selected = selectedIds.includes(category.id);
+
+					return (
+						<button
+							key={category.id}
+							type="button"
+							onClick={() => onToggle(category.id)}
+							className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition ${
+								selected
+									? 'bg-main text-bg border-transparent'
+									: 'border-border text-sub hover:text-main'
+							}`}
+						>
+							{category.name}
+						</button>
+					);
+				})}
+				{filteredCategories.length === 0 && (
+					<p className="text-sub py-1 text-xs">No matching muscle groups.</p>
+				)}
+			</div>
 		</div>
 	);
 }
