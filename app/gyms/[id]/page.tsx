@@ -25,7 +25,7 @@ import AddEquipmentPanel from '@/app/add/_components/AddEquipmentPanel';
 export default function GymProfilePage() {
 	const { id } = useParams();
 	const router = useRouter();
-	const { user, loading: authLoading } = useAuth();
+	const { user } = useAuth();
 	const { requireAuth } = useAuthGate();
 	const { addToast } = useToastContext();
 
@@ -47,7 +47,6 @@ export default function GymProfilePage() {
 	const [instaSubmitted, setInstaSubmitted] = useState(false);
 
 	useEffect(() => {
-		if (authLoading) return;
 		const load = async () => {
 			try {
 				const [gymData, equipmentData, masterData] = await Promise.all([
@@ -67,7 +66,7 @@ export default function GymProfilePage() {
 			}
 		};
 		load();
-	}, [id, authLoading]);
+	}, [id]);
 
 	const handleFavorite = async () => {
 		setIsFavorite((prev) => !prev);
