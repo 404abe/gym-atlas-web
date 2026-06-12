@@ -7,10 +7,13 @@ import { Equipment } from '@/types/equipment';
 import {
 	fetchEquipmentBrands,
 	fetchEquipmentSeries,
+	fetchBestInClassCategories,
 	createEquipment,
 	uploadEquipmentImage,
-	rateEquipment
+	rateEquipment,
+	setBestInClass
 } from '@/lib/api';
+import type { BestInClassCategory } from '@/types/bestInClass';
 import ImageTile from './ImageTile';
 import TypeButtons from './TypeButtons';
 import ResistanceButtons from './ResistanceButtons';
@@ -107,6 +110,49 @@ function BrandSeriesRow({
 	);
 }
 
+function MuscleGroupButtons({
+	categories,
+	selectedIds,
+	onToggle,
+	loading
+}: {
+	categories: BestInClassCategory[];
+	selectedIds: number[];
+	onToggle: (id: number) => void;
+	loading: boolean;
+}) {
+	if (loading) {
+		return <p className="text-sub mt-2 text-xs">Loading muscle groups...</p>;
+	}
+
+	if (categories.length === 0) {
+		return <p className="text-sub mt-2 text-xs">No muscle groups available yet.</p>;
+	}
+
+	return (
+		<div className="mt-2 flex max-h-28 flex-wrap gap-2 overflow-y-auto pr-1">
+			{categories.map((category) => {
+				const selected = selectedIds.includes(category.id);
+
+				return (
+					<button
+						key={category.id}
+						type="button"
+						onClick={() => onToggle(category.id)}
+						className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition ${
+							selected
+								? 'bg-main text-bg border-transparent'
+								: 'border-border text-sub hover:text-main'
+						}`}
+					>
+						{category.name}
+					</button>
+				);
+			})}
+		</div>
+	);
+}
+
 // ── Main Component ───────────────────────────────────────────────────────────
 
 export default function NewMachineCard({ onCreated }: Props) {
@@ -125,30 +171,89 @@ export default function NewMachineCard({ onCreated }: Props) {
 
 	const [brands, setBrands] = useState<string[]>([]);
 	const [seriesOptions, setSeriesOptions] = useState<string[]>([]);
-	const [brandsLoading, setBrandsLoading] = useState(false);
+	const [brandsLoading, setBrandsLoading] = useState(true);
 	const [seriesLoading, setSeriesLoading] = useState(false);
+	const [muscleGroups, setMuscleGroups] = useState<BestInClassCategory[]>([]);
+	const [muscleGroupsLoading, setMuscleGroupsLoading] = useState(true);
+	const [selectedMuscleIds, setSelectedMuscleIds] = useState<number[]>([]);
 
 	useEffect(() => {
-		setBrandsLoading(true);
+		let cancelled = false;
+
 		fetchEquipmentBrands()
-			.then((data) => setBrands(data ?? []))
-			.catch(() => addToast('Failed to load brands', 'error'))
-			.finally(() => setBrandsLoading(false));
-	}, []);
+			.then((data) => {
+				if (!cancelled) setBrands(data ?? []);
+			})
+			.catch(() => {
+				if (!cancelled) addToast('Failed to load brands', 'error');
+			})
+			.finally(() => {
+				if (!cancelled) setBrandsLoading(false);
+			});
+
+		return () => {
+			cancelled = true;
+		};
+	}, [addToast]);
 
 	useEffect(() => {
+		let cancelled = false;
+
+		fetchBestInClassCategories()
+			.then((data) => {
+				if (!cancelled) {
+					setMuscleGroups(
+						(data.categories ?? []).filter((category) => category.type === 'muscle_group')
+					);
+				}
+			})
+			.catch(() => {
+				if (!cancelled) addToast('Failed to load muscle groups', 'error');
+			})
+			.finally(() => {
+				if (!cancelled) setMuscleGroupsLoading(false);
+			});
+
+		return () => {
+			cancelled = true;
+		};
+	}, [addToast]);
+
+	useEffect(() => {
+		let cancelled = false;
 		const matched = brands.find((b) => b.toLowerCase() === brand.toLowerCase());
+
 		if (!brand.trim() || !matched) {
-			setSeriesOptions([]);
-			if (!brand.trim()) setSeries('');
-			return;
+			queueMicrotask(() => {
+				if (cancelled) return;
+				setSeriesOptions([]);
+				if (!brand.trim()) setSeries('');
+			});
+
+			return () => {
+				cancelled = true;
+			};
 		}
-		setSeriesLoading(true);
+
+		queueMicrotask(() => {
+			if (!cancelled) setSeriesLoading(true);
+		});
+
 		fetchEquipmentSeries(matched)
-			.then((data) => setSeriesOptions(data ?? []))
-			.catch(() => addToast('Failed to load series', 'error'))
-			.finally(() => setSeriesLoading(false));
-	}, [brand, brands]);
+			.then((data) => {
+				if (!cancelled) setSeriesOptions(data ?? []);
+			})
+			.catch(() => {
+				if (!cancelled) addToast('Failed to load series', 'error');
+			})
+			.finally(() => {
+				if (!cancelled) setSeriesLoading(false);
+			});
+
+		return () => {
+			cancelled = true;
+		};
+	}, [brand, brands, addToast]);
 
 	const slug = [brand, series, name].filter(Boolean).map(toSlug).join('-');
 	const isValid = !!name && !!brand && !!series && !!type;
@@ -167,11 +272,18 @@ export default function NewMachineCard({ onCreated }: Props) {
 		setSeries('');
 	};
 
+	const toggleMuscleGroup = (id: number) => {
+		setSelectedMuscleIds((current) =>
+			current.includes(id) ? current.filter((selectedId) => selectedId !== id) : [...current, id]
+		);
+	};
+
 	const handleCreate = async () => {
 		if (!isValid || isCreating) return;
 		if (!requireAuth('add a machine')) return;
 		setIsCreating(true);
 		try {
+			let failedToAssignMuscles = false;
 			const created = await createEquipment({
 				name,
 				brand,
@@ -182,9 +294,22 @@ export default function NewMachineCard({ onCreated }: Props) {
 
 			if (imageFile && created.id) await uploadEquipmentImage(created.id, imageFile);
 			if (userRating > 0 && created.id) await rateEquipment(created.id, userRating);
+			if (created.id && selectedMuscleIds.length > 0) {
+				try {
+					await Promise.all(selectedMuscleIds.map((categoryId) => setBestInClass(categoryId, created.id)));
+				} catch (error) {
+					console.error('Failed to assign muscle groups:', error);
+					failedToAssignMuscles = true;
+				}
+			}
 
 			onCreated(created);
-			addToast(`"${brand} ${series} ${name}" submitted for review`, 'success');
+			addToast(
+				failedToAssignMuscles
+					? `"${brand} ${series} ${name}" submitted, but muscle groups failed to save`
+					: `"${brand} ${series} ${name}" submitted for review`,
+				failedToAssignMuscles ? 'error' : 'success'
+			);
 
 			setBrand('');
 			setSeries('');
@@ -194,6 +319,7 @@ export default function NewMachineCard({ onCreated }: Props) {
 			setUserRating(0);
 			setImageFile(null);
 			setImagePreview(null);
+			setSelectedMuscleIds([]);
 		} catch (error) {
 			console.error(error);
 			addToast('Failed to create equipment', 'error');
@@ -251,6 +377,16 @@ export default function NewMachineCard({ onCreated }: Props) {
 					<ResistanceButtons resistance={resistance} setResistance={setResistance} />
 				</div>
 
+				<div className={`${tileCls} col-span-4`}>
+					<p className={labelCls}>muscle groups</p>
+					<MuscleGroupButtons
+						categories={muscleGroups}
+						selectedIds={selectedMuscleIds}
+						onToggle={toggleMuscleGroup}
+						loading={muscleGroupsLoading}
+					/>
+				</div>
+
 				<div className="border-border bg-sub-alt col-span-4 flex items-center gap-4 rounded-2xl border px-4 py-3">
 					<p className={`${labelCls} shrink-0`}>your rating</p>
 					<RatingRow
@@ -292,6 +428,16 @@ export default function NewMachineCard({ onCreated }: Props) {
 						<p className={labelCls}>resistance</p>
 						<ResistanceButtons resistance={resistance} setResistance={setResistance} col />
 					</div>
+				</div>
+
+				<div className={tileCls}>
+					<p className={labelCls}>muscle groups</p>
+					<MuscleGroupButtons
+						categories={muscleGroups}
+						selectedIds={selectedMuscleIds}
+						onToggle={toggleMuscleGroup}
+						loading={muscleGroupsLoading}
+					/>
 				</div>
 
 				<div className="border-border bg-sub-alt flex items-center gap-4 rounded-2xl border px-4 py-3">
