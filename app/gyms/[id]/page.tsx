@@ -150,7 +150,7 @@ export default function GymProfilePage() {
 
 	// ── Hero ── image-first; gym name, location, address + socials overlaid
 	const Hero = () => (
-		<div className="border-border bg-sub-alt relative aspect-[4/3] w-full overflow-hidden rounded-2xl border sm:aspect-[16/9]">
+		<div className="border-border bg-sub-alt relative aspect-[4/3] w-full overflow-hidden rounded-2xl border sm:aspect-auto sm:h-90">
 			{imageUrl ? (
 				<img src={imageUrl} alt={gym.name} className="h-full w-full object-cover" />
 			) : (
@@ -399,7 +399,7 @@ export default function GymProfilePage() {
 	return (
 		<>
 			<div id="pageGymProfile" className="content-grid py-8">
-				<div className="full-width-padding mx-auto max-w-4xl">
+				<div className="full-width-padding mx-auto w-full max-w-4xl">
 					<div className="flex flex-col gap-3">
 						<Hero />
 

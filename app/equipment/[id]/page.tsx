@@ -259,7 +259,7 @@ export default function EquipmentProfilePage() {
 
 	return (
 		<div id="pageEquipmentProfile" className="content-grid py-8">
-			<div className="full-width-padding mx-auto max-w-4xl">
+			<div className="full-width-padding mx-auto w-full max-w-4xl">
 				<div className="flex flex-col gap-3">
 					<Hero />
 
