@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Equipment } from '@/types/equipment';
 import type { BestInClassCategory as Category } from '@/types/bestInClass';
+import { matchesSearch } from '@/lib/utils';
 
 export type EquipmentSortField = 'id' | 'brand' | 'name' | 'resistance_profile' | 'rating';
 
@@ -33,12 +34,7 @@ export function useEquipmentFilters(
 	const filtered = useMemo(() => {
 		return equipment
 			.filter((e) => {
-				const matchesSearch = (() => {
-					if (search === '') return true;
-					const full = `${e.brand ?? ''} ${e.series ?? ''} ${e.name ?? ''}`.toLowerCase();
-					const words = search.toLowerCase().replace(/-/g, ' ').split(/\s+/).filter(Boolean);
-					return words.every((w) => full.includes(w));
-				})();
+				const searchMatch = matchesSearch(search, e.brand, e.series, e.name);
 				const matchesType = selectedType === 'all' || e.type === selectedType;
 				const matchesBrand = selectedBrand === 'all' || e.brand === selectedBrand;
 				const matchesResistance =
@@ -54,7 +50,7 @@ export function useEquipmentFilters(
 					return eqName.includes(catName) || catName.includes(eqName);
 				})();
 				return (
-					matchesSearch &&
+					searchMatch &&
 					matchesType &&
 					matchesBrand &&
 					matchesResistance &&

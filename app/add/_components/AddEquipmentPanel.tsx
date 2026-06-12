@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useMemo } from 'react';
+import { matchesSearch } from '@/lib/utils';
 import { Loader2, X, Search, Dumbbell, Check } from 'lucide-react';
 import { GymEquipment } from '@/types/gym';
 import { Equipment } from '@/types/equipment';
@@ -34,12 +35,7 @@ export default function AddEquipmentPanel({
 	}, []);
 
 	const filtered = useMemo(
-		() =>
-			masterEquipment
-				.filter((e) =>
-					`${e.brand} ${e.series} ${e.name}`.toLowerCase().includes(query.toLowerCase())
-				)
-				.slice(0, 8),
+		() => masterEquipment.filter((e) => matchesSearch(query, e.brand, e.series, e.name)).slice(0, 8),
 		[masterEquipment, query]
 	);
 

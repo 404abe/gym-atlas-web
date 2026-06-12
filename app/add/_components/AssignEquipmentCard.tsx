@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useMemo } from 'react';
+import { matchesSearch } from '@/lib/utils';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { Building2, Dumbbell, MapPin, X, Plus, Loader2 } from 'lucide-react';
 import { useToastContext } from '@/app/contexts/ToastContext';
@@ -50,15 +51,12 @@ export default function AssignEquipmentCard({ gyms, equipment, preselectedEquipm
 	}, [preselectedEquipmentId, equipment]);
 
 	const filteredGyms = useMemo(
-		() => gyms.filter((g) => g?.name?.toLowerCase().includes(gymSearch.toLowerCase())),
+		() => gyms.filter((g) => matchesSearch(gymSearch, g.name)),
 		[gyms, gymSearch]
 	);
 
 	const filteredEquipment = useMemo(
-		() =>
-			equipment.filter((e) =>
-				`${e.brand} ${e.series} ${e.name}`.toLowerCase().includes(equipSearch.toLowerCase())
-			),
+		() => equipment.filter((e) => matchesSearch(equipSearch, e.brand, e.series, e.name)),
 		[equipment, equipSearch]
 	);
 
