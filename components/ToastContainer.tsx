@@ -1,9 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
 import { Check, X, AlertCircle, Info } from 'lucide-react';
 import { Toast } from '../hooks/useToast';
-;
 
 type Props = {
 	toasts: Toast[];
@@ -43,7 +41,7 @@ export default function ToastContainer({ toasts, onRemove }: Props) {
 	if (toasts.length === 0) return null;
 
 	return (
-		<div className="fixed right-4 top-4 z-50 flex flex-col gap-2 w-80 max-w-[calc(100vw-2rem)]">
+		<div className="fixed right-4 top-18 z-[80] flex w-80 max-w-[calc(100vw-2rem)] flex-col gap-2 md:right-6 md:top-20">
 			{toasts.map((toast) => (
 				<ToastItem key={toast.id} toast={toast} onRemove={onRemove} />
 			))}
