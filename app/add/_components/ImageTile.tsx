@@ -13,7 +13,7 @@ export default function ImageTile({ preview, onImageChange, className = '' }: Im
     return (
         <div className={`border-border bg-sub-alt relative overflow-hidden rounded-2xl border ${className}`}>
             {preview ? (
-                <img src={preview} alt="preview" className="h-full w-full object-cover" />
+                <img src={preview} alt="preview" className="h-full w-full object-contain" />
             ) : (
                 <div className="flex h-full w-full items-center justify-center">
                     <Dumbbell className="text-sub h-10 w-10 opacity-30" />

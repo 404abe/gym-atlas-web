@@ -1,9 +1,9 @@
 'use client';
 
-import { Minus, TrendingUp, TrendingDown } from 'lucide-react';
+import { Minus, SlidersHorizontal, TrendingDown, TrendingUp } from 'lucide-react';
 
 type ResistanceProfileProps = {
-	profile?: 'constant' | 'ascending' | 'descending';
+	profile?: 'constant' | 'ascending' | 'descending' | 'adjustable';
 };
 
 export default function ResistanceProfile({ profile }: ResistanceProfileProps) {
@@ -39,6 +39,18 @@ export default function ResistanceProfile({ profile }: ResistanceProfileProps) {
 					<polyline points="0,0 10,4 25,10 40,14" fill="none" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
 				</svg>
 				<span className="hidden text-xs text-red-500 sm:inline">Descending</span>
+			</div>
+		);
+	}
+
+	if (profile === 'adjustable') {
+		return (
+			<div className="flex items-center gap-2">
+				<SlidersHorizontal className="h-3.5 w-3.5 text-blue-500" />
+				<svg width="40" height="16" viewBox="0 0 40 16" className="overflow-visible">
+					<polyline points="0,11 10,5 20,11 30,5 40,11" fill="none" stroke="#3b82f6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+				</svg>
+				<span className="hidden text-xs text-blue-500 sm:inline">Adjustable</span>
 			</div>
 		);
 	}

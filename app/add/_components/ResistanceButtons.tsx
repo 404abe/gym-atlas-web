@@ -15,7 +15,7 @@ export default function ResistanceButtons({
 }: ResistanceButtonsProps) {
 	return (
 		<div className={`mt-1 flex ${col ? 'flex-col' : ''} gap-1.5`}>
-			{(['constant', 'ascending', 'descending'] as const).map((r) => (
+			{(['constant', 'ascending', 'descending', 'adjustable'] as const).map((r) => (
 				<button
 					key={r}
 					type="button"

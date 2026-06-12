@@ -1,6 +1,8 @@
 'use client';
 
 import { Gym } from '@/types/gym';
+import { useAuth } from '@/app/contexts/AuthContext';
+import { favouriteGym, unfavouriteGym } from '@/lib/api';
 import { Heart, Star, Dumbbell, MapPin, Navigation, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -35,7 +37,9 @@ export default function GymCard({
 	userLocation?: { lat: number; lng: number } | null;
 }) {
 	const router = useRouter();
+	const { user } = useAuth();
 	const [favourited, setFavourited] = useState(gym.is_favorite ?? false);
+	const [favouriteCount, setFavouriteCount] = useState(gym.favourites ?? 0);
 
 	const formatHearts = (n?: number) => {
 		if (!n) return '0';
@@ -43,9 +47,25 @@ export default function GymCard({
 		return n.toString();
 	};
 
-	const handleHeartClick = (e: React.MouseEvent) => {
+	const handleHeartClick = async (e: React.MouseEvent) => {
 		e.stopPropagation();
-		setFavourited((prev) => !prev);
+		if (!user) {
+			router.push('/login');
+			return;
+		}
+
+		const nextFavourited = !favourited;
+		setFavourited(nextFavourited);
+		setFavouriteCount((count) => Math.max(0, count + (nextFavourited ? 1 : -1)));
+
+		try {
+			if (nextFavourited) await favouriteGym(gym.id);
+			else await unfavouriteGym(gym.id);
+		} catch (err) {
+			console.error('Failed to toggle gym favourite:', err);
+			setFavourited(favourited);
+			setFavouriteCount((count) => Math.max(0, count + (nextFavourited ? -1 : 1)));
+		}
 	};
 
 	const handleCardClick = () => {
@@ -69,7 +89,16 @@ export default function GymCard({
 				<div className="min-w-0 flex-1">
 					{/* Name + profile link */}
 					<div className="flex items-center gap-1.5">
-						<p className="text-text truncate text-sm font-medium">{gym.name}</p>
+						<button
+							type="button"
+							onClick={(e) => {
+								e.stopPropagation();
+								router.push(`/gyms/${gym.id}`);
+							}}
+							className="text-text min-w-0 truncate text-left text-sm font-medium transition hover:text-main"
+						>
+							{gym.name}
+						</button>
 						<button
 							onClick={(e) => {
 								e.stopPropagation();
@@ -129,7 +158,7 @@ export default function GymCard({
 							favourited ? 'fill-red-500 stroke-red-500' : 'text-sub fill-none'
 						}`}
 					/>
-					<span className="text-sub text-xs">{formatHearts(gym.favourites)}</span>
+					<span className="text-sub text-xs">{formatHearts(favouriteCount)}</span>
 				</button>
 			</div>
 		</div>
