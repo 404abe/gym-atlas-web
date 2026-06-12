@@ -132,10 +132,6 @@ function MuscleGroupButtons({
 		return <p className="text-sub mt-2 text-xs">Loading muscle groups...</p>;
 	}
 
-	if (categories.length === 0) {
-		return <p className="text-sub mt-2 text-xs">No muscle groups available yet.</p>;
-	}
-
 	return (
 		<div className="mt-2 flex flex-col gap-2">
 			<div className="border-border flex items-center gap-2 rounded-lg border px-2.5 py-2">
@@ -167,7 +163,10 @@ function MuscleGroupButtons({
 						</button>
 					);
 				})}
-				{filteredCategories.length === 0 && (
+				{categories.length === 0 && (
+					<p className="text-sub py-1 text-xs">No muscle groups available yet.</p>
+				)}
+				{categories.length > 0 && filteredCategories.length === 0 && (
 					<p className="text-sub py-1 text-xs">No matching muscle groups.</p>
 				)}
 			</div>
