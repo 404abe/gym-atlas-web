@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Dumbbell, Search, X } from 'lucide-react';
 import { useGymFilter } from '@/app/contexts/GymFilterContext';
+import { matchesSearch } from '@/lib/utils';
 import type { Equipment } from '@/types/equipment';
 import { API_URL } from '@/lib/config';
 import { cn } from '@/lib/utils';
@@ -20,11 +21,7 @@ export function MobileEquipmentModal({ onClose }: { onClose: () => void }) {
 	}, []);
 
 	const results = query.trim()
-		? allEquipment
-				.filter((e) =>
-					`${e.brand} ${e.series} ${e.name}`.toLowerCase().includes(query.toLowerCase())
-				)
-				.slice(0, 15)
+		? allEquipment.filter((e) => matchesSearch(query, e.brand, e.series, e.name)).slice(0, 15)
 		: allEquipment.slice(0, 20);
 
 	const toggle = (item: Equipment) => {

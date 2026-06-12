@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Gym } from '@/types/gym';
+import { matchesSearch } from '@/lib/utils';
 
 export function useGymFilters(gyms: Gym[]) {
 	const [search, setSearch] = useState('');
@@ -24,12 +25,11 @@ export function useGymFilters(gyms: Gym[]) {
 	const filtered = useMemo(() => {
 		return gyms
 			.filter((g) => {
-				const matchesSearch =
-					search === '' || g.name?.toLowerCase().includes(search.toLowerCase());
+				const searchMatch = matchesSearch(search, g.name);
 				const matchesCity = selectedCity === 'all' || g.city === selectedCity;
 				const matchesFavorite = !showFavoritesOnly || g.is_favorite === true;
 				const matchesRating = (Number(g.avg_rating) || 0) >= minRating;
-				return matchesSearch && matchesCity && matchesFavorite && matchesRating;
+				return searchMatch && matchesCity && matchesFavorite && matchesRating;
 			})
 			.sort((a, b) => {
 				let comparison = 0;
