@@ -23,6 +23,7 @@ import { Star, Dumbbell, Plus, Trophy, X, ChevronDown } from 'lucide-react';
 import { Equipment, EquipmentVariant } from '@/types/equipment';
 import { GymWithQuantity } from '@/types/gym';
 import type { BestInClassCategory } from '@/types/bestInClass';
+import { getEquipmentCategorySuggestions, EQUIPMENT_CATEGORY_DEFAULT } from '@/lib/equipment-categories';
 
 export default function EquipmentProfilePage() {
 	const { id } = useParams();
@@ -50,39 +51,9 @@ export default function EquipmentProfilePage() {
 
 	const canConfirm = selectedMuscle || selectedExercise;
 
-	const SUGGESTED: Record<string, { muscles: string[]; exercises: string[] }> = {
-		default: {
-			muscles: ['Chest', 'Triceps', 'Shoulders'],
-			exercises: ['Chest Press', 'Incline Chest Press', 'Chest Fly']
-		},
-		'Chest Press': {
-			muscles: ['Chest', 'Triceps', 'Shoulders'],
-			exercises: ['Chest Press', 'Incline Chest Press', 'Chest Fly']
-		},
-		'Leg Press': { muscles: ['Quads', 'Glutes', 'Hamstrings'], exercises: ['Leg Press'] },
-		'Lat Pulldown': { muscles: ['Lats', 'Upper Back', 'Biceps'], exercises: ['Lat Pulldown'] },
-		'Shoulder Press': {
-			muscles: ['Shoulders', 'Triceps'],
-			exercises: ['Shoulder Press', 'Lateral Raise']
-		},
-		'Leg Extension': { muscles: ['Quads'], exercises: ['Leg Extension'] },
-		'Leg Curl': {
-			muscles: ['Hamstrings'],
-			exercises: ['Lying Hamstring Curl', 'Seated Hamstring Curl']
-		},
-		'Seated Row': {
-			muscles: ['Upper Back', 'Lats', 'Biceps'],
-			exercises: ['Lat Row', 'Upper Back Row', 'T-Bar Row']
-		},
-		'Calf Raise': { muscles: ['Calves'], exercises: ['Seated Calf Raise', 'Standing Calf Raise'] },
-		'Bicep Curl': { muscles: ['Biceps'], exercises: ['Bicep Curl'] },
-		'Tricep Extension': { muscles: ['Triceps'], exercises: ['Tricep Extension', 'Tricep Pushdown'] }
-	};
-
-	const getSuggested = () => {
-		const key = Object.keys(SUGGESTED).find((k) => item?.name?.includes(k));
-		return SUGGESTED[key ?? 'default'] ?? SUGGESTED['default'];
-	};
+	const getSuggested = () =>
+		getEquipmentCategorySuggestions(item?.name ?? '', { fallback: true }) ??
+		EQUIPMENT_CATEGORY_DEFAULT;
 
 	useEffect(() => {
 		const load = async () => {

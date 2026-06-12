@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
-import { Plus, Loader2, Search } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, Loader2 } from 'lucide-react';
 import Combobox from '@/components/ui/Combobox';
 import { Equipment } from '@/types/equipment';
 import {
@@ -20,6 +20,7 @@ import ResistanceButtons from './ResistanceButtons';
 import RatingRow from './RatingRow';
 import { useToastContext } from '@/app/contexts/ToastContext';
 import { useAuthGate } from '@/app/contexts/AuthGateContext';
+import { getEquipmentCategorySuggestions } from '@/lib/equipment-categories';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -121,55 +122,32 @@ function MuscleGroupButtons({
 	onToggle: (id: number) => void;
 	loading: boolean;
 }) {
-	const [query, setQuery] = useState('');
-	const filteredCategories = useMemo(() => {
-		const normalizedQuery = query.trim().toLowerCase();
-		if (!normalizedQuery) return categories;
-		return categories.filter((category) => category.name.toLowerCase().includes(normalizedQuery));
-	}, [categories, query]);
-
 	if (loading) {
 		return <p className="text-sub mt-2 text-xs">Loading muscle groups...</p>;
 	}
 
 	return (
-		<div className="mt-2 flex flex-col gap-2">
-			<div className="border-border flex items-center gap-2 rounded-lg border px-2.5 py-2">
-				<Search className="text-sub h-3.5 w-3.5 shrink-0" />
-				<input
-					value={query}
-					onChange={(event) => setQuery(event.target.value)}
-					placeholder="Search muscle groups"
-					className="text-main placeholder:text-sub w-full bg-transparent text-xs outline-none"
-				/>
-			</div>
-
-			<div className="flex max-h-28 flex-wrap gap-2 overflow-y-auto pr-1">
-				{filteredCategories.map((category) => {
-					const selected = selectedIds.includes(category.id);
-
-					return (
-						<button
-							key={category.id}
-							type="button"
-							onClick={() => onToggle(category.id)}
-							className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition ${
-								selected
-									? 'bg-main text-bg border-transparent'
-									: 'border-border text-sub hover:text-main'
-							}`}
-						>
-							{category.name}
-						</button>
-					);
-				})}
-				{categories.length === 0 && (
-					<p className="text-sub py-1 text-xs">No muscle groups available yet.</p>
-				)}
-				{categories.length > 0 && filteredCategories.length === 0 && (
-					<p className="text-sub py-1 text-xs">No matching muscle groups.</p>
-				)}
-			</div>
+		<div className="mt-2 flex flex-wrap gap-2">
+			{categories.map((category) => {
+				const selected = selectedIds.includes(category.id);
+				return (
+					<button
+						key={category.id}
+						type="button"
+						onClick={() => onToggle(category.id)}
+						className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition ${
+							selected
+								? 'bg-main text-bg border-transparent'
+								: 'border-border text-sub hover:text-main'
+						}`}
+					>
+						{category.name}
+					</button>
+				);
+			})}
+			{categories.length === 0 && (
+				<p className="text-sub py-1 text-xs">No muscle groups available yet.</p>
+			)}
 		</div>
 	);
 }
@@ -276,6 +254,19 @@ export default function NewMachineCard({ onCreated }: Props) {
 		};
 	}, [brand, brands, addToast]);
 
+	useEffect(() => {
+		if (muscleGroupsLoading) return;
+		const suggested = getEquipmentCategorySuggestions(name);
+		if (!suggested) {
+			setSelectedMuscleIds([]);
+			return;
+		}
+		const ids = muscleGroups
+			.filter((mg) => suggested.muscles.includes(mg.name))
+			.map((mg) => mg.id);
+		setSelectedMuscleIds(ids);
+	}, [name, muscleGroups, muscleGroupsLoading]);
+
 	const slug = [brand, series, name].filter(Boolean).map(toSlug).join('-');
 	const isValid = !!name && !!brand && !!series && !!type;
 
@@ -363,42 +354,44 @@ export default function NewMachineCard({ onCreated }: Props) {
 	const submitProps = { isValid, isCreating, onClick: handleCreate };
 
 	return (
-		<div className="w-full">
-			{/* ── Desktop Bento Layout ── */}
-			<div
-				className="hidden sm:grid sm:grid-cols-4 sm:gap-3"
-				style={{ gridTemplateRows: '160px 160px auto 56px auto' }}
-			>
-				<ImageTile
-					preview={imagePreview}
-					onImageChange={handleImageChange}
-					className="col-span-2 row-span-2"
-				/>
+		<div className="mx-auto w-full max-w-2xl">
+			{/* ── Desktop Layout ── */}
+			<div className="hidden flex-col gap-3 sm:flex">
+				<div className="grid grid-cols-2 gap-3">
+					<ImageTile
+						preview={imagePreview}
+						onImageChange={handleImageChange}
+						className="aspect-square w-full"
+					/>
 
-				<div className="border-border bg-surface col-span-2 row-span-2 flex flex-col justify-between rounded-2xl border p-5">
 					<div className="flex flex-col gap-3">
-						<BrandSeriesRow {...brandSeriesProps} />
-						<input
-							value={name}
-							onChange={(e) => setName(e.target.value)}
-							placeholder="Machine name"
-							className={`${bareInputCls} text-main text-2xl font-semibold leading-tight`}
-						/>
+						<div className="border-border bg-surface flex flex-1 flex-col justify-between rounded-2xl border p-5">
+							<div className="flex flex-col gap-3">
+								<BrandSeriesRow {...brandSeriesProps} />
+								<input
+									value={name}
+									onChange={(e) => setName(e.target.value)}
+									placeholder="Machine name"
+									className={`${bareInputCls} text-main text-2xl font-semibold leading-tight`}
+								/>
+							</div>
+							{slug && <p className="text-sub mt-2 truncate text-[11px]">{slug}</p>}
+						</div>
+
+						<div className="grid grid-cols-2 gap-3">
+							<div className={tileCls}>
+								<p className={labelCls}>type</p>
+								<TypeButtons type={type} setType={setType} col />
+							</div>
+							<div className={tileCls}>
+								<p className={labelCls}>resistance</p>
+								<ResistanceButtons resistance={resistance} setResistance={setResistance} col />
+							</div>
+						</div>
 					</div>
-					{slug && <p className="text-sub mt-2 truncate text-[11px]">{slug}</p>}
 				</div>
 
-				<div className={`${tileCls} col-span-2`}>
-					<p className={labelCls}>type</p>
-					<TypeButtons type={type} setType={setType} />
-				</div>
-
-				<div className={`${tileCls} col-span-2`}>
-					<p className={labelCls}>resistance</p>
-					<ResistanceButtons resistance={resistance} setResistance={setResistance} />
-				</div>
-
-				<div className={`${tileCls} col-span-4`}>
+				<div className={tileCls}>
 					<p className={labelCls}>muscle groups</p>
 					<MuscleGroupButtons
 						categories={muscleGroups}
@@ -408,15 +401,12 @@ export default function NewMachineCard({ onCreated }: Props) {
 					/>
 				</div>
 
-				<div className="border-border bg-sub-alt col-span-4 flex items-center gap-4 rounded-2xl border px-4 py-3">
+				<div className="border-border bg-sub-alt flex items-center gap-4 rounded-2xl border px-4 py-3">
 					<p className={`${labelCls} shrink-0`}>your rating</p>
-					<RatingRow
-						rating={userRating}
-						setRating={setUserRating}
-					/>
+					<RatingRow rating={userRating} setRating={setUserRating} />
 				</div>
 
-				<SubmitButton {...submitProps} className="col-span-4" />
+				<SubmitButton {...submitProps} />
 			</div>
 
 			{/* ── Mobile Stack Layout ── */}

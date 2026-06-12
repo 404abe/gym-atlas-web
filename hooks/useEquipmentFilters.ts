@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Equipment } from '@/types/equipment';
 import type { BestInClassCategory as Category } from '@/types/bestInClass';
 import { matchesSearch } from '@/lib/utils';
+import { getEquipmentCategorySuggestions } from '@/lib/equipment-categories';
 
 export type EquipmentSortField = 'id' | 'brand' | 'name' | 'resistance_profile' | 'rating';
 
@@ -47,7 +48,13 @@ export function useEquipmentFilters(
 					if (!cat) return true;
 					const catName = cat.name.toLowerCase();
 					const eqName = e.name?.toLowerCase() ?? '';
-					return eqName.includes(catName) || catName.includes(eqName);
+					if (eqName.includes(catName) || catName.includes(eqName)) return true;
+					const suggested = getEquipmentCategorySuggestions(e.name ?? '');
+					if (suggested) {
+						if (cat.type === 'muscle_group') return suggested.muscles.includes(cat.name);
+						if (cat.type === 'exercise') return suggested.exercises.includes(cat.name);
+					}
+					return false;
 				})();
 				return (
 					searchMatch &&
