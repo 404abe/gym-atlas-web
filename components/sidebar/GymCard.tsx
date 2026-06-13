@@ -85,81 +85,80 @@ export default function GymCard({
 				selected ? 'bg-sub-alt' : 'hover:bg-surface'
 			}`}
 		>
-			<div className="flex items-start justify-between gap-3">
-				<div className="min-w-0 flex-1">
-					{/* Name + profile link */}
-					<div className="flex items-center gap-1.5">
-						<button
-							type="button"
-							onClick={(e) => {
-								e.stopPropagation();
-								router.push(`/gyms/${gym.id}`);
-							}}
-							className="text-text min-w-0 truncate text-left text-sm font-medium transition hover:text-main"
-						>
-							{gym.name}
-						</button>
-						<button
-							onClick={(e) => {
-								e.stopPropagation();
-								router.push(`/gyms/${gym.id}`);
-							}}
-							aria-label="View gym profile"
-							className="text-sub hover:text-main shrink-0 transition"
-						>
-							<ArrowRight className="h-3.5 w-3.5" />
-						</button>
-					</div>
-
-					{/* Location + distance */}
-					<div className="text-sub mt-0.5 flex flex-wrap items-center gap-2.5">
-						{gym.city && (
-							<div className="flex items-center gap-1">
-								<MapPin className="h-3 w-3 shrink-0" />
-								<span className="text-xs">{gym.city}</span>
-							</div>
-						)}
-						{distance !== null && (
-							<div className="flex items-center gap-1">
-								<Navigation className="h-3 w-3 shrink-0" />
-								<span className="text-xs">{formatDistance(distance)}</span>
-							</div>
-						)}
-					</div>
-
-					{/* Stats + rating row */}
-					<div className="mt-2 flex flex-wrap items-center gap-3">
-						<div className="flex items-center gap-1">
-							<Dumbbell className="text-sub h-3.5 w-3.5 shrink-0" />
-							<span className="text-sub text-xs">
-								{gym.total_equipment ?? 0} machines · {gym.unique_machines ?? 0} unique
-							</span>
-						</div>
-
-						{gym.rating ? (
-							<div className="flex items-center gap-1">
-								<Star className="fill-accent stroke-accent h-3.5 w-3.5" />
-								<span className="text-sub text-xs">{gym.rating}</span>
-							</div>
-						) : null}
-					</div>
+			{/* Top row: thumbnail + name + arrow */}
+			<div className="flex items-end gap-2.5">
+				<div className="border-border bg-sub-alt flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border">
+					{gym.image_url ? (
+						<img src={gym.image_url} alt={gym.name} className="h-full w-full object-cover" />
+					) : (
+						<Dumbbell className="text-sub h-3.5 w-3.5" />
+					)}
 				</div>
 
-				{/* Favourite */}
+				<div className="min-w-0 flex-1">
+					<span className="text-sub text-xs leading-none">{gym.city ?? 'Gym'}</span>
+					{distance !== null && (
+						<p className="text-sub mt-0.5 flex items-center gap-0.5 text-xs">
+							<Navigation className="h-2.5 w-2.5 shrink-0" />
+							{formatDistance(distance)}
+						</p>
+					)}
+				</div>
+
+				{/* Arrow — top right */}
+				<button
+					onClick={(e) => {
+						e.stopPropagation();
+						router.push(`/gyms/${gym.id}`);
+					}}
+					aria-label="View gym profile"
+					className="border-border bg-sub-alt text-sub hover:text-main self-start shrink-0 rounded-md border p-1 transition"
+				>
+					<ArrowRight className="h-3.5 w-3.5" />
+				</button>
+			</div>
+
+			{/* Gym name */}
+			<p className="text-text mt-2.5 truncate text-sm font-semibold leading-tight">
+				{gym.name}
+			</p>
+
+			{/* Tags */}
+			<div className="mt-2 flex gap-1.5">
+				<span className="border-border text-sub flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs">
+					<Dumbbell className="h-2.5 w-2.5" />
+					{gym.total_equipment ?? 0} machines
+				</span>
+				{gym.unique_machines > 0 && (
+					<span className="border-border text-sub rounded-full border px-2 py-0.5 text-xs">
+						{gym.unique_machines} unique
+					</span>
+				)}
+			</div>
+
+			{/* Bottom row: favourite + rating */}
+			<div className="mt-2.5 flex items-center justify-between">
 				<button
 					id={`gym-card-${gym.id}-favourite-btn`}
 					onClick={handleHeartClick}
 					aria-label={favourited ? 'Remove from favourites' : 'Add to favourites'}
-					className="flex shrink-0 flex-col items-center gap-0.5 pt-0.5"
+					className="flex items-center gap-1"
 				>
 					<Heart
-						size={15}
+						size={13}
 						className={`transition-all duration-[--default-transition-duration] ${
 							favourited ? 'fill-red-500 stroke-red-500' : 'text-sub fill-none'
 						}`}
 					/>
 					<span className="text-sub text-xs">{formatHearts(favouriteCount)}</span>
 				</button>
+
+				<div className="flex items-center gap-1">
+					<Star
+						className={`h-3 w-3 ${gym.rating ? 'fill-accent stroke-accent' : 'text-sub fill-none'}`}
+					/>
+					<span className="text-sub text-xs">{gym.rating ?? '—'}</span>
+				</div>
 			</div>
 		</div>
 	);

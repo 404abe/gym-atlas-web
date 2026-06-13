@@ -72,7 +72,7 @@ function ExpandedRow({ item: e, index = 0, onToggleFavorite, onUpdateRating }: R
 							{[e.brand, e.series].filter(Boolean).join(' · ')}
 						</p>
 						<div className="mt-1 hidden sm:block">
-							<ResistanceProfile profile={e.resistance_profile} />
+							<ResistanceProfile profile={e.resistance_profile} curve={e.resistance_curve} />
 						</div>
 					</div>
 
@@ -135,7 +135,7 @@ function CompactRow({ item: e, onToggleFavorite, onUpdateRating }: RowProps) {
 				<TypeBadge type={e.type} />
 			</td>
 			<td className="hidden px-2 py-3 lg:table-cell lg:px-4">
-				<ResistanceProfile profile={e.resistance_profile} />
+				<ResistanceProfile profile={e.resistance_profile} curve={e.resistance_curve} />
 			</td>
 			<td className="px-2 py-3 sm:px-4">
 				<span className="text-sub text-sm sm:hidden">

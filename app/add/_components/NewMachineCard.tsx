@@ -17,6 +17,7 @@ import type { BestInClassCategory } from '@/types/bestInClass';
 import ImageTile from './ImageTile';
 import TypeButtons from './TypeButtons';
 import ResistanceButtons from './ResistanceButtons';
+import { DEFAULT_CURVE } from '@/components/ui/CustomCurveEditor';
 import RatingRow from './RatingRow';
 import { useToastContext } from '@/app/contexts/ToastContext';
 import { useAuthGate } from '@/app/contexts/AuthGateContext';
@@ -163,6 +164,7 @@ export default function NewMachineCard({ onCreated }: Props) {
 	const [name, setName] = useState('');
 	const [type, setType] = useState<Equipment['type'] | null>(null);
 	const [resistance, setResistance] = useState<Equipment['resistance_profile'] | null>(null);
+	const [resistanceCurve, setResistanceCurve] = useState<number[]>(DEFAULT_CURVE);
 	const [userRating, setUserRating] = useState(0);
 	const [imageFile, setImageFile] = useState<File | null>(null);
 	const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -301,7 +303,8 @@ export default function NewMachineCard({ onCreated }: Props) {
 				brand,
 				series,
 				type,
-				resistance_profile: resistance || undefined
+				resistance_profile: resistance || undefined,
+			resistance_curve: resistance === 'custom' ? resistanceCurve : undefined,
 			});
 
 			if (imageFile && created.id) await uploadEquipmentImage(created.id, imageFile);
@@ -328,6 +331,7 @@ export default function NewMachineCard({ onCreated }: Props) {
 			setName('');
 			setType(null);
 			setResistance(null);
+			setResistanceCurve(DEFAULT_CURVE);
 			setUserRating(0);
 			setImageFile(null);
 			setImagePreview(null);
@@ -385,7 +389,7 @@ export default function NewMachineCard({ onCreated }: Props) {
 							</div>
 							<div className={tileCls}>
 								<p className={labelCls}>resistance</p>
-								<ResistanceButtons resistance={resistance} setResistance={setResistance} col />
+								<ResistanceButtons resistance={resistance} setResistance={setResistance} curve={resistanceCurve} onCurveChange={setResistanceCurve} col />
 							</div>
 						</div>
 					</div>
@@ -437,7 +441,7 @@ export default function NewMachineCard({ onCreated }: Props) {
 					</div>
 					<div className={tileCls}>
 						<p className={labelCls}>resistance</p>
-						<ResistanceButtons resistance={resistance} setResistance={setResistance} col />
+						<ResistanceButtons resistance={resistance} setResistance={setResistance} curve={resistanceCurve} onCurveChange={setResistanceCurve} col />
 					</div>
 				</div>
 

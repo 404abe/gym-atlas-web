@@ -323,7 +323,7 @@ export default function EquipmentProfilePage() {
 						<div className="border-border bg-sub-alt flex flex-col justify-between rounded-2xl border p-3">
 							<p className="text-sub text-[11px]">resistance</p>
 							<div className="mt-1">
-								<ResistanceProfile profile={item.resistance_profile} />
+								<ResistanceProfile profile={item.resistance_profile} curve={item.resistance_curve} />
 							</div>
 						</div>
 					</div>

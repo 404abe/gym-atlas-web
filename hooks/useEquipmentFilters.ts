@@ -72,7 +72,7 @@ export function useEquipmentFilters(
 				if (sortField === 'brand') comparison = (a.brand || '').localeCompare(b.brand || '');
 				if (sortField === 'name') comparison = (a.name || '').localeCompare(b.name || '');
 				if (sortField === 'resistance_profile') {
-					const order = { constant: 0, ascending: 1, descending: 2, adjustable: 3 };
+					const order: Record<string, number> = { constant: 0, ascending: 1, descending: 2, adjustable: 3, custom: 4 };
 					comparison =
 						(order[a.resistance_profile || 'constant'] || 0) -
 						(order[b.resistance_profile || 'constant'] || 0);
