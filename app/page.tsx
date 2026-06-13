@@ -29,6 +29,7 @@ export default function Page() {
 
 	const displayCount = filteredGyms ? filteredGyms.length : gyms.length;
 	const countLabel = filteredGyms ? `${displayCount} gyms match` : `${displayCount} gyms`;
+	const filteredGymIds = filteredGyms ? new Set(filteredGyms.map((g) => g.id)) : null;
 
 	return (
 		<div className="flex h-full flex-col overflow-hidden bg-bg md:fixed md:inset-0 md:z-10">
@@ -74,6 +75,7 @@ export default function Page() {
 							selectedGym={selectedGym}
 							onSelectGym={setSelectedGym}
 							userLocation={userLocation}
+							filteredGymIds={filteredGymIds}
 						/>
 					</div>
 				</div>
@@ -155,6 +157,7 @@ export default function Page() {
 						selectedGym={selectedGym}
 						onSelectGym={setSelectedGym}
 						userLocation={userLocation}
+						filteredGymIds={filteredGymIds}
 					/>
 				</div>
 			</div>
