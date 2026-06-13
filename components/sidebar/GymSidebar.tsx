@@ -31,7 +31,8 @@ export default function GymSidebar({
 	const userLocation = useUserLocation();
 	const { filteredGyms } = useGymFilter();
 
-	const baseGyms = Array.isArray(filteredGyms ?? gyms) ? (filteredGyms ?? gyms) : [];
+	const filteredGymIds = filteredGyms ? new Set(filteredGyms.map((g) => g.id)) : null;
+	const baseGyms = filteredGymIds ? gyms.filter((g) => filteredGymIds.has(g.id)) : gyms;
 	const displayGyms = userLocation
 		? [...baseGyms].sort((a, b) => {
 				if (!a.lat || !a.lng) return 1;

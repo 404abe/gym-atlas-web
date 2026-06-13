@@ -9,12 +9,14 @@ export default function MapView({
 	gyms,
 	selectedGym,
 	onSelectGym,
-	userLocation
+	userLocation,
+	filteredGymIds
 }: {
 	gyms: Gym[];
 	selectedGym: Gym | null;
 	onSelectGym: (gym: Gym) => void;
 	userLocation: { lat: number; lng: number } | null;
+	filteredGymIds?: Set<number> | null;
 }) {
 	const mapRef = useRef<MapRef>(null);
 	const { theme } = useTheme();
@@ -61,7 +63,13 @@ export default function MapView({
 						<div
 							onClick={() => onSelectGym(gym)}
 							className={`h-4 w-4 cursor-pointer rounded-full transition ${
-								selectedGym?.id === gym.id ? 'scale-125 bg-red-500' : 'bg-blue-500'
+								selectedGym?.id === gym.id
+									? 'scale-125 bg-red-500'
+									: filteredGymIds != null
+										? filteredGymIds.has(gym.id)
+											? 'bg-green-500'
+											: 'bg-gray-400 opacity-40'
+										: 'bg-blue-500'
 							}`}
 						/>
 					</Marker>
