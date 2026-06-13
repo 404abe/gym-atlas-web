@@ -22,9 +22,10 @@ export default function EquipmentSearch() {
 	const [expanded, setExpanded] = useState(false);
 	const [query, setQuery] = useState('');
 	const [equipment, setEquipment] = useState<Equipment[]>([]);
-	const [loading, setLoading] = useState(false);
 	const containerRef = useRef<HTMLDivElement>(null);
 	const inputRef = useRef<HTMLInputElement>(null);
+	const selectedEquipmentRef = useRef(selectedEquipment);
+	selectedEquipmentRef.current = selectedEquipment;
 
 	const hasResults = filteredGyms !== null;
 
@@ -54,7 +55,7 @@ export default function EquipmentSearch() {
 	const collapse = () => {
 		setExpanded(false);
 		setQuery('');
-		if (selectedEquipment.length === 0) setFilteredGyms(null);
+		if (selectedEquipmentRef.current.length === 0) setFilteredGyms(null);
 	};
 
 	const open = () => {
@@ -68,13 +69,7 @@ export default function EquipmentSearch() {
 			? selectedEquipment.filter((e) => e.id !== item.id)
 			: [...selectedEquipment, item];
 		setSelectedEquipment(next);
-	};
-
-	const handleSearchClick = async () => {
-		setLoading(true);
-		await searchByEquipment(selectedEquipment);
-		setLoading(false);
-		collapse();
+		searchByEquipment(next);
 	};
 
 	const results = query.trim()
@@ -113,7 +108,7 @@ export default function EquipmentSearch() {
 						value={query}
 						onChange={(e) => setQuery(e.target.value)}
 						onKeyDown={(e) => {
-							if (e.key === 'Enter') handleSearchClick();
+							if (e.key === 'Enter') collapse();
 						}}
 						placeholder="Search machines..."
 						className="text-text flex-1 border-none bg-transparent text-[13px] outline-none"
@@ -214,40 +209,9 @@ export default function EquipmentSearch() {
 								);
 							})}
 
-							{/* ── Search action button ── */}
-							{selectedEquipment.length > 0 && (
-								<div className="border-border border-t px-2 py-2">
-									<button
-										onClick={handleSearchClick}
-										disabled={loading}
-										className="text-text w-full rounded-[var(--roundness)] bg-text/6 py-1.5 text-[12px] transition-colors hover:bg-text/10 disabled:opacity-50"
-									>
-										{loading
-											? 'Searching...'
-											: `Search ${selectedEquipment.length} machine${selectedEquipment.length > 1 ? 's' : ''}`}
-									</button>
-								</div>
-							)}
 						</div>
 					)}
 
-					{/* ── Search button when no query but items selected ── */}
-					{results.length === 0 && selectedEquipment.length > 0 && (
-						<div
-							className={cn(pillCls, 'z-200 absolute left-0 top-full px-2 py-2')}
-							style={{ width: 'var(--search-width)', marginTop: 'var(--search-gap)' }}
-						>
-							<button
-								onClick={handleSearchClick}
-								disabled={loading}
-								className="text-text w-full rounded-[var(--roundness)] bg-text/6 py-1.5 text-[12px] transition-colors hover:bg-text/10 disabled:opacity-50"
-							>
-								{loading
-									? 'Searching...'
-									: `Search ${selectedEquipment.length} machine${selectedEquipment.length > 1 ? 's' : ''}`}
-							</button>
-						</div>
-					)}
 
 					{/* ── Selected chips panel (desktop only) ── */}
 					{/* {selectedEquipment.length > 0 && (
