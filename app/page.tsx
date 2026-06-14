@@ -29,6 +29,7 @@ export default function Page() {
 
 	const displayCount = filteredGyms ? filteredGyms.length : gyms.length;
 	const countLabel = filteredGyms ? `${displayCount} gyms match` : `${displayCount} gyms`;
+	const displayedGyms = filteredGyms ?? gyms;
 
 	return (
 		<div className="flex h-full flex-col overflow-hidden bg-bg md:fixed md:inset-0 md:z-10">
@@ -70,10 +71,11 @@ export default function Page() {
 				<div className="z-0 shrink-0 px-3">
 					<div className="border-border relative h-[45vh] overflow-hidden rounded-2xl border">
 						<MapView
-							gyms={gyms}
+							gyms={displayedGyms}
 							selectedGym={selectedGym}
 							onSelectGym={setSelectedGym}
 							userLocation={userLocation}
+							isFiltered={filteredGyms !== null}
 						/>
 					</div>
 				</div>
@@ -151,10 +153,11 @@ export default function Page() {
 						</div>
 					)}
 					<MapView
-						gyms={gyms}
+						gyms={displayedGyms}
 						selectedGym={selectedGym}
 						onSelectGym={setSelectedGym}
 						userLocation={userLocation}
+						isFiltered={filteredGyms !== null}
 					/>
 				</div>
 			</div>
