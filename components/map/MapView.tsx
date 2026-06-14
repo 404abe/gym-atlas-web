@@ -13,19 +13,71 @@ type GymCluster = {
 	gyms: Gym[];
 };
 
-function getClusterCellSize(zoom: number) {
-	if (zoom < 5) return 3;
-	if (zoom < 7) return 1.4;
-	if (zoom < 9) return 0.7;
-	return 0.35;
+type MappedGym = {
+	gym: Gym;
+	lat: number;
+	lng: number;
+	x: number;
+	y: number;
+};
+
+function getClusterRadius(zoom: number) {
+	if (zoom < 5) return 104;
+	if (zoom < 6) return 82;
+	if (zoom < 7) return 64;
+	if (zoom < 8) return 48;
+	if (zoom < 9) return 34;
+	if (zoom < 10.2) return 22;
+	return 0;
+}
+
+function getClusterGeoRadiusKm(zoom: number) {
+	if (zoom < 5) return 300;
+	if (zoom < 6) return 130;
+	if (zoom < 7) return 55;
+	if (zoom < 8) return 38;
+	if (zoom < 9) return 22;
+	if (zoom < 10.2) return 12;
+	return 0;
+}
+
+function distanceInKm(a: Pick<MappedGym, 'lat' | 'lng'>, b: Pick<MappedGym, 'lat' | 'lng'>) {
+	const earthRadiusKm = 6371;
+	const latDelta = ((b.lat - a.lat) * Math.PI) / 180;
+	const lngDelta = ((b.lng - a.lng) * Math.PI) / 180;
+	const startLat = (a.lat * Math.PI) / 180;
+	const endLat = (b.lat * Math.PI) / 180;
+	const value =
+		Math.sin(latDelta / 2) ** 2 +
+		Math.cos(startLat) * Math.cos(endLat) * Math.sin(lngDelta / 2) ** 2;
+
+	return earthRadiusKm * 2 * Math.atan2(Math.sqrt(value), Math.sqrt(1 - value));
+}
+
+function projectToWorldPixels(lat: number, lng: number, zoom: number) {
+	const siny = Math.sin((lat * Math.PI) / 180);
+	const clampedSiny = Math.min(Math.max(siny, -0.9999), 0.9999);
+	const scale = 256 * 2 ** zoom;
+
+	return {
+		x: ((lng + 180) / 360) * scale,
+		y: (0.5 - Math.log((1 + clampedSiny) / (1 - clampedSiny)) / (4 * Math.PI)) * scale
+	};
 }
 
 function clusterGyms(gyms: Gym[], zoom: number): GymCluster[] {
 	const mappedGyms = gyms
-		.map((gym) => ({ gym, lat: Number(gym.lat), lng: Number(gym.lng) }))
+		.map((gym) => {
+			const lat = Number(gym.lat);
+			const lng = Number(gym.lng);
+			return { gym, lat, lng, ...projectToWorldPixels(lat, lng, zoom) };
+		})
 		.filter(({ lat, lng }) => Number.isFinite(lat) && Number.isFinite(lng));
 
-	if (zoom >= 10) {
+	const radius = getClusterRadius(zoom);
+	const geoRadius = getClusterGeoRadiusKm(zoom);
+
+	if (!radius) {
 		return mappedGyms.map(({ gym, lat, lng }) => ({
 			id: `gym-${gym.id}`,
 			lat,
@@ -34,53 +86,94 @@ function clusterGyms(gyms: Gym[], zoom: number): GymCluster[] {
 		}));
 	}
 
-	const cellSize = getClusterCellSize(zoom);
-	const buckets = new Map<string, Gym[]>();
+	const remaining = [...mappedGyms].sort((a, b) => a.lng - b.lng);
+	const clusters: MappedGym[][] = [];
 
-	mappedGyms.forEach(({ gym, lat, lng }) => {
-		const key = `${Math.round(lat / cellSize)}:${Math.round(lng / cellSize)}`;
-		buckets.set(key, [...(buckets.get(key) ?? []), gym]);
-	});
+	while (remaining.length) {
+		const seed = remaining.shift();
+		if (!seed) continue;
 
-	return Array.from(buckets.entries()).map(([key, bucket]) => {
-		const totals = bucket.reduce(
-			(acc, gym) => ({
-				lat: acc.lat + Number(gym.lat),
-				lng: acc.lng + Number(gym.lng)
+		const cluster = [seed];
+		let centerX = seed.x;
+		let centerY = seed.y;
+		let centerLat = seed.lat;
+		let centerLng = seed.lng;
+
+		for (let index = remaining.length - 1; index >= 0; index -= 1) {
+			const candidate = remaining[index];
+			const screenDistance = Math.hypot(candidate.x - centerX, candidate.y - centerY);
+			const geoDistance = distanceInKm(candidate, { lat: centerLat, lng: centerLng });
+			if (screenDistance > radius || geoDistance > geoRadius) continue;
+
+			cluster.push(candidate);
+			remaining.splice(index, 1);
+			centerX = cluster.reduce((sum, item) => sum + item.x, 0) / cluster.length;
+			centerY = cluster.reduce((sum, item) => sum + item.y, 0) / cluster.length;
+			centerLat = cluster.reduce((sum, item) => sum + item.lat, 0) / cluster.length;
+			centerLng = cluster.reduce((sum, item) => sum + item.lng, 0) / cluster.length;
+		}
+
+		clusters.push(cluster);
+	}
+
+	return clusters.map((cluster) => {
+		const gymsInCluster = cluster.map(({ gym }) => gym);
+		const totals = cluster.reduce(
+			(acc, { lat, lng }) => ({
+				lat: acc.lat + lat,
+				lng: acc.lng + lng
 			}),
 			{ lat: 0, lng: 0 }
 		);
+		const center = {
+			lat: totals.lat / gymsInCluster.length,
+			lng: totals.lng / gymsInCluster.length
+		};
+		const representative = cluster.reduce((closest, item) => {
+			const closestDistance = Math.hypot(closest.lat - center.lat, closest.lng - center.lng);
+			const itemDistance = Math.hypot(item.lat - center.lat, item.lng - center.lng);
+			return itemDistance < closestDistance ? item : closest;
+		}, cluster[0]);
 
 		return {
-			id: `cluster-${key}`,
-			lat: totals.lat / bucket.length,
-			lng: totals.lng / bucket.length,
-			gyms: bucket
+			id:
+				gymsInCluster.length > 1
+					? `cluster-${gymsInCluster.map((gym) => gym.id).sort().join('-')}`
+					: `gym-${gymsInCluster[0].id}`,
+			lat: representative.lat,
+			lng: representative.lng,
+			gyms: gymsInCluster
 		};
 	});
 }
 
+const FULL_CLUSTER_COUNT = 100;
+
 function ClusterMarker({ count, matched }: { count: number; matched: boolean }) {
+	const sizeClass = count < 4 ? 'h-[46px] w-[46px]' : count < 10 ? 'h-[50px] w-[50px]' : 'h-[54px] w-[54px]';
+	const innerClass = count < 4 ? 'inset-[13px]' : count < 10 ? 'inset-[14px]' : 'inset-[15px]';
+	const fill = Math.min(100, Math.round((count / FULL_CLUSTER_COUNT) * 100));
+
 	return (
 		<div
-			className={`relative grid h-[68px] w-[68px] place-items-center rounded-full border border-[#050606] bg-[#090a0a] ${
+			className={`map-marker-shell relative grid ${sizeClass} place-items-center rounded-full border border-[#050606] bg-[#090a0a] shadow-[0_10px_24px_rgb(0_0_0/0.32)] ${
 				matched ? '' : 'opacity-85'
 			}`}
 		>
 			<div
-				className="absolute inset-[5px] rounded-full"
+				className="absolute inset-[4px] rounded-full"
 				style={{
-					background: `conic-gradient(${matched ? '#3ee7a6' : '#6f7474'} 0 70%, #3c4041 70% 100%)`,
+					background: `conic-gradient(${matched ? '#3ee7a6' : '#6f7474'} 0 ${fill}%, #3c4041 ${fill}% 100%)`,
 					boxShadow: '0 0 0 2px #050606, inset 0 0 0 2px #050606'
 				}}
 			/>
 			<div
-				className="absolute inset-[18px] rounded-full bg-[#101111]"
+				className={`absolute ${innerClass} rounded-full bg-[#101111]`}
 				style={{
 					boxShadow: '0 0 0 2px #050606, inset 0 0 0 1px rgb(255 255 255 / 0.06)'
 				}}
 			/>
-			<strong className="relative z-10 text-lg font-semibold text-main">{count}</strong>
+			<strong className="relative z-10 text-sm font-semibold text-main">{count}</strong>
 		</div>
 	);
 }
@@ -131,7 +224,7 @@ export default function MapView({
 				mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
 				mapStyle={mapStyle}
 				style={{ width: '100%', height: '100%' }}
-				onMoveEnd={(event) => setZoom(event.viewState.zoom)}
+				onMove={(event) => setZoom(event.viewState.zoom)}
 			>
 				{clusters.map((cluster) => (
 					<Marker
@@ -147,11 +240,11 @@ export default function MapView({
 								onClick={() => {
 									mapRef.current?.flyTo({
 										center: [cluster.lng, cluster.lat],
-										zoom: Math.min(zoom + 2, 12),
-										duration: 800
+										zoom: Math.min(zoom + 1.35, 12),
+										duration: 1300
 									});
 								}}
-								className="cursor-pointer transition-transform hover:scale-105"
+								className="cursor-pointer opacity-95 transition duration-500 ease-out hover:scale-105 hover:opacity-100"
 							>
 								<ClusterMarker count={cluster.gyms.length} matched={isFiltered} />
 							</button>

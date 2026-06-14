@@ -38,7 +38,7 @@ export default function GymMarker({
 				type="button"
 				onClick={onClick}
 				aria-label={`Select ${gym.name}`}
-				className={`group relative grid h-[58px] w-[58px] place-items-center rounded-full border-2 border-[#050606] bg-[#070808] transition-transform duration-150 ${
+				className={`group relative z-20 grid h-[58px] w-[58px] place-items-center rounded-full border-2 border-[#050606] bg-[#070808] transition-transform duration-150 ${
 					selected ? 'scale-110' : 'hover:scale-105'
 				}`}
 			>
@@ -63,10 +63,7 @@ export default function GymMarker({
 
 			{selected && (
 				<>
-					<div className="mt-2 whitespace-nowrap rounded-full border border-white/12 bg-[#070808]/90 px-3 py-1.5 text-xs text-main">
-						{gym.name}
-					</div>
-					<div className="pointer-events-none absolute left-[68px] top-1/2 w-64 -translate-y-1/2 rounded-2xl border border-white/14 bg-[#0d0e0e]/95 p-3 text-left">
+					<div className="pointer-events-none absolute left-[84px] top-1/2 z-10 w-64 -translate-y-1/2 rounded-2xl border border-white/14 bg-[#0d0e0e]/95 p-3 text-left">
 						<div className="mb-2 flex items-center gap-2.5">
 							<div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full border-2 border-main bg-gradient-to-br from-[#e7ece9] to-[#75807c] text-[10px] font-bold text-[#151616]">
 								{gym.image_url ? (
