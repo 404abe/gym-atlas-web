@@ -150,7 +150,7 @@ export default function GymProfilePage() {
 
 	// ── Hero ── image-first; gym name, location, address + socials overlaid
 	const Hero = () => (
-		<div className="border-border bg-sub-alt relative aspect-[4/3] w-full overflow-hidden rounded-2xl border sm:aspect-auto sm:h-90">
+		<div className="bg-sub-alt relative aspect-[4/3] w-full overflow-hidden rounded-2xl sm:aspect-auto sm:h-90">
 			{imageUrl ? (
 				<img src={imageUrl} alt={gym.name} className="h-full w-full object-cover" />
 			) : (
@@ -168,7 +168,7 @@ export default function GymProfilePage() {
 			{/* Photo control — top left */}
 			{user ? (
 				<label className="absolute left-3 top-3 cursor-pointer">
-					<div className="border-border bg-surface/80 text-sub hover:text-main rounded-lg border px-3 py-1.5 text-xs backdrop-blur-sm transition">
+					<div className="bg-surface/80 text-sub hover:text-main rounded-lg px-3 py-1.5 text-xs backdrop-blur-sm transition">
 						{uploading ? 'Uploading...' : imageUrl ? 'Change photo' : 'Add photo'}
 					</div>
 					<input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
@@ -176,7 +176,7 @@ export default function GymProfilePage() {
 			) : (
 				<button
 					onClick={() => requireAuth('add a photo')}
-					className="border-border bg-surface/80 text-sub hover:text-main absolute left-3 top-3 rounded-lg border px-3 py-1.5 text-xs backdrop-blur-sm transition"
+					className="bg-surface/80 text-sub hover:text-main absolute left-3 top-3 rounded-lg px-3 py-1.5 text-xs backdrop-blur-sm transition"
 				>
 					{imageUrl ? 'Change photo' : 'Add photo'}
 				</button>
@@ -303,8 +303,8 @@ export default function GymProfilePage() {
 							<button
 								key={item.equipment_id}
 								onClick={() => !isPending && router.push(`/equipment/${item.equipment_id}`)}
-								className={`border-border bg-sub-alt group relative flex flex-col gap-1.5 rounded-xl border p-3 text-left transition ${
-									isPending ? 'cursor-default opacity-50' : 'hover:border-main/30'
+								className={`bg-sub-alt group relative flex flex-col gap-1.5 rounded-xl p-3 text-left transition ${
+									isPending ? 'cursor-default opacity-50' : ''
 								}`}
 							>
 								{item.image_url ? (
@@ -367,7 +367,7 @@ export default function GymProfilePage() {
 									isPending ? 'opacity-50' : 'hover:bg-main/5'
 								}`}
 							>
-								<div className="border-border bg-main/5 h-9 w-9 shrink-0 overflow-hidden rounded-lg border">
+								<div className="bg-main/5 h-9 w-9 shrink-0 overflow-hidden rounded-lg">
 									{item.image_url ? (
 										<img
 											src={item.image_url}
@@ -432,7 +432,7 @@ export default function GymProfilePage() {
 
 						{/* ── Stats ── */}
 						<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-							<div className="border-border bg-sub-alt flex flex-col justify-between rounded-2xl border p-3">
+							<div className="bg-sub-alt flex flex-col justify-between rounded-2xl p-3">
 								<p className="text-sub text-[11px]">rating</p>
 								<p className="text-main text-xl font-semibold">
 									{avgRating ? avgRating.toFixed(1) : '—'}
@@ -448,22 +448,22 @@ export default function GymProfilePage() {
 									</div>
 								)}
 							</div>
-							<div className="border-border bg-sub-alt flex flex-col justify-between rounded-2xl border p-3">
+							<div className="bg-sub-alt flex flex-col justify-between rounded-2xl p-3">
 								<p className="text-sub text-[11px]">favourites</p>
 								<p className="text-main text-xl font-semibold">{gym.favourites ?? 0}</p>
 							</div>
-							<div className="border-border bg-sub-alt flex flex-col justify-between rounded-2xl border p-3">
+							<div className="bg-sub-alt flex flex-col justify-between rounded-2xl p-3">
 								<p className="text-sub text-[11px]">equipment</p>
 								<p className="text-main text-xl font-semibold">{gym.total_equipment}</p>
 							</div>
-							<div className="border-border bg-sub-alt flex flex-col justify-between rounded-2xl border p-3">
+							<div className="bg-sub-alt flex flex-col justify-between rounded-2xl p-3">
 								<p className="text-sub text-[11px]">unique</p>
 								<p className="text-main text-xl font-semibold">{gym.unique_machines}</p>
 							</div>
 						</div>
 
 						{/* ── Equipment ── */}
-						<div className="border-border bg-surface rounded-2xl border p-4">
+						<div className="bg-surface rounded-2xl p-4">
 							<div className="mb-3 flex items-center justify-between">
 								<h2 className="text-main text-sm font-semibold">Equipment ({equipment.length})</h2>
 								<div className="flex items-center gap-1">

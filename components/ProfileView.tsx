@@ -173,7 +173,7 @@ export default function ProfileView({
 								<Link
 									key={b.id}
 									href={`/equipment/${b.equipment_id}`}
-									className="border-border bg-sub-alt hover:border-main/30 group flex flex-col gap-1.5 rounded-xl border p-3 transition"
+									className="bg-sub-alt group flex flex-col gap-1.5 rounded-xl p-3 transition"
 								>
 									{b.image_url ? (
 										<img

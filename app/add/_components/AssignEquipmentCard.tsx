@@ -117,7 +117,7 @@ export default function AssignEquipmentCard({ gyms, equipment, preselectedEquipm
 							}}
 							onFocus={() => setShowGymDropdown(true)}
 							placeholder="Search gym..."
-							className="bg-main/5 border-main/10 text-main placeholder:text-sub focus:border-main/30 h-9 w-full rounded-lg border pl-9 pr-8 text-sm outline-none"
+							className="bg-main/5 text-main placeholder:text-sub h-9 w-full rounded-lg pl-9 pr-8 text-sm outline-none"
 						/>
 						{gymSearch && (
 							<button
@@ -133,7 +133,7 @@ export default function AssignEquipmentCard({ gyms, equipment, preselectedEquipm
 						)}
 					</div>
 					{showGymDropdown && gymSearch && filteredGyms.length > 0 && (
-						<div className="bg-sub-alt border-main/10 absolute z-10 mt-1 max-h-44 w-full overflow-y-auto rounded-lg border shadow-lg">
+						<div className="bg-sub-alt absolute z-10 mt-1 max-h-44 w-full overflow-y-auto rounded-lg shadow-lg">
 							{filteredGyms.slice(0, 6).map((gym) => (
 								<button
 									key={gym.id}
@@ -166,7 +166,7 @@ export default function AssignEquipmentCard({ gyms, equipment, preselectedEquipm
 							}}
 							onFocus={() => setShowEquipDropdown(true)}
 							placeholder="Search equipment..."
-							className="bg-main/5 border-main/10 text-main placeholder:text-sub focus:border-main/30 h-9 w-full rounded-lg border pl-9 pr-8 text-sm outline-none"
+							className="bg-main/5 text-main placeholder:text-sub h-9 w-full rounded-lg pl-9 pr-8 text-sm outline-none"
 						/>
 						{equipSearch && (
 							<button
@@ -182,7 +182,7 @@ export default function AssignEquipmentCard({ gyms, equipment, preselectedEquipm
 						)}
 					</div>
 					{showEquipDropdown && equipSearch && filteredEquipment.length > 0 && (
-						<div className="bg-sub-alt border-main/10 absolute z-10 mt-1 max-h-44 w-full overflow-y-auto rounded-lg border shadow-lg">
+						<div className="bg-sub-alt absolute z-10 mt-1 max-h-44 w-full overflow-y-auto rounded-lg shadow-lg">
 							{filteredEquipment.slice(0, 6).map((item) => (
 								<button
 									key={item.id}
@@ -209,7 +209,7 @@ export default function AssignEquipmentCard({ gyms, equipment, preselectedEquipm
 						min={1}
 						value={quantity}
 						onChange={(e) => setQuantity(Number(e.target.value))}
-						className="bg-main/5 border-main/10 text-main focus:border-main/30 h-9 w-full rounded-lg border px-3 text-sm outline-none"
+						className="bg-main/5 text-main h-9 w-full rounded-lg px-3 text-sm outline-none"
 					/>
 				</div>
 

@@ -12,7 +12,7 @@ import { useUserLocation } from '@/hooks/useUserLocation';
 import { cn } from '@/lib/utils';
 
 const pillCls =
-	'flex items-center bg-[var(--pill-bg)] border-[0.5px] border-[var(--border-color)] rounded-lg backdrop-blur pointer-events-auto';
+	'flex items-center bg-[var(--pill-bg)]  rounded-lg backdrop-blur pointer-events-auto';
 
 export default function GymSidebar({
 	gyms,

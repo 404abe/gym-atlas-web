@@ -190,7 +190,7 @@ export default function BestInClassPage() {
 						</div>
 
 						{/* Search input */}
-						<div className="border-border bg-sub-alt flex items-center gap-2 rounded-xl border px-3 py-2">
+						<div className="bg-sub-alt flex items-center gap-2 rounded-xl px-3 py-2">
 							<Search className="text-sub h-4 w-4 shrink-0" />
 							<input
 								autoFocus

@@ -9,7 +9,7 @@ import { useGymFilter } from '@/app/contexts/GymFilterContext';
 import type { Equipment } from '@/types/equipment';
 
 const pillCls =
-	'flex items-center bg-surface border-[0.5px] border-border rounded-lg backdrop-blur pointer-events-auto';
+	'flex items-center bg-surface rounded-lg backdrop-blur pointer-events-auto';
 
 export default function EquipmentSearch() {
 	const {

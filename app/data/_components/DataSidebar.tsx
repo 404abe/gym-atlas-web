@@ -73,7 +73,7 @@ export default function DataSidebar({
 				{/* Equipment */}
 				<div className="bg-sub-alt space-y-0.5 rounded-2xl p-3">
 					<NavButton
-						active={activeView === 'equipment' && selectedType === 'all' && !selectedCategory}
+						active={activeView === 'equipment' && selectedType === 'all' && (!selectedCategory || selectedCategory === 'all')}
 						onClick={() => onSelectEquipmentFilter?.('all')}
 						count={equipmentCount}
 					>
@@ -98,7 +98,7 @@ export default function DataSidebar({
 				<div className="bg-sub-alt rounded-2xl p-3">
 					<button
 						onClick={() => setShowCats((p) => !p)}
-						className="text-main mb-2 flex w-full items-center justify-between px-1 text-xs font-semibold"
+						className="text-sub mb-2 flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition hover:bg-main/5 hover:text-main"
 					>
 						<span>Filter by category</span>
 						<ChevronDown

@@ -17,7 +17,7 @@ const icons = {
 const styles = {
 	success: 'bg-green-600 text-white',
 	error: 'bg-red-600 text-white',
-	info: 'bg-surface border border-border text-main',
+	info: 'bg-surface text-main',
 };
 
 function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) => void }) {

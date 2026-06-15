@@ -134,7 +134,7 @@ export default function GymTable({
 										className={`flex items-center gap-3 rounded-xl px-4 py-3 ${index % 2 === 0 ? 'bg-sub-alt' : ''}`}
 									>
 										{/* Gym image */}
-										<div className="bg-main/5 border-border h-14 w-14 shrink-0 overflow-hidden rounded-xl border">
+										<div className="bg-main/5 h-14 w-14 shrink-0 overflow-hidden rounded-xl">
 											{gym.image_url ? (
 												<img
 													src={gym.image_url}

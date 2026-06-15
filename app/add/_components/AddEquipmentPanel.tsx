@@ -72,7 +72,7 @@ export default function AddEquipmentPanel({
 	};
 
 	return (
-		<div className="border-border bg-sub-alt mb-3 mt-2 rounded-xl border p-3">
+		<div className="bg-sub-alt mb-3 mt-2 rounded-xl p-3">
 			{/* Search */}
 			<div className="relative mb-3">
 				<Search className="text-sub pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2" />
@@ -82,7 +82,7 @@ export default function AddEquipmentPanel({
 					value={query}
 					onChange={(e) => setQuery(e.target.value)}
 					placeholder="Search equipment…"
-					className="bg-surface border-border text-main placeholder:text-sub focus:border-main/40 h-9 w-full rounded-lg border pl-8 pr-8 text-xs outline-none transition"
+					className="bg-surface text-main placeholder:text-sub h-9 w-full rounded-lg pl-8 pr-8 text-xs outline-none transition"
 					autoComplete="off"
 				/>
 				{query && (
@@ -109,10 +109,10 @@ export default function AddEquipmentPanel({
 							return (
 								<div
 									key={item.id}
-									className="border-border bg-surface flex items-center gap-3 rounded-xl border p-2.5"
+									className="bg-surface flex items-center gap-3 rounded-xl p-2.5"
 								>
 									{/* Thumbnail */}
-									<div className="bg-sub-alt border-border h-14 w-14 shrink-0 overflow-hidden rounded-lg border">
+									<div className="bg-sub-alt h-14 w-14 shrink-0 overflow-hidden rounded-lg">
 										{item.image_url ? (
 											<img
 												src={item.image_url}

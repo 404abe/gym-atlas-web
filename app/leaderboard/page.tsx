@@ -100,7 +100,7 @@ export default function LeaderboardPage() {
 
 			{/* List */}
 			{sorted.length === 0 ? (
-				<div className="border-border bg-surface rounded-2xl border p-8 text-center">
+				<div className="bg-surface rounded-2xl p-8 text-center">
 					<p className="text-sub text-sm">No contributions yet</p>
 				</div>
 			) : (
@@ -126,7 +126,7 @@ export default function LeaderboardPage() {
 								key={entry.id}
 								id={`leaderboard-entry-${entry.id}`}
 								href={`/profile/${entry.username}`}
-								className="border-border bg-surface hover:border-main/30 flex cursor-pointer items-center gap-4 rounded-xl border p-4 transition-colors"
+								className="bg-surface flex cursor-pointer items-center gap-4 rounded-xl p-4 transition-colors"
 							>
 								{/* Rank */}
 								<div

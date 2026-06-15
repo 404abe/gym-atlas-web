@@ -48,10 +48,10 @@ export default function BottomNav() {
 			>
 				<div
 					className={cn(
-						'-translate-y-3 flex h-12 w-12 items-center justify-center rounded-full border',
+						'-translate-y-3 flex h-12 w-12 items-center justify-center rounded-full',
 						active('/add')
-							? 'border-main bg-main/20 text-main'
-							: 'border-border bg-surface text-sub'
+							? 'bg-main/20 text-main'
+							: 'bg-surface text-sub'
 					)}
 				>
 					<Plus size={22} />

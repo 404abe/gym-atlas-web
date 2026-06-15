@@ -62,7 +62,7 @@ export function AuthGateProvider({ children }: { children: ReactNode }) {
 					/>
 
 					{/* Card */}
-					<div className="border-border bg-surface relative w-full max-w-sm rounded-2xl border p-6 shadow-xl">
+					<div className="bg-surface relative w-full max-w-sm rounded-2xl p-6 shadow-xl">
 						<button
 							onClick={close}
 							className="text-sub hover:text-main absolute right-4 top-4 transition"

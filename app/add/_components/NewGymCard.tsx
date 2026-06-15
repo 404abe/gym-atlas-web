@@ -36,7 +36,7 @@ export default function NewGymCard({ onCreated }: Props) {
 	const wrapperRef = useRef<HTMLDivElement>(null);
 
 	// Styling Presets matching NewMachineCard
-	const tileCls = 'border-border bg-sub-alt flex flex-col justify-between rounded-2xl border p-3';
+	const tileCls = 'bg-sub-alt flex flex-col justify-between rounded-2xl p-3';
 	const labelCls = 'text-sub text-[11px] mb-1';
 	const bareInputCls =
 		'bg-transparent text-main placeholder:text-sub w-full border-none outline-none font-[inherit]';
@@ -143,7 +143,7 @@ export default function NewGymCard({ onCreated }: Props) {
 				style={{ gridTemplateRows: '120px auto 56px auto' }}
 			>
 				{/* Header Tile Block */}
-				<div className="border-border bg-surface col-span-2 flex flex-col justify-center rounded-2xl border p-5">
+				<div className="bg-surface col-span-2 flex flex-col justify-center rounded-2xl p-5">
 					<div className="flex items-center gap-3">
 						<div className="bg-main flex h-8 w-8 items-center justify-center rounded-xl">
 							<MapPin className="text-bg h-4 w-4" />
@@ -183,7 +183,7 @@ export default function NewGymCard({ onCreated }: Props) {
 					/>
 
 					{showSuggestions && suggestions.length > 0 && (
-						<ul className="border-border bg-surface absolute left-0 top-full z-50 mt-1 max-h-48 w-full overflow-y-auto rounded-xl border p-1 shadow-lg">
+						<ul className="bg-surface absolute left-0 top-full z-50 mt-1 max-h-48 w-full overflow-y-auto rounded-xl p-1 shadow-lg">
 							{suggestions.map((suggestion, index) => (
 								<li
 									key={index}
@@ -198,7 +198,7 @@ export default function NewGymCard({ onCreated }: Props) {
 				</div>
 
 				{/* Spatial Mapping Readout Sub-Bar */}
-				<div className="border-border bg-sub-alt text-sub col-span-4 flex items-center justify-between rounded-2xl border px-4 py-3 text-[11px]">
+				<div className="bg-sub-alt text-sub col-span-4 flex items-center justify-between rounded-2xl px-4 py-3 text-[11px]">
 					<span>
 						City: <span className="text-main font-medium">{city || 'Unresolved'}</span>
 					</span>
@@ -219,7 +219,7 @@ export default function NewGymCard({ onCreated }: Props) {
 
 			{/* ── Mobile Stack Layout ── */}
 			<div className="flex flex-col gap-3 sm:hidden">
-				<div className="border-border bg-surface flex items-center gap-3 rounded-2xl border p-4">
+				<div className="bg-surface flex items-center gap-3 rounded-2xl p-4">
 					<div className="bg-main flex h-8 w-8 items-center justify-center rounded-xl">
 						<MapPin className="text-bg h-4 w-4" />
 					</div>
@@ -255,7 +255,7 @@ export default function NewGymCard({ onCreated }: Props) {
 					/>
 
 					{showSuggestions && suggestions.length > 0 && (
-						<ul className="border-border bg-surface absolute left-0 top-full z-50 mt-1 max-h-48 w-full overflow-y-auto rounded-xl border p-1 shadow-lg">
+						<ul className="bg-surface absolute left-0 top-full z-50 mt-1 max-h-48 w-full overflow-y-auto rounded-xl p-1 shadow-lg">
 							{suggestions.map((suggestion, index) => (
 								<li
 									key={index}
@@ -269,7 +269,7 @@ export default function NewGymCard({ onCreated }: Props) {
 					)}
 				</div>
 
-				<div className="border-border bg-sub-alt text-sub flex flex-col gap-1 rounded-2xl border p-3 text-[11px]">
+				<div className="bg-sub-alt text-sub flex flex-col gap-1 rounded-2xl p-3 text-[11px]">
 					<div className="flex justify-between">
 						<span>City:</span>
 						<span className="text-main font-medium">{city || 'Unresolved'}</span>

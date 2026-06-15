@@ -3,7 +3,7 @@
 import { Gym } from '@/types/gym';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { favouriteGym, unfavouriteGym } from '@/lib/api';
-import { Heart, Star, Dumbbell, MapPin, Navigation, ArrowRight } from 'lucide-react';
+import { Heart, Star, Dumbbell, Navigation, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -87,7 +87,7 @@ export default function GymCard({
 		>
 			{/* Top row: thumbnail + name + arrow */}
 			<div className="flex items-end gap-2.5">
-				<div className="border-border bg-sub-alt flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border">
+				<div className="bg-sub-alt flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg">
 					{gym.image_url ? (
 						<img src={gym.image_url} alt={gym.name} className="h-full w-full object-cover" />
 					) : (
@@ -112,7 +112,7 @@ export default function GymCard({
 						router.push(`/gyms/${gym.id}`);
 					}}
 					aria-label="View gym profile"
-					className="border-border bg-sub-alt text-sub hover:text-main self-start shrink-0 rounded-md border p-1 transition"
+					className="bg-sub-alt text-sub hover:text-main self-start shrink-0 rounded-md p-1 transition"
 				>
 					<ArrowRight className="h-3.5 w-3.5" />
 				</button>

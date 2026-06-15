@@ -10,10 +10,8 @@ import NotificationDrawer from '../NotificationDrawer';
 import GymAtlasLogo from '../ui/GymAtlasLogo';
 import ThemeToggle from '../ui/ThemeToggle';
 
-
-
 const pillCls =
-	'flex items-center bg-[var(--pill-bg)] border-[0.5px] border-[var(--border-color)] rounded-lg backdrop-blur pointer-events-auto';
+	'flex items-center bg-[var(--pill-bg)]  rounded-lg backdrop-blur pointer-events-auto';
 
 const iconLinkCls =
 	'flex items-center justify-center w-[var(--hit-size)] h-[var(--hit-size)] rounded-[var(--roundness)] text-sub hover:text-text transition-colors duration-[0.22s] no-underline';

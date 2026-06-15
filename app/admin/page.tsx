@@ -246,7 +246,7 @@ export default function AdminPage() {
 								return (
 									<div
 										key={e.id}
-										className={`border-border bg-surface flex items-center gap-4 rounded-2xl border p-4 transition-opacity duration-300 ${
+										className={`bg-surface flex items-center gap-4 rounded-2xl p-4 transition-opacity duration-300 ${
 											state === 'done' ? 'opacity-0' : 'opacity-100'
 										}`}
 									>
@@ -306,7 +306,7 @@ export default function AdminPage() {
 								return (
 									<div
 										key={g.id}
-										className={`border-border bg-surface flex items-center gap-4 rounded-2xl border p-4 transition-opacity duration-300 ${
+										className={`bg-surface flex items-center gap-4 rounded-2xl p-4 transition-opacity duration-300 ${
 											state === 'done' ? 'opacity-0' : 'opacity-100'
 										}`}
 									>
@@ -351,7 +351,7 @@ export default function AdminPage() {
 								return (
 									<div
 										key={s.id}
-										className={`border-border bg-surface flex items-center gap-4 rounded-2xl border p-4 transition-opacity duration-300 ${
+										className={`bg-surface flex items-center gap-4 rounded-2xl p-4 transition-opacity duration-300 ${
 											state === 'done' ? 'opacity-0' : 'opacity-100'
 										}`}
 									>
@@ -404,7 +404,7 @@ export default function AdminPage() {
 								return (
 									<div
 										key={p.id}
-										className={`border-border bg-surface flex items-center gap-4 rounded-2xl border p-4 transition-opacity duration-300 ${
+										className={`bg-surface flex items-center gap-4 rounded-2xl p-4 transition-opacity duration-300 ${
 											state === 'done' ? 'opacity-0' : 'opacity-100'
 										}`}
 									>
@@ -455,7 +455,7 @@ export default function AdminPage() {
 								return (
 									<div
 										key={v.id}
-										className={`border-border bg-surface flex items-center gap-4 rounded-2xl border p-4 transition-opacity duration-300 ${
+										className={`bg-surface flex items-center gap-4 rounded-2xl p-4 transition-opacity duration-300 ${
 											state === 'done' ? 'opacity-0' : 'opacity-100'
 										}`}
 									>
@@ -508,7 +508,7 @@ export default function AdminPage() {
 								return (
 									<div
 										key={w.id}
-										className={`border-border bg-surface flex items-center gap-4 rounded-2xl border p-4 transition-opacity duration-300 ${
+										className={`bg-surface flex items-center gap-4 rounded-2xl p-4 transition-opacity duration-300 ${
 											state === 'done' ? 'opacity-0' : 'opacity-100'
 										}`}
 									>
@@ -558,7 +558,7 @@ export default function AdminPage() {
 								return (
 									<div
 										key={gi.id}
-										className={`border-border bg-surface flex items-center gap-4 rounded-2xl border p-4 transition-opacity duration-300 ${
+										className={`bg-surface flex items-center gap-4 rounded-2xl p-4 transition-opacity duration-300 ${
 											state === 'done' ? 'opacity-0' : 'opacity-100'
 										}`}
 									>
@@ -611,7 +611,7 @@ export default function AdminPage() {
 							users.map((u) => (
 								<div
 									key={u.id}
-									className="border-border bg-surface flex items-center gap-4 rounded-2xl border p-4"
+									className="bg-surface flex items-center gap-4 rounded-2xl p-4"
 								>
 									<div className="bg-sub-alt flex h-10 w-10 shrink-0 items-center justify-center rounded-xl">
 										<Users className="text-sub h-4 w-4" />

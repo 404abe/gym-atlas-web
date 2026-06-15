@@ -53,7 +53,7 @@ export default function Combobox({
 			/>
 
 			{showDropdown && (
-				<div className="border-border bg-surface absolute left-0 top-full z-50 mt-1 max-h-48 w-40 overflow-y-auto rounded-xl border shadow-lg">
+				<div className="bg-surface absolute left-0 top-full z-50 mt-1 max-h-48 w-40 overflow-y-auto rounded-xl shadow-lg">
 					{loading ? (
 						<div className="text-sub flex items-center gap-2 px-3 py-2 text-xs">
 							<Loader2 className="h-3 w-3 animate-spin" />

@@ -6,7 +6,7 @@ import { FaCodeBranch } from 'react-icons/fa6';
 import { MdEmail } from 'react-icons/md';
 import { cn } from '@/lib/utils';
 const pillCls =
-	'flex items-center bg-surface border-[0.5px] border-border rounded-lg backdrop-blur pointer-events-auto';
+	'flex items-center bg-surface rounded-lg backdrop-blur pointer-events-auto';
 const footerLinkCls =
 	'flex items-center gap-2 h-[var(--hit-size)] px-4 text-sub hover:text-text text-[11px] tracking-[0.04em] uppercase no-underline transition-colors duration-[0.22s]';
 

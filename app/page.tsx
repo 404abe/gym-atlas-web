@@ -44,7 +44,7 @@ export default function Page() {
 					{selectedEquipment.map((item) => (
 						<div
 							key={item.id}
-							className="border-main/30 bg-main/10 flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1"
+							className="bg-main/10 flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1"
 						>
 							<Dumbbell size={11} className="text-main" />
 							<span className="text-main text-xs">
@@ -87,7 +87,7 @@ export default function Page() {
 					<span className="text-sm text-sub">{countLabel}</span>
 					<button
 						onClick={() => requireAuth('add a gym') && router.push('/add')}
-						className="flex items-center gap-1.5 rounded border border-border bg-sub-alt px-2.5 py-1 text-xs text-sub transition hover:text-text"
+						className="flex items-center gap-1.5 rounded bg-sub-alt px-2.5 py-1 text-xs text-sub transition hover:text-text"
 					>
 						<Plus size={11} />
 						Add gym
@@ -123,7 +123,7 @@ export default function Page() {
 									className="flex items-center gap-3 rounded-2xl border border-border bg-bg/92 p-3 shadow-lg backdrop-blur-sm"
 								>
 									{/* image/icon square */}
-									<div className="bg-sub-alt flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border">
+									<div className="bg-sub-alt flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl">
 										{item.image_url ? (
 											<img
 												src={item.image_url}

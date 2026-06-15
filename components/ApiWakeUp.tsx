@@ -54,7 +54,7 @@ export default function ApiWakeUp() {
 	const progress = Math.min((elapsed / MAX_WAIT) * 100, 95);
 
 	return (
-		<div className="fixed bottom-4 left-1/2 z-70 flex w-72 -translate-x-1/2 flex-col items-center gap-2 rounded-(--roundness) border-[0.5px] border-border bg-[rgba(20,20,20,0.92)] px-5 py-3 shadow-lg backdrop-blur">
+		<div className="fixed bottom-4 left-1/2 z-70 flex w-72 -translate-x-1/2 flex-col items-center gap-2 rounded-(--roundness) bg-[rgba(20,20,20,0.92)] px-5 py-3 shadow-lg backdrop-blur">
 			<div className="flex w-full items-center justify-between">
 				<span className="text-sub text-xs">
 					{status === 'timeout' ? 'API unavailable' : 'Waking up server…'}

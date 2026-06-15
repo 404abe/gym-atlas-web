@@ -135,7 +135,7 @@ export default function GymSearch({ onResults }: { onResults: (gyms: Gym[] | nul
 
 				return (
 					<div key={index} className="relative mb-2">
-						<div className="border-main/10 bg-main/5 flex items-center gap-2 rounded-lg border px-3 py-2">
+						<div className="bg-main/5 flex items-center gap-2 rounded-lg px-3 py-2">
 							<Target className="text-sub h-3.5 w-3.5 shrink-0" />
 							<input
 								ref={(el) => {
@@ -162,7 +162,7 @@ export default function GymSearch({ onResults }: { onResults: (gyms: Gym[] | nul
 								ref={(el) => {
 									dropdownRefs.current[index] = el;
 								}}
-								className="bg-sub-alt border-main/10 absolute z-10 mt-1 max-h-48 w-full overflow-y-auto rounded-xl border shadow-lg"
+								className="bg-sub-alt absolute z-10 mt-1 max-h-48 w-full overflow-y-auto rounded-xl shadow-lg"
 							>
 								{suggestions.slice(0, 8).map((item) => (
 									<div

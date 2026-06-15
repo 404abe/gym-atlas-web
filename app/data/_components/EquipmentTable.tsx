@@ -53,7 +53,7 @@ function ExpandedRow({ item: e, index = 0, onToggleFavorite, onUpdateRating }: R
 				<div
 					className={`flex items-center gap-3 rounded-xl px-4 py-3 ${index % 2 === 0 ? 'bg-sub-alt' : ''}`}
 				>
-					<div className="bg-main/5 border-border h-14 w-14 shrink-0 overflow-hidden rounded-xl border">
+					<div className="bg-main/5 h-14 w-14 shrink-0 overflow-hidden rounded-xl">
 						{e.image_url ? (
 							<img src={e.image_url} alt={e.name} className="h-full w-full object-cover" />
 						) : (

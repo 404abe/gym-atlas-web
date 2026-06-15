@@ -11,7 +11,7 @@ type ImageTileProps = {
 
 export default function ImageTile({ preview, onImageChange, className = '' }: ImageTileProps) {
     return (
-        <div className={`border-border bg-sub-alt relative overflow-hidden rounded-2xl border ${className}`}>
+        <div className={`bg-sub-alt relative overflow-hidden rounded-2xl ${className}`}>
             {preview ? (
                 <img src={preview} alt="preview" className="h-full w-full object-contain" />
             ) : (
@@ -20,7 +20,7 @@ export default function ImageTile({ preview, onImageChange, className = '' }: Im
                 </div>
             )}
             <label className="absolute bottom-3 right-3 cursor-pointer">
-                <div className="border-border bg-surface/80 text-sub hover:text-main rounded-lg border px-3 py-1.5 text-xs backdrop-blur-sm transition">
+                <div className="bg-surface/80 text-sub hover:text-main rounded-lg px-3 py-1.5 text-xs backdrop-blur-sm transition">
                     {preview ? 'Change photo' : 'Add photo'}
                 </div>
                 <input type="file" accept="image/*" className="hidden" onChange={onImageChange} />

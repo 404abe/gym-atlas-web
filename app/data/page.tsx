@@ -70,7 +70,7 @@ function DataPageInner() {
 						<button
 							id="data-mobile-filter-btn"
 							onClick={() => setSidebarOpen(true)}
-							className="bg-surface border-border flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm"
+							className="bg-surface flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm"
 						>
 							<SlidersHorizontal className="h-3.5 w-3.5" />
 							Filters

@@ -31,7 +31,7 @@ type Props = {
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
-const tileCls = 'border-border bg-sub-alt flex flex-col justify-between rounded-2xl border p-3';
+const tileCls = 'bg-sub-alt flex flex-col justify-between rounded-2xl p-3';
 const labelCls = 'text-sub text-[11px]';
 const bareInputCls =
 	'bg-transparent text-main placeholder:text-sub w-full border-none outline-none font-[inherit]';
@@ -369,7 +369,7 @@ export default function NewMachineCard({ onCreated }: Props) {
 					/>
 
 					<div className="flex flex-col gap-3">
-						<div className="border-border bg-surface flex flex-1 flex-col justify-between rounded-2xl border p-5">
+						<div className="bg-surface flex flex-1 flex-col justify-between rounded-2xl p-5">
 							<div className="flex flex-col gap-3">
 								<BrandSeriesRow {...brandSeriesProps} />
 								<input
@@ -405,7 +405,7 @@ export default function NewMachineCard({ onCreated }: Props) {
 					/>
 				</div>
 
-				<div className="border-border bg-sub-alt flex items-center gap-4 rounded-2xl border px-4 py-3">
+				<div className="bg-sub-alt flex items-center gap-4 rounded-2xl px-4 py-3">
 					<p className={`${labelCls} shrink-0`}>your rating</p>
 					<RatingRow rating={userRating} setRating={setUserRating} />
 				</div>
@@ -421,7 +421,7 @@ export default function NewMachineCard({ onCreated }: Props) {
 					className="aspect-square w-full"
 				/>
 
-				<div className="border-border bg-surface flex flex-col justify-between rounded-2xl border p-5">
+				<div className="bg-surface flex flex-col justify-between rounded-2xl p-5">
 					<div className="flex flex-col gap-3">
 						<BrandSeriesRow {...brandSeriesProps} />
 						<input
@@ -455,7 +455,7 @@ export default function NewMachineCard({ onCreated }: Props) {
 					/>
 				</div>
 
-				<div className="border-border bg-sub-alt flex items-center gap-4 rounded-2xl border px-4 py-3">
+				<div className="bg-sub-alt flex items-center gap-4 rounded-2xl px-4 py-3">
 					<p className={`${labelCls} shrink-0`}>your rating</p>
 					<RatingRow
 						rating={userRating}

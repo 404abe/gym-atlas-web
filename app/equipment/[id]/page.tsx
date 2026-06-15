@@ -158,7 +158,7 @@ export default function EquipmentProfilePage() {
 
 	// ── Hero ── shared across breakpoints; image-first with overlaid title + actions
 	const Hero = () => (
-		<div className="border-border bg-sub-alt relative aspect-[4/3] w-full overflow-hidden rounded-2xl border sm:aspect-[16/9]">
+		<div className="bg-sub-alt relative aspect-[4/3] w-full overflow-hidden rounded-2xl sm:aspect-[16/9]">
 			{imageUrl ? (
 				<img src={imageUrl} alt={item.name} className="h-full w-full object-cover" />
 			) : (
@@ -176,7 +176,7 @@ export default function EquipmentProfilePage() {
 			{/* Photo control — top left */}
 			{user ? (
 				<label className="absolute left-3 top-3 cursor-pointer">
-					<div className="border-border bg-surface/80 text-sub hover:text-main rounded-lg border px-3 py-1.5 text-xs backdrop-blur-sm transition">
+					<div className="bg-surface/80 text-sub hover:text-main rounded-lg px-3 py-1.5 text-xs backdrop-blur-sm transition">
 						{uploading ? 'Uploading...' : imageUrl ? 'Change photo' : 'Add photo'}
 					</div>
 					<input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
@@ -184,7 +184,7 @@ export default function EquipmentProfilePage() {
 			) : (
 				<button
 					onClick={() => requireAuth('add a photo')}
-					className="border-border bg-surface/80 text-sub hover:text-main absolute left-3 top-3 rounded-lg border px-3 py-1.5 text-xs backdrop-blur-sm transition"
+					className="bg-surface/80 text-sub hover:text-main absolute left-3 top-3 rounded-lg px-3 py-1.5 text-xs backdrop-blur-sm transition"
 				>
 					Add photo
 				</button>
@@ -237,7 +237,7 @@ export default function EquipmentProfilePage() {
 					{/* ── Stats ── */}
 					<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
 						{/* avg rating */}
-						<div className="border-border bg-sub-alt flex flex-col justify-between rounded-2xl border p-3">
+						<div className="bg-sub-alt flex flex-col justify-between rounded-2xl p-3">
 							<p className="text-sub text-[11px]">avg rating</p>
 							<p className="text-main text-xl font-semibold">
 								{avgRating ? avgRating.toFixed(1) : '—'}
@@ -255,7 +255,7 @@ export default function EquipmentProfilePage() {
 						</div>
 
 						{/* in gyms */}
-						<div className="border-border bg-sub-alt flex flex-col justify-between rounded-2xl border p-3">
+						<div className="bg-sub-alt flex flex-col justify-between rounded-2xl p-3">
 							<p className="text-sub text-[11px]">in gyms</p>
 							<p className="text-main text-xl font-semibold">{gyms.length}</p>
 						</div>
@@ -294,7 +294,7 @@ export default function EquipmentProfilePage() {
 												if (e.key === 'Escape') setEditingWeightStack(false);
 											}}
 											placeholder="kg"
-											className="bg-surface border-border text-main w-14 rounded-md border px-2 py-1 text-xs outline-none"
+											className="bg-surface text-main w-14 rounded-md px-2 py-1 text-xs outline-none"
 										/>
 										<button
 											onClick={handleSaveWeightStack}
@@ -312,7 +312,7 @@ export default function EquipmentProfilePage() {
 								) : (
 									<button
 										onClick={() => setEditingWeightStack(true)}
-										className="border-border bg-surface/80 text-sub hover:text-main absolute bottom-3 right-3 rounded-lg border px-3 py-1.5 text-xs backdrop-blur-sm transition"
+										className="bg-surface/80 text-sub hover:text-main absolute bottom-3 right-3 rounded-lg px-3 py-1.5 text-xs backdrop-blur-sm transition"
 									>
 										Add weight stack
 									</button>
@@ -320,7 +320,7 @@ export default function EquipmentProfilePage() {
 						</div>
 
 						{/* resistance */}
-						<div className="border-border bg-sub-alt flex flex-col justify-between rounded-2xl border p-3">
+						<div className="bg-sub-alt flex flex-col justify-between rounded-2xl p-3">
 							<p className="text-sub text-[11px]">resistance</p>
 							<div className="mt-1">
 								<ResistanceProfile profile={item.resistance_profile} curve={item.resistance_curve} />
@@ -329,7 +329,7 @@ export default function EquipmentProfilePage() {
 					</div>
 
 					{/* ── Your rating ── */}
-					<div className="border-border bg-sub-alt flex items-center gap-4 rounded-2xl border px-4 py-3">
+					<div className="bg-sub-alt flex items-center gap-4 rounded-2xl px-4 py-3">
 						<p className="text-sub shrink-0 text-xs">your rating</p>
 						<RatingStars
 							avgRating={avgRating || 0}
@@ -339,7 +339,7 @@ export default function EquipmentProfilePage() {
 					</div>
 
 					{/* ── Found in ── */}
-					<div className="border-border bg-surface rounded-2xl border p-4">
+					<div className="bg-surface rounded-2xl p-4">
 						<div className="mb-3 flex items-center justify-between">
 							<h2 className="text-main text-sm font-semibold">
 								Found in ({gyms.length} {gyms.length === 1 ? 'gym' : 'gyms'})
@@ -392,7 +392,7 @@ export default function EquipmentProfilePage() {
 			{showBestInClass && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center p-4">
 					<div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={closeModal} />
-					<div className="bg-surface border-border relative w-full max-w-md rounded-2xl border p-5 shadow-2xl">
+					<div className="bg-surface relative w-full max-w-md rounded-2xl p-5 shadow-2xl">
 						<div className="mb-1 flex items-center justify-between">
 							<div className="flex items-center gap-2">
 								<Trophy className="text-main h-4 w-4" />
@@ -521,7 +521,7 @@ export default function EquipmentProfilePage() {
 
 						{/* Summary */}
 						{(selectedMuscle || selectedExercise) && (
-							<div className="border-border bg-sub-alt mb-3 rounded-xl border px-3 py-2.5 text-xs">
+							<div className="bg-sub-alt mb-3 rounded-xl px-3 py-2.5 text-xs">
 								<span className="text-sub">Saving as best </span>
 								{selectedMuscle && (
 									<span className="text-main font-medium">{selectedMuscle.name} machine</span>
@@ -673,7 +673,7 @@ function VariantsCard({
 	};
 
 	return (
-		<div className="border-border bg-surface rounded-2xl border p-4">
+		<div className="bg-surface rounded-2xl p-4">
 			<div className="mb-3 flex items-center justify-between">
 				<h2 className="text-main text-sm font-semibold">Variations</h2>
 				{canSubmit && !open && (
@@ -718,7 +718,7 @@ function VariantsCard({
 											{canDelete && (
 												<button
 													onClick={() => handleDelete(v.id)}
-													className="border-border bg-surface text-sub absolute -top-1.5 -right-1.5 hidden h-4 w-4 items-center justify-center rounded-full border transition group-hover/var:flex hover:text-red-400"
+													className="bg-surface text-sub absolute -top-1.5 -right-1.5 hidden h-4 w-4 items-center justify-center rounded-full transition group-hover/var:flex hover:text-red-400"
 												>
 													<X className="h-2.5 w-2.5" />
 												</button>
@@ -740,12 +740,12 @@ function VariantsCard({
 						value={label}
 						onChange={(e) => setLabel(e.target.value)}
 						placeholder="Label (e.g. Wide grip)"
-						className="bg-sub-alt border-border text-main w-full rounded-lg border px-3 py-2 text-xs outline-none"
+						className="bg-sub-alt text-main w-full rounded-lg px-3 py-2 text-xs outline-none"
 					/>
 					<select
 						value={type}
 						onChange={(e) => setType(e.target.value as EquipmentVariant['variation_type'])}
-						className="bg-sub-alt border-border text-main w-full rounded-lg border px-3 py-2 text-xs outline-none"
+						className="bg-sub-alt text-main w-full rounded-lg px-3 py-2 text-xs outline-none"
 					>
 						{VARIATION_TYPES.map((t) => (
 							<option key={t} value={t}>
