@@ -301,7 +301,7 @@ export default function MapView({
 						closeOnClick={false}
 						focusAfterOpen={false}
 						maxWidth="none"
-						offset={16}
+						offset={28}
 						className="gym-popup"
 						onClose={() => {}}
 					>
