@@ -205,8 +205,14 @@ export default function MapView({
 	useEffect(() => {
 		if (!selectedGym || !mapRef.current) return;
 
+		const mapWidth = mapRef.current.getContainer().offsetWidth;
+		// On narrow screens the card popup extends to the right of the pin.
+		// Offset the center so pin+card are visually centred rather than just the pin.
+		// 0.01 deg ≈ 117px at zoom 14, which centres the ~298px-wide pin+card unit.
+		const lngOffset = mapWidth < 640 ? 0.007 : 0;
+
 		mapRef.current.flyTo({
-			center: [Number(selectedGym.lng), Number(selectedGym.lat)],
+			center: [Number(selectedGym.lng) + lngOffset, Number(selectedGym.lat)],
 			zoom: 14,
 			duration: 1200
 		});

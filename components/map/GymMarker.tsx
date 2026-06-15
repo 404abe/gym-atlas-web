@@ -1,7 +1,10 @@
 'use client';
 
-import { Check, Dumbbell, Star } from 'lucide-react';
-import type { Gym } from '@/types/gym';
+import { Check, Dumbbell, Plus, Star, ArrowRight } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import type { Gym, GymEquipment } from '@/types/gym';
+import { fetchGymEquipment } from '@/lib/api';
 
 function initialsFor(name: string) {
 	return name
@@ -29,8 +32,18 @@ export default function GymMarker({
 	matched: boolean;
 	onClick: () => void;
 }) {
+	const router = useRouter();
 	const rating = formatRating(gym);
 	const machineCount = gym.total_equipment ?? 0;
+	const [equipment, setEquipment] = useState<GymEquipment[]>([]);
+
+	useEffect(() => {
+		if (!selected) return;
+		fetchGymEquipment(gym.id)
+			.then(setEquipment)
+			.catch(() => setEquipment([]));
+	}, [selected, gym.id]);
+
 
 	return (
 		<div className="relative flex flex-col items-center">
@@ -62,45 +75,88 @@ export default function GymMarker({
 			</button>
 
 			{selected && (
-				<>
-					<div className="pointer-events-none absolute left-[84px] top-1/2 z-10 w-64 -translate-y-1/2 rounded-2xl border border-border bg-surface/95 p-3 text-left">
-						<div className="mb-2 flex items-center gap-2.5">
-							<div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full border-2 border-main bg-linear-to-br from-[#e7ece9] to-[#75807c] text-[10px] font-bold text-[#151616]">
-								{gym.image_url ? (
-									// eslint-disable-next-line @next/next/no-img-element
-									<img src={gym.image_url} alt="" className="h-full w-full object-cover" />
-								) : (
-									initialsFor(gym.name)
-								)}
-							</div>
-							<div className="min-w-0">
-								<p className="truncate text-sm font-semibold text-main">{gym.name}</p>
-								<p className="truncate text-xs text-sub">
-									{gym.city || 'Gym'} {matched ? '· matches filter' : ''}
-								</p>
-							</div>
+				<div className="absolute left-18.5 top-1/2 z-10 w-auto min-w-64 -translate-y-1/2 overflow-hidden rounded-2xl border border-border bg-surface text-left shadow-lg">
+					{/* Header */}
+					<div className="flex items-center gap-2.5 p-3 pb-2">
+						<div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full border-2 border-border bg-linear-to-br from-[#e7ece9] to-[#75807c] text-[10px] font-bold text-[#151616]">
+							{gym.image_url ? (
+								// eslint-disable-next-line @next/next/no-img-element
+								<img src={gym.image_url} alt="" className="h-full w-full object-cover" />
+							) : (
+								initialsFor(gym.name) || <Dumbbell className="h-3.5 w-3.5" />
+							)}
 						</div>
-						<div className="grid grid-cols-2 gap-2">
-							<div className="rounded-xl border border-border px-2 py-2 text-center">
-								<strong className="block text-sm text-main">{machineCount}</strong>
-								<span className="text-[11px] text-sub">machines</span>
-							</div>
-							<div className="rounded-xl border border-border px-2 py-2 text-center">
-								<strong className="flex items-center justify-center gap-1 text-sm text-main">
-									{rating ? (
-										<>
-											<Star className="h-3 w-3 fill-[#f4c35b] stroke-[#f4c35b]" />
-											{rating}
-										</>
-									) : (
-										'--'
-									)}
-								</strong>
-								<span className="text-[11px] text-sub">rating</span>
-							</div>
+						<div className="min-w-0">
+							<p className="truncate text-sm font-semibold text-main">{gym.name}</p>
+							<p className="text-xs text-sub">{gym.city || 'Gym'}</p>
 						</div>
 					</div>
-				</>
+
+					{/* Stats pills */}
+					<div className="flex flex-wrap gap-1.5 px-3 pb-2.5">
+						<span className="flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-xs text-sub">
+							<Dumbbell className="h-2.5 w-2.5" />
+							{machineCount} machines
+						</span>
+						{gym.unique_machines > 0 && (
+							<span className="rounded-full border border-border px-2 py-0.5 text-xs text-sub">
+								{gym.unique_machines} unique
+							</span>
+						)}
+						{rating && (
+							<span className="flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-xs text-sub">
+								<Star className="h-2.5 w-2.5 fill-[#f4c35b] stroke-[#f4c35b]" />
+								{rating}
+							</span>
+						)}
+					</div>
+
+					{/* Equipment thumbnails */}
+					{equipment.length > 0 && (
+						<div className="flex gap-1.5 px-3 pb-2.5">
+							{equipment.slice(0, 4).map((eq, i) => (
+								<div
+									key={eq.equipment_id}
+									className={`h-15.5 w-15.5 shrink-0 overflow-hidden rounded-xl bg-sub-alt ${i === 3 ? 'hidden sm:flex' : 'flex'} items-center justify-center`}
+								>
+									{eq.image_url ? (
+										// eslint-disable-next-line @next/next/no-img-element
+										<img src={eq.image_url} alt="" className="h-full w-full object-cover" />
+									) : (
+										<Dumbbell className="h-5 w-5 text-sub" />
+									)}
+								</div>
+							))}
+							{/* mobile: show when > 3 */}
+							{equipment.length > 3 && (
+								<div className="flex h-15.5 w-15.5 shrink-0 flex-col items-center justify-center gap-0.5 rounded-xl bg-sub-alt sm:hidden">
+									<Plus className="h-4 w-4 text-sub" />
+									<span className="text-[11px] text-sub">{equipment.length - 3} more</span>
+								</div>
+							)}
+							{/* desktop: show when > 4 */}
+							{equipment.length > 4 && (
+								<div className="hidden h-15.5 w-15.5 shrink-0 flex-col items-center justify-center gap-0.5 rounded-xl bg-sub-alt sm:flex">
+									<Plus className="h-4 w-4 text-sub" />
+									<span className="text-[11px] text-sub">{equipment.length - 4} more</span>
+								</div>
+							)}
+						</div>
+					)}
+
+					{/* View gym button */}
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							router.push(`/gyms/${gym.id}`);
+						}}
+						className="flex w-full items-center justify-between border-t border-border px-3 py-2.5 text-sm font-medium text-main transition-colors hover:bg-sub-alt"
+					>
+						View gym
+						<ArrowRight className="h-4 w-4" />
+					</button>
+				</div>
 			)}
 		</div>
 	);
