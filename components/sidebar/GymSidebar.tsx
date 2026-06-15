@@ -3,11 +3,9 @@
 import { Gym } from '@/types/gym';
 import GymCard from './GymCard';
 import EquipmentSearch from './EquipmentSearch';
-import { Plus } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
 import { useGymFilter } from '@/app/contexts/GymFilterContext';
-import { useAuthGate } from '@/app/contexts/AuthGateContext';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { cn } from '@/lib/utils';
 
@@ -18,15 +16,17 @@ export default function GymSidebar({
 	gyms,
 	selectedGym,
 	onSelectGym,
-	listOnly = false
+	listOnly = false,
+	gymSearch = '',
+	onGymSearchChange
 }: {
 	gyms: Gym[];
 	selectedGym: Gym | null;
 	onSelectGym: (gym: Gym) => void;
 	listOnly?: boolean;
+	gymSearch?: string;
+	onGymSearchChange?: (val: string) => void;
 }) {
-	const router = useRouter();
-	const { requireAuth } = useAuthGate();
 	const scrollRef = useRef<HTMLDivElement>(null);
 	const userLocation = useUserLocation();
 	const { filteredGyms } = useGymFilter();
@@ -72,17 +72,22 @@ export default function GymSidebar({
 					{/* <div className="mb-2 mt-3">
 						<EquipmentSearch />
 					</div> */}
-					<div className={cn(pillCls, 'mb-2 justify-between px-3 py-2')}>
-						<span className="text-sub text-xs font-medium uppercase tracking-[0.08em]">
-							{filteredGyms ? `${displayGyms.length} results` : `${gyms.length} gyms`}
-						</span>
-						<button
-							onClick={() => requireAuth('add a gym') && router.push('/add/gym')}
-							className="text-sub hover:text-text flex items-center gap-2 text-xs font-medium uppercase tracking-[0.08em] transition-colors duration-[0.22s]"
-						>
-							<Plus className="h-4 w-4" />
-							Add
-						</button>
+					<div className={cn(pillCls, 'mb-2 gap-2 px-3 py-1.5')}>
+						<Search size={13} className="shrink-0 text-sub" />
+						<input
+							type="text"
+							placeholder="Search gyms..."
+							value={gymSearch}
+							onChange={(e) => onGymSearchChange?.(e.target.value)}
+							className="min-w-0 flex-1 bg-transparent text-xs text-main placeholder:text-sub outline-none"
+						/>
+						{gymSearch ? (
+							<button onClick={() => onGymSearchChange?.('')}>
+								<X size={12} className="text-sub hover:text-main transition" />
+							</button>
+						) : (
+							<span className="shrink-0 text-xs text-sub">{filteredGyms ? filteredGyms.length : gyms.length} gyms</span>
+						)}
 					</div>
 				</div>
 			)}

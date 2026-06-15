@@ -1,9 +1,12 @@
 'use client';
 
-import ReactMap, { Marker, type MapRef } from 'react-map-gl/mapbox';
+import ReactMap, { Marker, Popup, type MapRef } from 'react-map-gl/mapbox';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Gym } from '@/types/gym';
 import { useTheme } from '@/app/contexts/ThemeContext';
+import { ArrowRight, Building2, Dumbbell, Link2, Navigation, Plus, Star } from 'lucide-react';
+import { API_URL } from '@/lib/config';
 import GymMarker from './GymMarker';
 
 type GymCluster = {
@@ -20,6 +23,16 @@ type MappedGym = {
 	x: number;
 	y: number;
 };
+
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number) {
+	const R = 6371;
+	const dLat = ((lat2 - lat1) * Math.PI) / 180;
+	const dLng = ((lng2 - lng1) * Math.PI) / 180;
+	const a =
+		Math.sin(dLat / 2) ** 2 +
+		Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+	return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
 function getClusterRadius(zoom: number) {
 	if (zoom < 5) return 104;
@@ -156,21 +169,21 @@ function ClusterMarker({ count, matched }: { count: number; matched: boolean }) 
 
 	return (
 		<div
-			className={`map-marker-shell relative grid ${sizeClass} place-items-center rounded-full border border-[#050606] bg-[#090a0a] shadow-[0_10px_24px_rgb(0_0_0/0.32)] ${
+			className={`map-marker-shell relative grid ${sizeClass} place-items-center rounded-full border border-border bg-surface shadow-[0_10px_24px_rgb(0_0_0/0.24)] ${
 				matched ? '' : 'opacity-85'
 			}`}
 		>
 			<div
 				className="absolute inset-[4px] rounded-full"
 				style={{
-					background: `conic-gradient(${matched ? '#3ee7a6' : '#6f7474'} 0 ${fill}%, #3c4041 ${fill}% 100%)`,
-					boxShadow: '0 0 0 2px #050606, inset 0 0 0 2px #050606'
+					background: `conic-gradient(${matched ? '#3ee7a6' : 'var(--sub-color)'} 0 ${fill}%, var(--border-color) ${fill}% 100%)`,
+					boxShadow: '0 0 0 2px var(--bg-color), inset 0 0 0 2px var(--bg-color)'
 				}}
 			/>
 			<div
-				className={`absolute ${innerClass} rounded-full bg-[#101111]`}
+				className={`absolute ${innerClass} rounded-full bg-bg`}
 				style={{
-					boxShadow: '0 0 0 2px #050606, inset 0 0 0 1px rgb(255 255 255 / 0.06)'
+					boxShadow: '0 0 0 2px var(--bg-color)'
 				}}
 			/>
 			<strong className="relative z-10 text-sm font-semibold text-main">{count}</strong>
@@ -183,7 +196,7 @@ export default function MapView({
 	selectedGym,
 	onSelectGym,
 	userLocation,
-	isFiltered = false
+	isFiltered = false,
 	filteredGymIds
 }: {
 	gyms: Gym[];
@@ -193,11 +206,27 @@ export default function MapView({
 	isFiltered?: boolean;
 	filteredGymIds?: Set<number> | null;
 }) {
+	const router = useRouter();
 	const mapRef = useRef<MapRef>(null);
 	const [zoom, setZoom] = useState(5);
+	const [previewEquipment, setPreviewEquipment] = useState<{ id: number; name: string; brand: string; image_url?: string }[]>([]);
+	const [popupOpen, setPopupOpen] = useState(false);
 	const { theme } = useTheme();
 	const mapStyle = theme === 'light' ? 'mapbox://styles/mapbox/light-v11' : 'mapbox://styles/mapbox/dark-v11';
 	const clusters = useMemo(() => clusterGyms(gyms, zoom), [gyms, zoom]);
+
+	useEffect(() => {
+		if (!selectedGym) { setPreviewEquipment([]); setPopupOpen(false); return; }
+		setPopupOpen(true);
+		fetch(`${API_URL}/gyms/${selectedGym.id}/equipment`)
+			.then((r) => r.json())
+			.then((data) => setPreviewEquipment((data.data ?? data).slice(0, 2)));
+	}, [selectedGym]);
+
+	const distanceKm =
+		userLocation && selectedGym?.lat && selectedGym?.lng
+			? Math.round(haversineKm(userLocation.lat, userLocation.lng, Number(selectedGym.lat), Number(selectedGym.lng)) * 10) / 10
+			: null;
 
 	useEffect(() => {
 		if (!userLocation || !mapRef.current) return;
@@ -227,6 +256,8 @@ export default function MapView({
 				mapStyle={mapStyle}
 				style={{ width: '100%', height: '100%' }}
 				onMove={(event) => setZoom(event.viewState.zoom)}
+				onZoomStart={() => setPopupOpen(false)}
+				onDragStart={() => setPopupOpen(false)}
 			>
 				{clusters.map((cluster) => (
 					<Marker
@@ -255,23 +286,101 @@ export default function MapView({
 								gym={cluster.gyms[0]}
 								selected={selectedGym?.id === cluster.gyms[0].id}
 								matched={isFiltered}
-								onClick={() => onSelectGym(cluster.gyms[0])}
+								onClick={() => { onSelectGym(cluster.gyms[0]); setPopupOpen(true); }}
 							/>
 						)}
-						<div
-							onClick={() => onSelectGym(gym)}
-							className={`h-4 w-4 cursor-pointer rounded-full transition ${
-								selectedGym?.id === gym.id
-									? 'scale-125 bg-red-500'
-									: filteredGymIds != null
-										? filteredGymIds.has(gym.id)
-											? 'bg-green-500'
-											: 'bg-gray-400 opacity-40'
-										: 'bg-blue-500'
-							}`}
-						/>
 					</Marker>
 				))}
+
+				{popupOpen && selectedGym && selectedGym.lat && selectedGym.lng && (
+					<Popup
+						longitude={Number(selectedGym.lng)}
+						latitude={Number(selectedGym.lat)}
+						anchor="left"
+						closeButton={false}
+						closeOnClick={false}
+						focusAfterOpen={false}
+						maxWidth="none"
+						offset={16}
+						className="gym-popup"
+						onClose={() => {}}
+					>
+						<style>{`.gym-popup .mapboxgl-popup-content{padding:0;background:transparent;box-shadow:none;border-radius:0}.gym-popup .mapboxgl-popup-tip{display:none}`}</style>
+						<div className="w-65 overflow-hidden rounded-2xl border border-border bg-bg shadow-xl">
+							{/* Header */}
+							<div className="flex items-center justify-between gap-2 px-3 pt-3">
+								<div className="flex min-w-0 items-center gap-2">
+									<div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-sub-alt">
+										{selectedGym.image_url
+											? <img src={selectedGym.image_url} alt={selectedGym.name} className="h-full w-full object-cover" />
+											: <Building2 size={13} className="text-sub" />}
+									</div>
+									<div className="min-w-0">
+										<p className="truncate text-[13px] font-medium leading-tight text-main">{selectedGym.name}</p>
+										<p className="text-[11px] text-sub">{selectedGym.city}</p>
+									</div>
+								</div>
+								{distanceKm != null && (
+									<span className="flex shrink-0 items-center gap-1 rounded-full border border-border bg-sub-alt px-2 py-0.5 text-[11px] text-sub">
+										<Navigation size={10} />
+										{distanceKm}km
+									</span>
+								)}
+							</div>
+
+							{/* Chips */}
+							<div className="flex flex-wrap gap-1.5 px-3 pt-2">
+								<span className="flex items-center gap-1 rounded-full border border-border bg-sub-alt px-2 py-0.5 text-[11px] text-sub">
+									<Link2 size={10} />
+									{selectedGym.total_equipment} machines
+								</span>
+								<span className="rounded-full border border-border bg-sub-alt px-2 py-0.5 text-[11px] text-sub">
+									{selectedGym.unique_machines} unique
+								</span>
+								{selectedGym.avg_rating && Number(selectedGym.avg_rating) > 0 && (
+									<span className="flex items-center gap-1 rounded-full border border-border bg-sub-alt px-2 py-0.5 text-[11px] text-sub">
+										<Star size={10} />
+										{Number(selectedGym.avg_rating).toFixed(1)}
+									</span>
+								)}
+							</div>
+
+							{/* Equipment thumbnails */}
+							<div className="flex gap-2 px-3 pt-2">
+								{previewEquipment.map((eq) => (
+									<div key={eq.id} className="flex flex-1 flex-col items-center justify-center gap-1 rounded-xl border border-border bg-sub-alt py-3">
+										{eq.image_url
+											? <img src={eq.image_url} alt={eq.name} className="h-10 w-10 object-contain" />
+											: <Dumbbell size={20} className="text-sub" />}
+										<span className="line-clamp-1 px-1 text-center text-[10px] text-sub">{eq.brand} {eq.name}</span>
+									</div>
+								))}
+								{selectedGym.total_equipment > 2 && (
+									<div key="more" className="flex flex-1 flex-col items-center justify-center gap-1 rounded-xl border border-border bg-sub-alt py-3">
+										<Plus size={16} className="text-sub" />
+										<span className="text-[10px] text-sub">{selectedGym.total_equipment - 2} more</span>
+									</div>
+								)}
+								{previewEquipment.length === 0 && selectedGym.total_equipment === 0 && (
+									<div key="empty" className="flex w-full items-center justify-center rounded-xl border border-border bg-sub-alt py-3">
+										<span className="text-[10px] text-sub">No equipment logged yet</span>
+									</div>
+								)}
+							</div>
+
+							{/* View gym button */}
+							<div className="p-3">
+								<button
+									onClick={() => router.push(`/gyms/${selectedGym.id}`)}
+									className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-border bg-sub-alt py-2 text-[12px] font-medium text-main transition hover:border-main hover:bg-main hover:text-bg"
+								>
+									View gym
+									<ArrowRight size={12} />
+								</button>
+							</div>
+						</div>
+					</Popup>
+				)}
 			</ReactMap>
 		</div>
 	);
