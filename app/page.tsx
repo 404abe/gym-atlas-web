@@ -1,7 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Dumbbell, Plus, X } from 'lucide-react';
+import { Dumbbell, Search, X } from 'lucide-react';
 import MapView from '@/components/map/MapView';
 import GymSidebar from '@/components/sidebar/GymSidebar';
 import EquipmentSearch from '@/components/sidebar/EquipmentSearch';
@@ -9,14 +8,11 @@ import { MobileEquipmentModal } from '@/app/_components/MobileEquipmentModal';
 import { fetchGyms } from '@/lib/api';
 import { Gym } from '@/types/gym';
 import { useGymFilter } from '@/app/contexts/GymFilterContext';
-import { useAuthGate } from '@/app/contexts/AuthGateContext';
 import { useUserLocation } from '@/hooks/useUserLocation';
 
 
 
 export default function Page() {
-	const router = useRouter();
-	const { requireAuth } = useAuthGate();
 	const [gyms, setGyms] = useState<Gym[]>([]);
 	const [selectedGym, setSelectedGym] = useState<Gym | null>(null);
 	const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
@@ -27,10 +23,17 @@ export default function Page() {
 		fetchGyms().then(setGyms);
 	}, []);
 
-	const displayCount = filteredGyms ? filteredGyms.length : gyms.length;
-	const countLabel = filteredGyms ? `${displayCount} gyms match` : `${displayCount} gyms`;
+	const [gymSearch, setGymSearch] = useState('');
+	const baseList = filteredGyms ?? gyms;
+	const searchFilteredGyms = gymSearch
+		? baseList.filter(
+				(g) =>
+					g.name.toLowerCase().includes(gymSearch.toLowerCase()) ||
+					g.city?.toLowerCase().includes(gymSearch.toLowerCase())
+			)
+		: baseList;
+
 	const displayedGyms = filteredGyms ?? gyms;
-	const filteredGymIds = filteredGyms ? new Set(filteredGyms.map((g) => g.id)) : null;
 
 	return (
 		<div className="flex h-full flex-col overflow-hidden bg-bg md:fixed md:inset-0 md:z-10">
@@ -77,26 +80,30 @@ export default function Page() {
 							onSelectGym={setSelectedGym}
 							userLocation={userLocation}
 							isFiltered={filteredGyms !== null}
-							filteredGymIds={filteredGymIds}
 						/>
 					</div>
 				</div>
 
-				{/* gym count row */}
-				<div className="flex shrink-0 items-center justify-between px-3 py-2.5">
-					<span className="text-sm text-sub">{countLabel}</span>
-					<button
-						onClick={() => requireAuth('add a gym') && router.push('/add')}
-						className="flex items-center gap-1.5 rounded bg-sub-alt px-2.5 py-1 text-xs text-sub transition hover:text-text"
-					>
-						<Plus size={11} />
-						Add gym
-					</button>
+				{/* gym search */}
+				<div className="relative shrink-0 px-3 py-2">
+					<Search size={14} className="absolute left-6 top-1/2 -translate-y-1/2 text-sub" />
+					<input
+						type="text"
+						placeholder="Search gyms..."
+						value={gymSearch}
+						onChange={(e) => setGymSearch(e.target.value)}
+						className="h-9 w-full rounded-xl border border-border bg-sub-alt pl-8 pr-8 text-sm text-main placeholder:text-sub outline-none"
+					/>
+					{gymSearch && (
+						<button onClick={() => setGymSearch('')} className="absolute right-6 top-1/2 -translate-y-1/2">
+							<X size={13} className="text-sub" />
+						</button>
+					)}
 				</div>
 
 				{/* gym list */}
 				<div className="min-h-0 flex-1">
-					<GymSidebar gyms={gyms} selectedGym={selectedGym} onSelectGym={setSelectedGym} listOnly />
+					<GymSidebar gyms={searchFilteredGyms} selectedGym={selectedGym} onSelectGym={setSelectedGym} listOnly />
 				</div>
 			</div>
 
@@ -104,7 +111,13 @@ export default function Page() {
 			<div className="relative hidden h-full md:flex md:gap-3 md:p-3 md:pt-[56px]">
 				{/* Sidebar — left, fixed width w-80 (320px) with pt-3 to clear header */}
 				<div className="flex h-full w-80 shrink-0 flex-col pt-3">
-					<GymSidebar gyms={gyms} selectedGym={selectedGym} onSelectGym={setSelectedGym} />
+					<GymSidebar
+						gyms={searchFilteredGyms}
+						selectedGym={selectedGym}
+						onSelectGym={setSelectedGym}
+						gymSearch={gymSearch}
+						onGymSearchChange={setGymSearch}
+					/>
 				</div>
 				{/* Map — right, fills remaining space with proper rounded corners */}
 				<div className="border-border relative min-h-0 flex-1 overflow-hidden rounded-2xl border">
@@ -160,7 +173,6 @@ export default function Page() {
 						onSelectGym={setSelectedGym}
 						userLocation={userLocation}
 						isFiltered={filteredGyms !== null}
-						filteredGymIds={filteredGymIds}
 					/>
 				</div>
 			</div>

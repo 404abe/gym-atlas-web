@@ -156,21 +156,21 @@ function ClusterMarker({ count, matched }: { count: number; matched: boolean }) 
 
 	return (
 		<div
-			className={`map-marker-shell relative grid ${sizeClass} place-items-center rounded-full border border-[#050606] bg-[#090a0a] shadow-[0_10px_24px_rgb(0_0_0/0.32)] ${
+			className={`map-marker-shell relative grid ${sizeClass} place-items-center rounded-full border border-border bg-surface shadow-[0_10px_24px_rgb(0_0_0/0.24)] ${
 				matched ? '' : 'opacity-85'
 			}`}
 		>
 			<div
 				className="absolute inset-[4px] rounded-full"
 				style={{
-					background: `conic-gradient(${matched ? '#3ee7a6' : '#6f7474'} 0 ${fill}%, #3c4041 ${fill}% 100%)`,
-					boxShadow: '0 0 0 2px #050606, inset 0 0 0 2px #050606'
+					background: `conic-gradient(${matched ? '#3ee7a6' : 'var(--sub-color)'} 0 ${fill}%, var(--border-color) ${fill}% 100%)`,
+					boxShadow: '0 0 0 2px var(--bg-color), inset 0 0 0 2px var(--bg-color)'
 				}}
 			/>
 			<div
-				className={`absolute ${innerClass} rounded-full bg-[#101111]`}
+				className={`absolute ${innerClass} rounded-full bg-bg`}
 				style={{
-					boxShadow: '0 0 0 2px #050606, inset 0 0 0 1px rgb(255 255 255 / 0.06)'
+					boxShadow: '0 0 0 2px var(--bg-color)'
 				}}
 			/>
 			<strong className="relative z-10 text-sm font-semibold text-main">{count}</strong>
@@ -183,15 +183,13 @@ export default function MapView({
 	selectedGym,
 	onSelectGym,
 	userLocation,
-	isFiltered = false
-	filteredGymIds
+	isFiltered = false,
 }: {
 	gyms: Gym[];
 	selectedGym: Gym | null;
 	onSelectGym: (gym: Gym) => void;
 	userLocation: { lat: number; lng: number } | null;
 	isFiltered?: boolean;
-	filteredGymIds?: Set<number> | null;
 }) {
 	const mapRef = useRef<MapRef>(null);
 	const [zoom, setZoom] = useState(5);
@@ -258,18 +256,6 @@ export default function MapView({
 								onClick={() => onSelectGym(cluster.gyms[0])}
 							/>
 						)}
-						<div
-							onClick={() => onSelectGym(gym)}
-							className={`h-4 w-4 cursor-pointer rounded-full transition ${
-								selectedGym?.id === gym.id
-									? 'scale-125 bg-red-500'
-									: filteredGymIds != null
-										? filteredGymIds.has(gym.id)
-											? 'bg-green-500'
-											: 'bg-gray-400 opacity-40'
-										: 'bg-blue-500'
-							}`}
-						/>
 					</Marker>
 				))}
 			</ReactMap>
