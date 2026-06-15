@@ -498,7 +498,24 @@ export default function GymProfilePage() {
 								<AddEquipmentPanel
 									gymId={Number(id)}
 									masterEquipment={masterEquipment}
-									onEquipmentAdded={(item) => setEquipment((prev) => [...prev, item])}
+									existingEquipment={equipment}
+									onEquipmentAdded={(item) =>
+										setEquipment((prev) => {
+											const existing = prev.find(
+												(e) => e.equipment_id === item.equipment_id
+											);
+											if (!existing) return [...prev, item];
+											if (item.status === 'approved') {
+												return prev.map((e) =>
+													e.equipment_id === item.equipment_id
+														? { ...e, quantity: e.quantity + item.quantity }
+														: e
+												);
+											}
+											// pending on an already-listed machine — quantity unchanged
+											return prev;
+										})
+									}
 									onClose={() => setShowAddPanel(false)}
 								/>
 							)}
