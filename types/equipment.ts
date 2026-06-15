@@ -15,7 +15,8 @@ export interface Equipment {
 	slug: string;
 	type: 'pin_loaded' | 'plate_loaded';
 	weight_stack?: number | null;
-	resistance_profile?: 'constant' | 'ascending' | 'descending' | 'adjustable';
+	resistance_profile?: 'constant' | 'ascending' | 'descending' | 'adjustable' | 'custom';
+	resistance_curve?: number[];
 	rating?: number;
 	avg_rating?: number;
 	user_rating?: number;

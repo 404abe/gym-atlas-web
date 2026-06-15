@@ -27,6 +27,7 @@ export interface GymEquipment {
 	full_name: string;
 	quantity: number;
 	image_url?: string | null;
+	status?: 'approved' | 'pending';
 }
 
 export interface GymWithQuantity {

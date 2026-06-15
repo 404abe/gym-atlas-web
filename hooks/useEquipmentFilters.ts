@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Equipment } from '@/types/equipment';
 import type { BestInClassCategory as Category } from '@/types/bestInClass';
+import { matchesSearch } from '@/lib/utils';
+import { getEquipmentCategorySuggestions } from '@/lib/equipment-categories';
 
 export type EquipmentSortField = 'id' | 'brand' | 'name' | 'resistance_profile' | 'rating';
 
@@ -33,12 +35,7 @@ export function useEquipmentFilters(
 	const filtered = useMemo(() => {
 		return equipment
 			.filter((e) => {
-				const matchesSearch = (() => {
-					if (search === '') return true;
-					const full = `${e.brand ?? ''} ${e.series ?? ''} ${e.name ?? ''}`.toLowerCase();
-					const words = search.toLowerCase().replace(/-/g, ' ').split(/\s+/).filter(Boolean);
-					return words.every((w) => full.includes(w));
-				})();
+				const searchMatch = matchesSearch(search, e.brand, e.series, e.name);
 				const matchesType = selectedType === 'all' || e.type === selectedType;
 				const matchesBrand = selectedBrand === 'all' || e.brand === selectedBrand;
 				const matchesResistance =
@@ -51,10 +48,16 @@ export function useEquipmentFilters(
 					if (!cat) return true;
 					const catName = cat.name.toLowerCase();
 					const eqName = e.name?.toLowerCase() ?? '';
-					return eqName.includes(catName) || catName.includes(eqName);
+					if (eqName.includes(catName) || catName.includes(eqName)) return true;
+					const suggested = getEquipmentCategorySuggestions(e.name ?? '');
+					if (suggested) {
+						if (cat.type === 'muscle_group') return suggested.muscles.includes(cat.name);
+						if (cat.type === 'exercise') return suggested.exercises.includes(cat.name);
+					}
+					return false;
 				})();
 				return (
-					matchesSearch &&
+					searchMatch &&
 					matchesType &&
 					matchesBrand &&
 					matchesResistance &&
@@ -69,7 +72,7 @@ export function useEquipmentFilters(
 				if (sortField === 'brand') comparison = (a.brand || '').localeCompare(b.brand || '');
 				if (sortField === 'name') comparison = (a.name || '').localeCompare(b.name || '');
 				if (sortField === 'resistance_profile') {
-					const order = { constant: 0, ascending: 1, descending: 2, adjustable: 3 };
+					const order: Record<string, number> = { constant: 0, ascending: 1, descending: 2, adjustable: 3, custom: 4 };
 					comparison =
 						(order[a.resistance_profile || 'constant'] || 0) -
 						(order[b.resistance_profile || 'constant'] || 0);

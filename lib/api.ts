@@ -170,6 +170,7 @@ export const createEquipment = (body: {
 	series: string;
 	type: string;
 	resistance_profile?: string;
+	resistance_curve?: number[];
 }): Promise<Equipment> =>
 	apiFetch('/equipment', {
 		method: 'POST',

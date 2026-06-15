@@ -4,6 +4,7 @@ import { Target, Plus, X, Search } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { Gym } from '@/types/gym';
 import { API_URL } from '@/lib/config';
+import { matchesSearch } from '@/lib/utils';
 
 type Equipment = {
 	id: number;
@@ -93,12 +94,10 @@ export default function GymSearch({ onResults }: { onResults: (gyms: Gym[] | nul
 		}, 200);
 	};
 
-	const getSuggestions = (value: string) => {
-		if (!value.trim()) return [];
-		return equipment.filter((item) =>
-			formatSlug(item.slug).toLowerCase().includes(value.toLowerCase())
-		);
-	};
+	const getSuggestions = (value: string) =>
+		value.trim()
+			? equipment.filter((item) => matchesSearch(value, item.brand, item.series, item.name))
+			: [];
 
 	const handleSearch = async () => {
 		const activeFilters = machineInputs.map((f) => f.trim()).filter(Boolean);

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
+import { matchesSearch } from '@/lib/utils';
 
 type ComboboxProps = {
 	value: string;
@@ -23,9 +24,7 @@ export default function Combobox({
 	const [focused, setFocused] = useState(false);
 	const containerRef = useRef<HTMLDivElement>(null);
 
-	const filtered = value
-		? options.filter((o) => o.toLowerCase().includes(value.toLowerCase()))
-		: options;
+	const filtered = value ? options.filter((o) => matchesSearch(value, o)) : options;
 
 	// Show dropdown if focused—even if no items match, so we can display a "No results" helper
 	const showDropdown = focused;
