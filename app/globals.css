@@ -57,6 +57,28 @@
 	display: none !important;
 }
 
+.map-marker-shell {
+	animation: map-marker-soft-in 420ms ease-out;
+	transition:
+		opacity 500ms ease,
+		scale 500ms ease,
+		filter 500ms ease;
+}
+
+@keyframes map-marker-soft-in {
+	from {
+		opacity: 0.35;
+		scale: 0.88;
+		filter: blur(1px);
+	}
+
+	to {
+		opacity: 1;
+		scale: 1;
+		filter: blur(0);
+	}
+}
+
 /* ── Tailwind v4 Theme Bridge ────────────────── */
 @theme inline {
 	/* colours */
