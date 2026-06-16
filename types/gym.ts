@@ -17,6 +17,16 @@ export interface Gym {
 	user_rating?: number;
 	favourites?: number;
 	image_url?: string;
+	opening_hours?: {
+		openNow: boolean;
+		periods: {
+			open: { day: number; hour: number; minute: number };
+			close?: { day: number; hour: number; minute: number };
+		}[];
+		nextCloseTime?: string;
+		weekdayDescriptions?: string[];
+	};
+	hours_updated_at?: string;
 }
 
 export interface GymEquipment {

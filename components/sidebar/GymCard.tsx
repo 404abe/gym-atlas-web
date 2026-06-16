@@ -3,7 +3,8 @@
 import { Gym } from '@/types/gym';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { favouriteGym, unfavouriteGym } from '@/lib/api';
-import { Heart, Star, Dumbbell, Navigation, ArrowRight } from 'lucide-react';
+import { Heart, Star, Dumbbell, Navigation, ArrowRight, Clock } from 'lucide-react';
+import { getOpenStatus } from '@/lib/openingHours';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -72,6 +73,8 @@ export default function GymCard({
 		onClick();
 	};
 
+	const openStatus = getOpenStatus(gym.opening_hours);
+
 	const distance =
 		userLocation && gym.lat && gym.lng
 			? getDistanceKm(userLocation.lat, userLocation.lng, gym.lat, gym.lng)
@@ -127,14 +130,25 @@ export default function GymCard({
 			<div className="mt-2 flex gap-1.5">
 				<span className="border-border text-sub flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs">
 					<Dumbbell className="h-2.5 w-2.5" />
-					{gym.total_equipment ?? 0} machines
+					{gym.total_equipment ?? 0}
 				</span>
-				{gym.unique_machines > 0 && (
-					<span className="border-border text-sub rounded-full border px-2 py-0.5 text-xs">
-						{gym.unique_machines} unique
-					</span>
-				)}
 			</div>
+			{openStatus && (
+				<div className="mt-1.5">
+					<span
+						className={`flex w-fit items-center gap-1 rounded-full border px-2 py-0.5 ${
+							openStatus.status === 'open'
+								? 'bg-[#0d2e1a] border-[#1a4a28] text-[#4ade80]'
+								: openStatus.status === 'closing_soon'
+									? 'bg-[#2a1a0d] border-[#4a2e10] text-[#fb923c]'
+									: 'bg-[#2a1010] border-[#4a2020] text-[#f87171]'
+						}`}
+					>
+						<Clock style={{ width: 12, height: 12 }} />
+						<span style={{ fontSize: 11 }}>{openStatus.label}</span>
+					</span>
+				</div>
+			)}
 
 			{/* Bottom row: favourite + rating */}
 			<div className="mt-2.5 flex items-center justify-between">
@@ -153,12 +167,12 @@ export default function GymCard({
 					<span className="text-sub text-xs">{formatHearts(favouriteCount)}</span>
 				</button>
 
-				<div className="flex items-center gap-1">
+				{/* <div className="flex items-center gap-1">
 					<Star
 						className={`h-3 w-3 ${gym.rating ? 'fill-accent stroke-accent' : 'text-sub fill-none'}`}
 					/>
 					<span className="text-sub text-xs">{gym.rating ?? '—'}</span>
-				</div>
+				</div> */}
 			</div>
 		</div>
 	);

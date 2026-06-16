@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Dumbbell, Plus, Star, ArrowRight } from 'lucide-react';
+import { Check, Dumbbell, Plus, /*Star,*/ ArrowRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Gym, GymEquipment } from '@/types/gym';
@@ -15,11 +15,11 @@ function initialsFor(name: string) {
 		.join('');
 }
 
-function formatRating(gym: Gym) {
-	const rating = gym.avg_rating ?? gym.rating;
-	if (!rating) return null;
-	return Number(rating).toFixed(1).replace(/\.0$/, '');
-}
+// function formatRating(gym: Gym) {
+// 	const rating = gym.avg_rating ?? gym.rating;
+// 	if (!rating) return null;
+// 	return Number(rating).toFixed(1).replace(/\.0$/, '');
+// }
 
 export default function GymMarker({
 	gym,
@@ -33,7 +33,7 @@ export default function GymMarker({
 	onClick: () => void;
 }) {
 	const router = useRouter();
-	const rating = formatRating(gym);
+	// const rating = formatRating(gym);
 	const machineCount = gym.total_equipment ?? 0;
 	const [equipment, setEquipment] = useState<GymEquipment[]>([]);
 
@@ -103,12 +103,12 @@ export default function GymMarker({
 								{gym.unique_machines} unique
 							</span>
 						)}
-						{rating && (
+						{/* {rating && (
 							<span className="flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-xs text-sub">
 								<Star className="h-2.5 w-2.5 fill-[#f4c35b] stroke-[#f4c35b]" />
 								{rating}
 							</span>
-						)}
+						)} */}
 					</div>
 
 					{/* Equipment thumbnails */}

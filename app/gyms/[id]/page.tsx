@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { MapPin, Star, Dumbbell, Minus, LayoutGrid, List, Plus, Navigation, Check, X, Loader2 } from 'lucide-react';
+import { MapPin, Star, Dumbbell, Minus, LayoutGrid, List, Plus, Navigation, Check, X, Loader2, Clock } from 'lucide-react';
 import {
 	fetchGymById,
 	fetchGymEquipment,
@@ -21,6 +21,7 @@ import { useAuth } from '@/app/contexts/AuthContext';
 import { useAuthGate } from '@/app/contexts/AuthGateContext';
 import { useToastContext } from '@/app/contexts/ToastContext';
 import AddEquipmentPanel from '@/app/add/_components/AddEquipmentPanel';
+import { getOpenStatus } from '@/lib/openingHours';
 
 export default function GymProfilePage() {
 	const { id } = useParams();
@@ -147,6 +148,8 @@ export default function GymProfilePage() {
 	const avgRating = gym.rating ? Number(gym.rating) : null;
 	const fullAddress = [gym.address, gym.city, gym.country].filter(Boolean).join(', ');
 	const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`;
+
+	const openStatus = getOpenStatus(gym.opening_hours);
 
 	// ── Hero ── image-first; gym name, location, address + socials overlaid
 	const Hero = () => (
@@ -287,6 +290,18 @@ export default function GymProfilePage() {
 						</span>
 					)}
 				</div>
+				{openStatus && (
+					<div className={`mt-2.5 flex w-fit items-center gap-1.5 rounded-full border px-3 py-1 text-xs ${
+						openStatus.status === 'open'
+							? 'bg-[#0d2e1a] border-[#1a4a28] text-[#4ade80]'
+							: openStatus.status === 'closing_soon'
+							? 'bg-[#2a1a0d] border-[#4a2e10] text-[#fb923c]'
+							: 'bg-[#2a1010] border-[#4a2020] text-[#f87171]'
+					}`}>
+						<Clock className="h-3 w-3 shrink-0" />
+						<span>{openStatus.label}</span>
+					</div>
+				)}
 			</div>
 		</div>
 	);
