@@ -178,6 +178,23 @@ export const createEquipment = (body: {
 		body: JSON.stringify(body)
 	});
 
+export const updateAdminEquipment = (
+	id: string | number,
+	body: {
+		name: string;
+		brand: string;
+		series?: string | null;
+		type: Equipment['type'];
+		resistance_profile?: Equipment['resistance_profile'];
+		resistance_curve?: number[] | null;
+	}
+): Promise<Equipment> =>
+	apiFetch(`/admin/equipment/${id}`, {
+		method: 'PATCH',
+		headers: { 'Content-Type': 'application/json', ...authHeaders() },
+		body: JSON.stringify(body)
+	});
+
 export const rateEquipment = (id: string | number, rating: number): Promise<void> =>
 	apiFetch(`/equipment/${id}/rate`, {
 		method: 'POST',

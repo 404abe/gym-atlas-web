@@ -2,9 +2,8 @@
 
 import { Gym } from '@/types/gym';
 import GymCard from './GymCard';
-import EquipmentSearch from './EquipmentSearch';
-import { Search, X } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { PanelLeftClose, Search, X } from 'lucide-react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useGymFilter } from '@/app/contexts/GymFilterContext';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { cn } from '@/lib/utils';
@@ -18,7 +17,8 @@ export default function GymSidebar({
 	onSelectGym,
 	listOnly = false,
 	gymSearch = '',
-	onGymSearchChange
+	onGymSearchChange,
+	onCollapse
 }: {
 	gyms: Gym[];
 	selectedGym: Gym | null;
@@ -26,6 +26,7 @@ export default function GymSidebar({
 	listOnly?: boolean;
 	gymSearch?: string;
 	onGymSearchChange?: (val: string) => void;
+	onCollapse?: () => void;
 }) {
 	const scrollRef = useRef<HTMLDivElement>(null);
 	const userLocation = useUserLocation();
@@ -33,26 +34,30 @@ export default function GymSidebar({
 
 	const filteredGymIds = filteredGyms ? new Set(filteredGyms.map((g) => g.id)) : null;
 	const baseGyms = filteredGymIds ? gyms.filter((g) => filteredGymIds.has(g.id)) : gyms;
-	const displayGyms = userLocation
-		? [...baseGyms].sort((a, b) => {
-				if (!a.lat || !a.lng) return 1;
-				if (!b.lat || !b.lng) return -1;
-				const dist = (lat1: number, lng1: number, lat2: number, lng2: number) => {
-					const dLat = ((lat2 - lat1) * Math.PI) / 180;
-					const dLng = ((lng2 - lng1) * Math.PI) / 180;
-					const x =
-						Math.sin(dLat / 2) ** 2 +
-						Math.cos((lat1 * Math.PI) / 180) *
-							Math.cos((lat2 * Math.PI) / 180) *
-							Math.sin(dLng / 2) ** 2;
-					return 6371 * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
-				};
-				return (
-					dist(userLocation.lat, userLocation.lng, a.lat, a.lng) -
-					dist(userLocation.lat, userLocation.lng, b.lat, b.lng)
-				);
-			})
-		: baseGyms;
+	const displayGyms = useMemo(
+		() =>
+			userLocation
+				? [...baseGyms].sort((a, b) => {
+						if (!a.lat || !a.lng) return 1;
+						if (!b.lat || !b.lng) return -1;
+						const dist = (lat1: number, lng1: number, lat2: number, lng2: number) => {
+							const dLat = ((lat2 - lat1) * Math.PI) / 180;
+							const dLng = ((lng2 - lng1) * Math.PI) / 180;
+							const x =
+								Math.sin(dLat / 2) ** 2 +
+								Math.cos((lat1 * Math.PI) / 180) *
+									Math.cos((lat2 * Math.PI) / 180) *
+									Math.sin(dLng / 2) ** 2;
+							return 6371 * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
+						};
+						return (
+							dist(userLocation.lat, userLocation.lng, a.lat, a.lng) -
+							dist(userLocation.lat, userLocation.lng, b.lat, b.lng)
+						);
+					})
+				: baseGyms,
+		[baseGyms, userLocation]
+	);
 
 	useEffect(() => {
 		if (!selectedGym) return;
@@ -63,7 +68,7 @@ export default function GymSidebar({
 				?.querySelector(`#gym-card-${selectedGym.id}`)
 				?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 		});
-	}, [selectedGym]);
+	}, [displayGyms, selectedGym]);
 
 	return (
 		<div id="GymSidebar" className="flex h-full flex-col">
@@ -87,6 +92,15 @@ export default function GymSidebar({
 							</button>
 						) : (
 							<span className="shrink-0 text-xs text-sub">{filteredGyms ? filteredGyms.length : gyms.length} gyms</span>
+						)}
+						{onCollapse && (
+							<button
+								onClick={onCollapse}
+								title="Collapse gym list"
+								className="text-sub hover:text-main -mr-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md transition hover:bg-sub-alt"
+							>
+								<PanelLeftClose size={13} />
+							</button>
 						)}
 					</div>
 				</div>
