@@ -306,13 +306,19 @@ export default function GymProfilePage() {
 		</div>
 	);
 
-	const EquipmentList = () => (
+	const EquipmentList = () => {
+		const sortedEquipment = [...equipment].sort((a, b) => {
+			if (a.image_url && !b.image_url) return -1;
+			if (!a.image_url && b.image_url) return 1;
+			return 0;
+		});
+		return (
 		<div>
 			{equipment.length === 0 ? (
 				<p className="text-sub text-sm">No equipment listed yet.</p>
 			) : equipmentView === 'grid' ? (
 				<div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-					{equipment.map((item) => {
+					{sortedEquipment.map((item) => {
 						const isPending = item.status === 'pending';
 						return (
 							<button
@@ -373,7 +379,7 @@ export default function GymProfilePage() {
 				</div>
 			) : (
 				<div className="divide-border divide-y">
-					{equipment.map((item) => {
+					{sortedEquipment.map((item) => {
 						const isPending = item.status === 'pending';
 						return (
 							<div
@@ -437,6 +443,7 @@ export default function GymProfilePage() {
 			)}
 		</div>
 	);
+	};
 
 	return (
 		<>
