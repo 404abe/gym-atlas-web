@@ -19,7 +19,7 @@ export default function MobileHeader() {
 	const active = (href: string) => pathname === href;
 
 	return (
-		<header className="bg-bg border-border flex shrink-0 items-center px-2 py-1 md:hidden">
+		<header className="relative z-20 flex shrink-0 items-center border-b border-border bg-bg px-2 py-1 md:hidden">
 			<Link href="/" className="flex items-center no-underline">
 				<GymAtlasLogo size={40} />
 			</Link>

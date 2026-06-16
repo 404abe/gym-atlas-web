@@ -13,7 +13,7 @@ export default function BottomNav() {
 	const active = (href: string) => pathname === href;
 
 	return (
-		<nav className="flex shrink-0 items-end  border-border bg-bg md:hidden">
+		<nav className="flex shrink-0 items-end border-border bg-bg md:hidden">
 			{/* Map */}
 			<Link
 				href="/"

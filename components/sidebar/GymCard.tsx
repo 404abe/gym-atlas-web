@@ -156,32 +156,19 @@ export default function GymCard({
 				</button>
 			</div>
 
-			{/* Photo grid */}
+			{/* Photo strip */}
 			{images.length > 0 && (
-				<div className="mt-2 grid max-h-36 grid-cols-2 gap-1 overflow-hidden rounded-xl">
-					{/* Left: tall image spanning both rows */}
-					<div className="bg-sub-alt row-span-2 h-full overflow-hidden">
-						<img src={images[0]} alt="" className="h-full w-full object-cover brightness-105 contrast-105" />
-					</div>
-
-					{/* Top-right */}
-					<div className="bg-sub-alt h-18 overflow-hidden">
-						{images[1] ? (
-							<img src={images[1]} alt="" className="h-full w-full object-cover brightness-105 contrast-105" />
-						) : null}
-					</div>
-
-					{/* Bottom-right: +N overlay if more than 3 */}
-					<div className="bg-sub-alt relative h-18 overflow-hidden">
-						{images[2] ? (
-							<img src={images[2]} alt="" className="h-full w-full object-cover brightness-105 contrast-105" />
-						) : null}
-						{images.length > 3 && (
-							<div className="absolute inset-0 flex items-center justify-center bg-black/60">
-								<span className="text-sm font-medium text-white">+{images.length - 3}</span>
-							</div>
-						)}
-					</div>
+				<div className="mt-2 flex gap-1.5" style={{ scrollbarWidth: 'none' }}>
+					{images.slice(0, 3).map((src, i) => (
+						<div key={i} className="bg-sub-alt h-16 w-16 shrink-0 overflow-hidden rounded-lg">
+							<img src={src} alt="" className="h-full w-full object-cover brightness-105 contrast-105" />
+						</div>
+					))}
+					{images.length > 3 && (
+						<div className="bg-sub-alt flex h-16 w-16 shrink-0 items-center justify-center rounded-lg text-xs font-medium text-sub">
+							+{images.length - 3}
+						</div>
+					)}
 				</div>
 			)}
 		</div>
