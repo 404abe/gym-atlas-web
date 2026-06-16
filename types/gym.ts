@@ -27,6 +27,7 @@ export interface Gym {
 		weekdayDescriptions?: string[];
 	};
 	hours_updated_at?: string;
+	equipment_images?: string[];
 }
 
 export interface GymEquipment {
