@@ -189,10 +189,15 @@ export const updateAdminEquipment = (
 		resistance_curve?: number[] | null;
 	}
 ): Promise<Equipment> =>
-	apiFetch(`/admin/equipment/${id}`, {
+	apiFetch<Equipment>(`/admin/equipment/${id}`, {
 		method: 'PATCH',
 		headers: { 'Content-Type': 'application/json', ...authHeaders() },
 		body: JSON.stringify(body)
+	}).catch((error) => {
+		if (error instanceof Error && error.message === 'Route not found') {
+			throw new Error('Admin editing is not available on the deployed API yet.');
+		}
+		throw error;
 	});
 
 export const rateEquipment = (id: string | number, rating: number): Promise<void> =>
