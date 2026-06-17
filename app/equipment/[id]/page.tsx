@@ -212,6 +212,7 @@ export default function EquipmentProfilePage() {
 				{isAdmin && (
 					<button
 						onClick={() => setShowAdminEdit(true)}
+						aria-label="Edit equipment"
 						title="Edit equipment"
 						className="flex h-9 w-9 items-center justify-center rounded-full border border-white/25 bg-white/15 text-white backdrop-blur-sm transition hover:bg-white/25"
 					>
@@ -637,7 +638,7 @@ function AdminEquipmentEditModal({
 						<Pencil className="text-main h-4 w-4" />
 						<h2 className="text-main font-semibold">Edit equipment</h2>
 					</div>
-					<button onClick={onClose} className="text-sub hover:text-main">
+					<button onClick={onClose} aria-label="Close edit equipment" className="text-sub hover:text-main">
 						<X className="h-4 w-4" />
 					</button>
 				</div>

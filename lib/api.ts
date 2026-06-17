@@ -193,11 +193,6 @@ export const updateAdminEquipment = (
 		method: 'PATCH',
 		headers: { 'Content-Type': 'application/json', ...authHeaders() },
 		body: JSON.stringify(body)
-	}).catch((error) => {
-		if (error instanceof Error && error.message === 'Route not found') {
-			throw new Error('Admin editing is not available on the deployed API yet.');
-		}
-		throw error;
 	});
 
 export const rateEquipment = (id: string | number, rating: number): Promise<void> =>
@@ -305,7 +300,7 @@ export const fetchLeaderboardUser = (id: string | number): Promise<unknown> =>
 export const fetchUserByUsername = (username: string) =>
 	apiFetch(`/users/by-username/${username}`);
 
-export const syncUser = (): Promise<unknown> =>
+export const syncUser = (): Promise<{ id: string; email: string; username: string; role: 'user' | 'admin' | 'super_admin' }> =>
 	apiFetch('/users/sync', { method: 'POST', headers: authHeaders() });
 
 // ── Users ─────────────────────────────────────────────────────────────────────
