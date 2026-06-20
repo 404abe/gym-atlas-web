@@ -1,25 +1,23 @@
 'use client';
 
 import { Star } from 'lucide-react';
-import { useAuth } from '@/app/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useAuthGate } from '@/app/contexts/AuthGateContext';
 import { useState } from 'react';
 
 type RatingStarsProps = {
 	avgRating?: number;
 	userRating?: number;
 	onRate?: (rating: number) => void;
-	requireAuth?: boolean;
+	gated?: boolean;
 };
 
 export default function RatingStars({
 	avgRating = 0,
 	userRating,
 	onRate,
-	requireAuth = true
+	gated = true
 }: RatingStarsProps) {
-	const { user } = useAuth();
-	const router = useRouter();
+	const { requireAuth } = useAuthGate();
 	const [hoverRating, setHoverRating] = useState(0);
 
 	const currentRating = Number(userRating) || 0;
@@ -27,18 +25,12 @@ export default function RatingStars({
 	const displayRating = hoverRating || currentRating || Number(avgRating) || 0;
 
 	const handleStarClick = (starValue: number) => {
-		if (requireAuth && !user) {
-			router.push('/login');
-			return;
-		}
+		if (gated && !requireAuth('rate equipment')) return;
 		const newRating = starValue === currentRating ? 0 : starValue;
 		onRate?.(newRating);
 	};
 
-	const handleMouseEnter = (starValue: number) => {
-		if (user || !requireAuth) setHoverRating(starValue);
-	};
-
+	const handleMouseEnter = (starValue: number) => setHoverRating(starValue);
 	const handleMouseLeave = () => setHoverRating(0);
 
 	return (

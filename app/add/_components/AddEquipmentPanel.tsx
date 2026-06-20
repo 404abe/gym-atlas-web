@@ -12,6 +12,7 @@ import { useAuth } from '@/app/contexts/AuthContext';
 type Props = {
 	gymId: number;
 	masterEquipment: Equipment[];
+	existingEquipment: GymEquipment[];
 	onEquipmentAdded: (newEquipment: GymEquipment) => void;
 	onClose: () => void;
 };
@@ -19,14 +20,20 @@ type Props = {
 export default function AddEquipmentPanel({
 	gymId,
 	masterEquipment,
+	existingEquipment,
 	onEquipmentAdded,
 	onClose
 }: Props) {
+	const existingMap = useMemo(
+		() => new Map(existingEquipment.map((e) => [e.equipment_id, e.quantity])),
+		[existingEquipment]
+	);
 	const { addToast } = useToastContext();
 	const { user } = useAuth();
 	const [query, setQuery] = useState('');
 	const [adding, setAdding] = useState<number | null>(null);
 	const [justAdded, setJustAdded] = useState<number | null>(null);
+	const [confirmItem, setConfirmItem] = useState<Equipment | null>(null);
 	const inputRef = useRef<HTMLInputElement>(null);
 
 	useEffect(() => {
@@ -41,6 +48,7 @@ export default function AddEquipmentPanel({
 
 	const handleAdd = async (item: Equipment) => {
 		if (adding !== null) return;
+		setConfirmItem(null);
 		setAdding(item.id);
 		try {
 			await addGymEquipment(gymId, item.id, 1);
@@ -68,6 +76,14 @@ export default function AddEquipmentPanel({
 			addToast('Failed to add equipment', 'error');
 		} finally {
 			setAdding(null);
+		}
+	};
+
+	const handleAddClick = (item: Equipment) => {
+		if (existingMap.has(item.id)) {
+			setConfirmItem(item);
+		} else {
+			handleAdd(item);
 		}
 	};
 
@@ -105,57 +121,93 @@ export default function AddEquipmentPanel({
 						filtered.map((item) => {
 							const isAdding = adding === item.id;
 							const isDone = justAdded === item.id;
+							const existingQty = existingMap.get(item.id);
+							const inGym = existingQty !== undefined;
+							const isConfirming = confirmItem?.id === item.id;
 
 							return (
-								<div
-									key={item.id}
-									className="bg-surface flex items-center gap-3 rounded-xl p-2.5"
-								>
-									{/* Thumbnail */}
-									<div className="bg-sub-alt h-14 w-14 shrink-0 overflow-hidden rounded-lg">
-										{item.image_url ? (
-											<img
-												src={item.image_url}
-												alt={item.name}
-												className="h-full w-full object-cover"
-											/>
-										) : (
-											<div className="flex h-full w-full items-center justify-center">
-												<Dumbbell className="text-sub h-5 w-5 opacity-30" />
+								<div key={item.id} className="flex flex-col gap-0 overflow-hidden rounded-xl">
+									<div className="bg-surface flex items-center gap-3 p-2.5">
+										{/* Thumbnail */}
+										<div className="bg-sub-alt h-14 w-14 shrink-0 overflow-hidden rounded-lg">
+											{item.image_url ? (
+												<img
+													src={item.image_url}
+													alt={item.name}
+													className="h-full w-full object-cover"
+												/>
+											) : (
+												<div className="flex h-full w-full items-center justify-center">
+													<Dumbbell className="text-sub h-5 w-5 opacity-30" />
+												</div>
+											)}
+										</div>
+
+										{/* Info */}
+										<div className="min-w-0 flex-1">
+											<p className="text-main truncate text-sm font-medium">
+												{item.brand} {item.name}
+											</p>
+											<p className="text-sub mt-0.5 text-xs">{item.series}</p>
+											<div className="mt-1 flex flex-wrap gap-1">
+												<span className="text-sub bg-main/8 inline-block rounded px-1.5 py-0.5 text-[10px]">
+													{item.type === 'pin_loaded' ? 'pin loaded' : 'plate loaded'}
+												</span>
+												{inGym && (
+													<span className="inline-block rounded bg-accent/15 px-1.5 py-0.5 text-[10px] text-accent">
+														in gym
+													</span>
+												)}
 											</div>
-										)}
+										</div>
+
+										{/* Add button */}
+										<button
+											onClick={() => handleAddClick(item)}
+											disabled={!!adding || isDone || isConfirming}
+											className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition ${
+												isDone
+													? 'border border-green-500/30 text-green-500'
+													: inGym
+														? 'border border-main/20 text-sub hover:border-main/40 hover:text-main disabled:opacity-40'
+														: 'bg-main text-bg hover:opacity-80 disabled:opacity-40'
+											}`}
+											aria-label={`Add ${item.name}`}
+										>
+											{isAdding ? (
+												<Loader2 className="h-3.5 w-3.5 animate-spin" />
+											) : isDone ? (
+												<Check className="h-3.5 w-3.5" />
+											) : (
+												<span className="text-xs font-medium">+</span>
+											)}
+										</button>
 									</div>
 
-									{/* Info */}
-									<div className="min-w-0 flex-1">
-										<p className="text-main truncate text-sm font-medium">
-											{item.brand} {item.name}
-										</p>
-										<p className="text-sub mt-0.5 text-xs">{item.series}</p>
-										<span className="text-sub bg-main/8 mt-1 inline-block rounded px-1.5 py-0.5 text-[10px]">
-											{item.type === 'pin_loaded' ? 'pin loaded' : 'plate loaded'}
-										</span>
-									</div>
-
-									{/* Add button */}
-									<button
-										onClick={() => handleAdd(item)}
-										disabled={!!adding || isDone}
-										className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition ${
-											isDone
-												? 'border border-green-500/30 text-green-500'
-												: 'bg-main text-bg hover:opacity-80 disabled:opacity-40'
-										}`}
-										aria-label={`Add ${item.name}`}
-									>
-										{isAdding ? (
-											<Loader2 className="h-3.5 w-3.5 animate-spin" />
-										) : isDone ? (
-											<Check className="h-3.5 w-3.5" />
-										) : (
-											<span className="text-xs font-medium">+</span>
-										)}
-									</button>
+									{/* Duplicate confirmation */}
+									{isConfirming && (
+										<div className="border-border bg-surface flex items-center justify-between gap-3 border-t px-3 py-2.5">
+											<p className="text-sub text-xs">
+												There{existingQty === 1 ? "'s" : ' are'} already{' '}
+												<span className="text-main font-medium">{existingQty}</span> of this in
+												the gym. Add another?
+											</p>
+											<div className="flex shrink-0 gap-1.5">
+												<button
+													onClick={() => setConfirmItem(null)}
+													className="border-border text-sub hover:text-main rounded-lg border px-2.5 py-1 text-xs transition"
+												>
+													Cancel
+												</button>
+												<button
+													onClick={() => handleAdd(item)}
+													className="bg-main text-bg hover:opacity-80 rounded-lg px-2.5 py-1 text-xs transition"
+												>
+													Add
+												</button>
+											</div>
+										</div>
+									)}
 								</div>
 							);
 						})

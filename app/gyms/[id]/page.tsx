@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { MapPin, Star, Dumbbell, Minus, LayoutGrid, List, Plus, Navigation, Check, X, Loader2 } from 'lucide-react';
+import { MapPin, Star, Dumbbell, Minus, LayoutGrid, List, Plus, Navigation, Check, X, Loader2, Clock } from 'lucide-react';
 import {
 	fetchGymById,
 	fetchGymEquipment,
@@ -21,6 +21,7 @@ import { useAuth } from '@/app/contexts/AuthContext';
 import { useAuthGate } from '@/app/contexts/AuthGateContext';
 import { useToastContext } from '@/app/contexts/ToastContext';
 import AddEquipmentPanel from '@/app/add/_components/AddEquipmentPanel';
+import { getOpenStatus } from '@/lib/openingHours';
 
 export default function GymProfilePage() {
 	const { id } = useParams();
@@ -147,6 +148,8 @@ export default function GymProfilePage() {
 	const avgRating = gym.rating ? Number(gym.rating) : null;
 	const fullAddress = [gym.address, gym.city, gym.country].filter(Boolean).join(', ');
 	const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`;
+
+	const openStatus = getOpenStatus(gym.opening_hours);
 
 	// ── Hero ── image-first; gym name, location, address + socials overlaid
 	const Hero = () => (
@@ -287,17 +290,35 @@ export default function GymProfilePage() {
 						</span>
 					)}
 				</div>
+				{openStatus && (
+					<div className={`mt-2.5 flex w-fit items-center gap-1.5 rounded-full border px-3 py-1 text-xs ${
+						openStatus.status === 'open'
+							? 'bg-[#0d2e1a] border-[#1a4a28] text-[#4ade80]'
+							: openStatus.status === 'closing_soon'
+							? 'bg-[#2a1a0d] border-[#4a2e10] text-[#fb923c]'
+							: 'bg-[#2a1010] border-[#4a2020] text-[#f87171]'
+					}`}>
+						<Clock className="h-3 w-3 shrink-0" />
+						<span>{openStatus.label}</span>
+					</div>
+				)}
 			</div>
 		</div>
 	);
 
-	const EquipmentList = () => (
+	const EquipmentList = () => {
+		const sortedEquipment = [...equipment].sort((a, b) => {
+			if (a.image_url && !b.image_url) return -1;
+			if (!a.image_url && b.image_url) return 1;
+			return 0;
+		});
+		return (
 		<div>
 			{equipment.length === 0 ? (
 				<p className="text-sub text-sm">No equipment listed yet.</p>
 			) : equipmentView === 'grid' ? (
 				<div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-					{equipment.map((item) => {
+					{sortedEquipment.map((item) => {
 						const isPending = item.status === 'pending';
 						return (
 							<button
@@ -358,7 +379,7 @@ export default function GymProfilePage() {
 				</div>
 			) : (
 				<div className="divide-border divide-y">
-					{equipment.map((item) => {
+					{sortedEquipment.map((item) => {
 						const isPending = item.status === 'pending';
 						return (
 							<div
@@ -422,6 +443,7 @@ export default function GymProfilePage() {
 			)}
 		</div>
 	);
+	};
 
 	return (
 		<>
@@ -547,7 +569,24 @@ export default function GymProfilePage() {
 								<AddEquipmentPanel
 									gymId={Number(id)}
 									masterEquipment={masterEquipment}
-									onEquipmentAdded={(item) => setEquipment((prev) => [...prev, item])}
+									existingEquipment={equipment}
+									onEquipmentAdded={(item) =>
+										setEquipment((prev) => {
+											const existing = prev.find(
+												(e) => e.equipment_id === item.equipment_id
+											);
+											if (!existing) return [...prev, item];
+											if (item.status === 'approved') {
+												return prev.map((e) =>
+													e.equipment_id === item.equipment_id
+														? { ...e, quantity: e.quantity + item.quantity }
+														: e
+												);
+											}
+											// pending on an already-listed machine — quantity unchanged
+											return prev;
+										})
+									}
 									onClose={() => setShowAddPanel(false)}
 								/>
 							)}
