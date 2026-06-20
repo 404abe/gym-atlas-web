@@ -58,8 +58,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 					// fires with loading=false, so the account page effect can run
 					// while fetchProfile is still in-flight — it needs a valid token.
 					setAuthToken(session.access_token);
+					let apiProfile: { username: string; role: string } | null = null;
+					try {
+						apiProfile = await syncUser();
+					} catch {
+						apiProfile = null;
+					}
 					if (_event === 'SIGNED_IN') {
-						await syncUser().catch(() => {});
 						// Create profile for new users — username stored in metadata during signUp.
 						// Runs with a valid JWT so RLS INSERT policy (auth.uid() = id) passes.
 						const username = session.user.user_metadata?.username as string | undefined;
@@ -70,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 							);
 						}
 					}
-					const profile = await fetchProfile(session.user.id);
+					const profile = apiProfile ?? await fetchProfile(session.user.id);
 					console.log('[AuthContext] fetchProfile resolved, calling setUser + setLoading(false)');
 					setUser({
 						id: session.user.id,

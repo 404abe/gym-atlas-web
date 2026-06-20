@@ -189,7 +189,7 @@ export const updateAdminEquipment = (
 		resistance_curve?: number[] | null;
 	}
 ): Promise<Equipment> =>
-	apiFetch(`/admin/equipment/${id}`, {
+	apiFetch<Equipment>(`/admin/equipment/${id}`, {
 		method: 'PATCH',
 		headers: { 'Content-Type': 'application/json', ...authHeaders() },
 		body: JSON.stringify(body)
@@ -300,7 +300,7 @@ export const fetchLeaderboardUser = (id: string | number): Promise<unknown> =>
 export const fetchUserByUsername = (username: string) =>
 	apiFetch(`/users/by-username/${username}`);
 
-export const syncUser = (): Promise<unknown> =>
+export const syncUser = (): Promise<{ id: string; email: string; username: string; role: 'user' | 'admin' | 'super_admin' }> =>
 	apiFetch('/users/sync', { method: 'POST', headers: authHeaders() });
 
 // ── Users ─────────────────────────────────────────────────────────────────────
