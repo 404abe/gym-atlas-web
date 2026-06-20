@@ -178,6 +178,23 @@ export const createEquipment = (body: {
 		body: JSON.stringify(body)
 	});
 
+export const updateAdminEquipment = (
+	id: string | number,
+	body: {
+		name: string;
+		brand: string;
+		series?: string | null;
+		type: Equipment['type'];
+		resistance_profile?: Equipment['resistance_profile'];
+		resistance_curve?: number[] | null;
+	}
+): Promise<Equipment> =>
+	apiFetch<Equipment>(`/admin/equipment/${id}`, {
+		method: 'PATCH',
+		headers: { 'Content-Type': 'application/json', ...authHeaders() },
+		body: JSON.stringify(body)
+	});
+
 export const rateEquipment = (id: string | number, rating: number): Promise<void> =>
 	apiFetch(`/equipment/${id}/rate`, {
 		method: 'POST',
@@ -283,7 +300,7 @@ export const fetchLeaderboardUser = (id: string | number): Promise<unknown> =>
 export const fetchUserByUsername = (username: string) =>
 	apiFetch(`/users/by-username/${username}`);
 
-export const syncUser = (): Promise<unknown> =>
+export const syncUser = (): Promise<{ id: string; email: string; username: string; role: 'user' | 'admin' | 'super_admin' }> =>
 	apiFetch('/users/sync', { method: 'POST', headers: authHeaders() });
 
 // ── Users ─────────────────────────────────────────────────────────────────────

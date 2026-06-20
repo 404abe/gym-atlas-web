@@ -455,7 +455,7 @@ export default function GymProfilePage() {
 						{/* ── Stats ── */}
 						<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
 							<div className="bg-sub-alt flex flex-col justify-between rounded-2xl p-3">
-								<p className="text-sub text-[11px]">rating</p>
+								<p className="text-sub text-[11px]">Rating</p>
 								<p className="text-main text-xl font-semibold">
 									{avgRating ? avgRating.toFixed(1) : '—'}
 								</p>
@@ -471,18 +471,67 @@ export default function GymProfilePage() {
 								)}
 							</div>
 							<div className="bg-sub-alt flex flex-col justify-between rounded-2xl p-3">
-								<p className="text-sub text-[11px]">favourites</p>
+								<p className="text-sub text-[11px]">Favourites</p>
 								<p className="text-main text-xl font-semibold">{gym.favourites ?? 0}</p>
 							</div>
 							<div className="bg-sub-alt flex flex-col justify-between rounded-2xl p-3">
-								<p className="text-sub text-[11px]">equipment</p>
+								<p className="text-sub text-[11px]">Equipment</p>
 								<p className="text-main text-xl font-semibold">{gym.total_equipment}</p>
 							</div>
 							<div className="bg-sub-alt flex flex-col justify-between rounded-2xl p-3">
-								<p className="text-sub text-[11px]">unique</p>
+								<p className="text-sub text-[11px]">Unique</p>
 								<p className="text-main text-xl font-semibold">{gym.unique_machines}</p>
 							</div>
 						</div>
+
+						<details className="group border-border bg-sub-alt rounded-2xl border">
+							<summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 marker:hidden">
+								<div>
+									<h2 className="text-main text-sm font-semibold">Free Weights</h2>
+									<p className="text-sub text-xs">Racks, benches, and dumbbell range</p>
+								</div>
+								<div className="flex items-center gap-2">
+									<div className="border-border bg-bg/40 rounded-xl border px-3 py-2 text-right">
+										<p className="text-sub text-[10px] uppercase">Dumbbells</p>
+										<p className="text-main text-sm font-semibold">2-50kg</p>
+									</div>
+									<span className="border-border bg-bg/40 text-main hidden rounded-full border px-2.5 py-1 text-xs transition group-open:hidden sm:inline">
+										View details
+									</span>
+								</div>
+							</summary>
+							<div className="border-border border-t px-4 pb-4 pt-3">
+								<div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+									<div className="border-border bg-bg/30 rounded-xl border px-3 py-2">
+										<p className="text-sub text-[11px]">Dumbbell Racks</p>
+										<p className="text-main text-base font-semibold">2</p>
+									</div>
+									<div className="border-border bg-bg/30 rounded-xl border px-3 py-2">
+										<p className="text-sub text-[11px]">Squat Racks</p>
+										<p className="text-main text-base font-semibold">4</p>
+									</div>
+									<div className="border-border bg-bg/30 rounded-xl border px-3 py-2">
+										<p className="text-sub text-[11px]">Flat Benches</p>
+										<p className="text-main text-base font-semibold">6</p>
+									</div>
+									<div className="border-border bg-bg/30 rounded-xl border px-3 py-2">
+										<p className="text-sub text-[11px]">Incline Benches</p>
+										<p className="text-main text-base font-semibold">2</p>
+									</div>
+								</div>
+								<div className="mt-2 flex flex-wrap gap-2">
+									<span className="border-border text-sub rounded-full border px-2.5 py-1 text-xs">
+										2 Platforms
+									</span>
+									<span className="border-border text-sub rounded-full border px-2.5 py-1 text-xs">
+										1 Preacher Curl Station
+									</span>
+									<span className="border-border text-sub rounded-full border px-2.5 py-1 text-xs">
+										Free Weight Area Verified
+									</span>
+								</div>
+							</div>
+						</details>
 
 						{/* ── Equipment ── */}
 						<div className="bg-surface rounded-2xl p-4">

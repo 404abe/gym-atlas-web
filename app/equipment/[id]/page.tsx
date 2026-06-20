@@ -16,10 +16,13 @@ import {
 	favouriteEquipment,
 	unfavouriteEquipment,
 	updateWeightStack,
+	updateAdminEquipment,
 	createVariant,
 	deleteVariant
 } from '@/lib/api';
-import { Star, Dumbbell, Plus, Trophy, X, ChevronDown } from 'lucide-react';
+import ResistanceButtons from '@/app/add/_components/ResistanceButtons';
+import { DEFAULT_CURVE } from '@/components/ui/CustomCurveEditor';
+import { Star, Dumbbell, Plus, Trophy, X, ChevronDown, Pencil } from 'lucide-react';
 import { Equipment, EquipmentVariant } from '@/types/equipment';
 import { GymWithQuantity } from '@/types/gym';
 import type { BestInClassCategory } from '@/types/bestInClass';
@@ -48,8 +51,10 @@ export default function EquipmentProfilePage() {
 	const [editingWeightStack, setEditingWeightStack] = useState(false);
 	const [weightStackInput, setWeightStackInput] = useState('');
 	const [weightStackPending, setWeightStackPending] = useState(false);
+	const [showAdminEdit, setShowAdminEdit] = useState(false);
 
 	const canConfirm = selectedMuscle || selectedExercise;
+	const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
 
 	const getSuggested = () =>
 		getEquipmentCategorySuggestions(item?.name ?? '', { fallback: true }) ??
@@ -157,7 +162,7 @@ export default function EquipmentProfilePage() {
 	const avgRating = item.avg_rating ? Number(item.avg_rating) : null;
 
 	// ── Hero ── shared across breakpoints; image-first with overlaid title + actions
-	const Hero = () => (
+	const renderHero = () => (
 		<div className="bg-sub-alt relative aspect-[4/3] w-full overflow-hidden rounded-2xl sm:aspect-[16/9]">
 			{imageUrl ? (
 				<img src={imageUrl} alt={item.name} className="h-full w-full object-cover" />
@@ -204,6 +209,16 @@ export default function EquipmentProfilePage() {
 				<div className="flex h-9 w-9 items-center justify-center rounded-full border border-white/25 bg-white/15 backdrop-blur-sm">
 					<FavoriteButton isFavorite={isFavorite} onToggle={handleFavorite} />
 				</div>
+				{isAdmin && (
+					<button
+						onClick={() => setShowAdminEdit(true)}
+						aria-label="Edit equipment"
+						title="Edit equipment"
+						className="flex h-9 w-9 items-center justify-center rounded-full border border-white/25 bg-white/15 text-white backdrop-blur-sm transition hover:bg-white/25"
+					>
+						<Pencil className="h-3.5 w-3.5" />
+					</button>
+				)}
 			</div>
 
 			{/* Title overlay — bottom */}
@@ -232,7 +247,7 @@ export default function EquipmentProfilePage() {
 		<div id="pageEquipmentProfile" className="content-grid py-8">
 			<div className="full-width-padding mx-auto w-full max-w-4xl">
 				<div className="flex flex-col gap-3">
-					<Hero />
+					{renderHero()}
 
 					{/* ── Stats ── */}
 					<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -387,6 +402,21 @@ export default function EquipmentProfilePage() {
 					/>
 				</div>
 			</div>
+
+			{showAdminEdit && (
+				<AdminEquipmentEditModal
+					item={item}
+					onClose={() => setShowAdminEdit(false)}
+					onSaved={async (updated) => {
+						setItem((prev) => (prev ? { ...prev, ...updated } : updated));
+						if (updated.slug && updated.slug !== item.slug) {
+							const gymsData = await fetchEquipmentGyms(updated.slug);
+							setGyms(gymsData.gyms || []);
+						}
+						setShowAdminEdit(false);
+					}}
+				/>
+			)}
 
 			{/* ── Best in Class Modal ── */}
 			{showBestInClass && (
@@ -549,6 +579,134 @@ export default function EquipmentProfilePage() {
 					</div>
 				</div>
 			)}
+		</div>
+	);
+}
+
+function AdminEquipmentEditModal({
+	item,
+	onClose,
+	onSaved
+}: {
+	item: Equipment;
+	onClose: () => void;
+	onSaved: (item: Equipment) => void | Promise<void>;
+}) {
+	const [brand, setBrand] = useState(item.brand || '');
+	const [series, setSeries] = useState(item.series || '');
+	const [name, setName] = useState(item.name || '');
+	const [type, setType] = useState<Equipment['type']>(item.type || 'pin_loaded');
+	const [resistance, setResistance] = useState<Equipment['resistance_profile'] | null>(
+		item.resistance_profile || 'constant'
+	);
+	const [curve, setCurve] = useState<number[]>(item.resistance_curve || DEFAULT_CURVE);
+	const [saving, setSaving] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+
+	const canSave = Boolean(brand.trim() && name.trim() && type && resistance);
+
+	const handleSave = async () => {
+		if (!canSave) return;
+		setSaving(true);
+		setError(null);
+		try {
+			const updated = await updateAdminEquipment(item.id, {
+				brand: brand.trim(),
+				series: series.trim() || null,
+				name: name.trim(),
+				type,
+				resistance_profile: resistance || 'constant',
+				resistance_curve: resistance === 'custom' ? curve : null
+			});
+			await onSaved(updated);
+		} catch (err) {
+			setError(err instanceof Error ? err.message : 'Failed to update equipment');
+		} finally {
+			setSaving(false);
+		}
+	};
+
+	const inputClass = 'bg-sub-alt text-main w-full rounded-lg px-3 py-2 text-sm outline-none';
+	const labelClass = 'text-sub mb-1.5 block text-[11px] uppercase tracking-wide';
+
+	return (
+		<div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+			<div className="absolute inset-0 bg-black/45 backdrop-blur-sm" onClick={onClose} />
+			<div className="bg-surface relative w-full max-w-lg rounded-2xl p-5 shadow-2xl">
+				<div className="mb-4 flex items-center justify-between">
+					<div className="flex items-center gap-2">
+						<Pencil className="text-main h-4 w-4" />
+						<h2 className="text-main font-semibold">Edit equipment</h2>
+					</div>
+					<button onClick={onClose} aria-label="Close edit equipment" className="text-sub hover:text-main">
+						<X className="h-4 w-4" />
+					</button>
+				</div>
+
+				<div className="grid gap-3 sm:grid-cols-2">
+					<label>
+						<span className={labelClass}>brand</span>
+						<input value={brand} onChange={(e) => setBrand(e.target.value)} className={inputClass} />
+					</label>
+					<label>
+						<span className={labelClass}>series</span>
+						<input value={series} onChange={(e) => setSeries(e.target.value)} className={inputClass} />
+					</label>
+				</div>
+
+				<label className="mt-3 block">
+					<span className={labelClass}>name</span>
+					<input value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
+				</label>
+
+				<div className="mt-3">
+					<span className={labelClass}>type</span>
+					<div className="grid grid-cols-2 gap-2">
+						{[
+							{ key: 'pin_loaded', label: 'Pin loaded' },
+							{ key: 'plate_loaded', label: 'Plate loaded' }
+						].map((option) => (
+							<button
+								key={option.key}
+								type="button"
+								onClick={() => setType(option.key as Equipment['type'])}
+								className={`rounded-lg border px-3 py-2 text-xs transition ${
+									type === option.key
+										? 'border-main bg-main text-bg'
+										: 'border-border text-sub hover:text-main'
+								}`}
+							>
+								{option.label}
+							</button>
+						))}
+					</div>
+				</div>
+
+				<div className="mt-3">
+					<span className={labelClass}>resistance</span>
+					<ResistanceButtons
+						resistance={resistance}
+						setResistance={setResistance}
+						curve={curve}
+						onCurveChange={setCurve}
+					/>
+				</div>
+
+				{error && <p className="mt-3 text-xs text-red-400">{error}</p>}
+
+				<div className="mt-5 flex justify-end gap-2">
+					<button onClick={onClose} className="text-sub hover:text-main rounded-lg px-3 py-2 text-xs">
+						Cancel
+					</button>
+					<button
+						onClick={handleSave}
+						disabled={!canSave || saving}
+						className="bg-main text-bg rounded-lg px-4 py-2 text-xs font-medium disabled:opacity-40"
+					>
+						{saving ? 'Saving...' : 'Save changes'}
+					</button>
+				</div>
+			</div>
 		</div>
 	);
 }
