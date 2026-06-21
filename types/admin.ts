@@ -74,6 +74,25 @@ export interface PendingGymInstagram {
 	submitted_by?: string;
 }
 
+export interface PendingFreeWeights {
+	id: number;
+	gym_id: number;
+	gym_name: string;
+	city?: string;
+	country?: string;
+	image_url?: string;
+	dumbbell_min_kg: number | null;
+	dumbbell_max_kg: number | null;
+	dumbbell_racks: number;
+	squat_racks: number;
+	flat_benches: number;
+	incline_benches: number;
+	platforms: number;
+	preacher_curl_stations: number;
+	submitted_by?: string;
+	created_at: string;
+}
+
 export interface AdminUser {
 	id: string;
 	email: string;
