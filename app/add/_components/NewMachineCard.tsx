@@ -1,22 +1,23 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Plus, Loader2 } from 'lucide-react';
-import Combobox from '@/components/ui/Combobox';
+import { useState, useEffect, useRef } from 'react';
+import { AlertTriangle, ChevronDown, ExternalLink, Loader2, Plus } from 'lucide-react';
 import { Equipment } from '@/types/equipment';
 import {
-	fetchEquipmentBrands,
-	fetchEquipmentSeries,
 	fetchBestInClassCategories,
 	createEquipment,
 	uploadEquipmentImage,
 	rateEquipment,
-	setBestInClass
+	setBestInClass,
+	checkEquipmentDuplicate
 } from '@/lib/api';
+import type { Brand, DuplicateMatch } from '@/lib/api';
 import type { BestInClassCategory } from '@/types/bestInClass';
 import ImageTile from './ImageTile';
 import TypeButtons from './TypeButtons';
 import ResistanceButtons from './ResistanceButtons';
+import BrandPickerModal from './BrandPickerModal';
+import SeriesPickerModal from './SeriesPickerModal';
 import { DEFAULT_CURVE } from '@/components/ui/CustomCurveEditor';
 import RatingRow from './RatingRow';
 import { useToastContext } from '@/app/contexts/ToastContext';
@@ -35,8 +36,6 @@ const tileCls = 'bg-sub-alt flex flex-col justify-between rounded-2xl p-3';
 const labelCls = 'text-sub text-[11px]';
 const bareInputCls =
 	'bg-transparent text-main placeholder:text-sub w-full border-none outline-none font-[inherit]';
-const metaComboInputCls =
-	'bg-transparent text-sub placeholder:text-sub border-none outline-none font-[inherit] text-xs';
 
 const toSlug = (str: string) =>
 	str
@@ -70,44 +69,69 @@ function SubmitButton({
 	);
 }
 
-function BrandSeriesRow({
-	brand,
-	series,
-	brands,
-	seriesOptions,
-	brandsLoading,
-	seriesLoading,
-	onBrandChange,
-	onSeriesChange
+function PickerButton({
+	label,
+	value,
+	disabled,
+	tooltip,
+	onClick
 }: {
-	brand: string;
-	series: string;
-	brands: string[];
-	seriesOptions: string[];
-	brandsLoading: boolean;
-	seriesLoading: boolean;
-	onBrandChange: (val: string) => void;
-	onSeriesChange: (val: string) => void;
+	label: string;
+	value: string;
+	disabled?: boolean;
+	tooltip?: string;
+	onClick: () => void;
 }) {
 	return (
-		<div className="flex items-center gap-1.5">
-			<Combobox
-				value={brand}
-				onChange={onBrandChange}
-				options={brands}
-				placeholder="Brand"
-				loading={brandsLoading}
-				inputClassName={`${metaComboInputCls} w-24`}
-			/>
-			<span className="text-sub text-xs">·</span>
-			<Combobox
-				value={series}
-				onChange={onSeriesChange}
-				options={seriesOptions}
-				placeholder="Series"
-				loading={seriesLoading}
-				inputClassName={`${metaComboInputCls} w-24`}
-			/>
+		<button
+			type="button"
+			onClick={onClick}
+			disabled={disabled}
+			title={tooltip}
+			className={`flex items-center gap-1 rounded-lg px-2 py-1 text-xs transition ${
+				disabled
+					? 'text-sub cursor-not-allowed opacity-40'
+					: value
+						? 'text-main hover:bg-sub-alt'
+						: 'text-sub hover:text-main hover:bg-sub-alt'
+			}`}
+		>
+			<span>{value || label}</span>
+			<ChevronDown className="h-3 w-3 shrink-0 opacity-60" />
+		</button>
+	);
+}
+
+function DuplicateBanner({
+	match,
+	onDismiss
+}: {
+	match: NonNullable<DuplicateMatch>;
+	onDismiss: () => void;
+}) {
+	return (
+		<div className="border-border bg-sub-alt flex items-start gap-3 rounded-xl border px-4 py-3">
+			<AlertTriangle className="text-sub mt-0.5 h-4 w-4 shrink-0" />
+			<div className="text-main flex-1 text-sm">
+				<span className="font-medium">Possible duplicate — </span>
+				<span className="text-sub">{match.name} already exists in the library. </span>
+				<a
+					href={`/equipment/${match.slug}`}
+					target="_blank"
+					rel="noreferrer"
+					className="text-main inline-flex items-center gap-0.5 font-medium underline underline-offset-2"
+				>
+					View it <ExternalLink className="h-3 w-3" />
+				</a>
+			</div>
+			<button
+				type="button"
+				onClick={onDismiss}
+				className="text-sub hover:text-main transition text-xs"
+				aria-label="Dismiss"
+			>
+				✕
+			</button>
 		</div>
 	);
 }
@@ -159,7 +183,7 @@ export default function NewMachineCard({ onCreated }: Props) {
 	const { addToast } = useToastContext();
 	const { requireAuth } = useAuthGate();
 
-	const [brand, setBrand] = useState('');
+	const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null);
 	const [series, setSeries] = useState('');
 	const [name, setName] = useState('');
 	const [type, setType] = useState<Equipment['type'] | null>(null);
@@ -170,41 +194,24 @@ export default function NewMachineCard({ onCreated }: Props) {
 	const [imagePreview, setImagePreview] = useState<string | null>(null);
 	const [isCreating, setIsCreating] = useState(false);
 
-	const [brands, setBrands] = useState<string[]>([]);
-	const [seriesOptions, setSeriesOptions] = useState<string[]>([]);
-	const [brandsLoading, setBrandsLoading] = useState(true);
-	const [seriesLoading, setSeriesLoading] = useState(false);
 	const [muscleGroups, setMuscleGroups] = useState<BestInClassCategory[]>([]);
 	const [muscleGroupsLoading, setMuscleGroupsLoading] = useState(true);
 	const [selectedMuscleIds, setSelectedMuscleIds] = useState<number[]>([]);
 
-	useEffect(() => {
-		let cancelled = false;
+	const [showBrandModal, setShowBrandModal] = useState(false);
+	const [showSeriesModal, setShowSeriesModal] = useState(false);
 
-		fetchEquipmentBrands()
-			.then((data) => {
-				if (!cancelled) setBrands(data ?? []);
-			})
-			.catch(() => {
-				if (!cancelled) addToast('Failed to load brands', 'error');
-			})
-			.finally(() => {
-				if (!cancelled) setBrandsLoading(false);
-			});
-
-		return () => {
-			cancelled = true;
-		};
-	}, [addToast]);
+	const [duplicateMatch, setDuplicateMatch] = useState<DuplicateMatch>(null);
+	const [duplicateDismissed, setDuplicateDismissed] = useState(false);
+	const duplicateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	useEffect(() => {
 		let cancelled = false;
-
 		fetchBestInClassCategories()
 			.then((data) => {
 				if (!cancelled) {
 					setMuscleGroups(
-						(data.categories ?? []).filter((category) => category.type === 'muscle_group')
+						(data.categories ?? []).filter((c) => c.type === 'muscle_group')
 					);
 				}
 			})
@@ -214,48 +221,10 @@ export default function NewMachineCard({ onCreated }: Props) {
 			.finally(() => {
 				if (!cancelled) setMuscleGroupsLoading(false);
 			});
-
-		return () => {
-			cancelled = true;
-		};
+		return () => { cancelled = true; };
 	}, [addToast]);
 
-	useEffect(() => {
-		let cancelled = false;
-		const matched = brands.find((b) => b.toLowerCase() === brand.toLowerCase());
-
-		if (!brand.trim() || !matched) {
-			queueMicrotask(() => {
-				if (cancelled) return;
-				setSeriesOptions([]);
-				if (!brand.trim()) setSeries('');
-			});
-
-			return () => {
-				cancelled = true;
-			};
-		}
-
-		queueMicrotask(() => {
-			if (!cancelled) setSeriesLoading(true);
-		});
-
-		fetchEquipmentSeries(matched)
-			.then((data) => {
-				if (!cancelled) setSeriesOptions(data ?? []);
-			})
-			.catch(() => {
-				if (!cancelled) addToast('Failed to load series', 'error');
-			})
-			.finally(() => {
-				if (!cancelled) setSeriesLoading(false);
-			});
-
-		return () => {
-			cancelled = true;
-		};
-	}, [brand, brands, addToast]);
-
+	// Muscle group suggestions based on name
 	useEffect(() => {
 		if (muscleGroupsLoading) return;
 		const suggested = getEquipmentCategorySuggestions(name);
@@ -269,8 +238,34 @@ export default function NewMachineCard({ onCreated }: Props) {
 		setSelectedMuscleIds(ids);
 	}, [name, muscleGroups, muscleGroupsLoading]);
 
-	const slug = [brand, series, name].filter(Boolean).map(toSlug).join('-');
-	const isValid = !!name && !!brand && !!series && !!type;
+	// Duplicate detection — debounced 600ms
+	useEffect(() => {
+		if (duplicateTimerRef.current) clearTimeout(duplicateTimerRef.current);
+
+		if (!selectedBrand || !name.trim() || name.trim().length < 3) {
+			setDuplicateMatch(null);
+			setDuplicateDismissed(false);
+			return;
+		}
+
+		duplicateTimerRef.current = setTimeout(async () => {
+			try {
+				const result = await checkEquipmentDuplicate(selectedBrand.id, series, name.trim());
+				setDuplicateMatch(result.match);
+				setDuplicateDismissed(false);
+			} catch {
+				// silently ignore
+			}
+		}, 600);
+
+		return () => {
+			if (duplicateTimerRef.current) clearTimeout(duplicateTimerRef.current);
+		};
+	}, [selectedBrand, series, name]);
+
+	const slug = [selectedBrand?.name ?? '', series, name].filter(Boolean).map(toSlug).join('-');
+	const isValid = !!name && !!selectedBrand && !!series && !!type;
+	const showDuplicate = !!duplicateMatch && !duplicateDismissed;
 
 	const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0];
@@ -281,39 +276,44 @@ export default function NewMachineCard({ onCreated }: Props) {
 		reader.readAsDataURL(file);
 	};
 
-	const handleBrandChange = (val: string) => {
-		setBrand(val);
+	const handleBrandConfirm = (brand: Brand) => {
+		setSelectedBrand(brand);
 		setSeries('');
+		setDuplicateMatch(null);
+		setDuplicateDismissed(false);
+		setShowBrandModal(false);
 	};
 
 	const toggleMuscleGroup = (id: number) => {
 		setSelectedMuscleIds((current) =>
-			current.includes(id) ? current.filter((selectedId) => selectedId !== id) : [...current, id]
+			current.includes(id) ? current.filter((sid) => sid !== id) : [...current, id]
 		);
 	};
 
 	const handleCreate = async () => {
-		if (!isValid || isCreating) return;
+		if (!isValid || isCreating || !selectedBrand) return;
 		if (!requireAuth('add a machine')) return;
 		setIsCreating(true);
 		try {
 			let failedToAssignMuscles = false;
 			const created = await createEquipment({
 				name,
-				brand,
+				brand: selectedBrand.name,
+				brand_id: selectedBrand.id,
 				series,
 				type,
 				resistance_profile: resistance || undefined,
-			resistance_curve: resistance === 'custom' ? resistanceCurve : undefined,
+				resistance_curve: resistance === 'custom' ? resistanceCurve : undefined,
 			});
 
 			if (imageFile && created.id) await uploadEquipmentImage(created.id, imageFile);
 			if (userRating > 0 && created.id) await rateEquipment(created.id, userRating);
 			if (created.id && selectedMuscleIds.length > 0) {
 				try {
-					await Promise.all(selectedMuscleIds.map((categoryId) => setBestInClass(categoryId, created.id)));
-				} catch (error) {
-					console.error('Failed to assign muscle groups:', error);
+					await Promise.all(
+						selectedMuscleIds.map((categoryId) => setBestInClass(categoryId, created.id))
+					);
+				} catch {
 					failedToAssignMuscles = true;
 				}
 			}
@@ -321,12 +321,12 @@ export default function NewMachineCard({ onCreated }: Props) {
 			onCreated(created);
 			addToast(
 				failedToAssignMuscles
-					? `"${brand} ${series} ${name}" submitted, but muscle groups failed to save`
-					: `"${brand} ${series} ${name}" submitted for review`,
+					? `"${selectedBrand.name} ${series} ${name}" submitted, but muscle groups failed to save`
+					: `"${selectedBrand.name} ${series} ${name}" submitted for review`,
 				failedToAssignMuscles ? 'error' : 'success'
 			);
 
-			setBrand('');
+			setSelectedBrand(null);
 			setSeries('');
 			setName('');
 			setType(null);
@@ -336,6 +336,8 @@ export default function NewMachineCard({ onCreated }: Props) {
 			setImageFile(null);
 			setImagePreview(null);
 			setSelectedMuscleIds([]);
+			setDuplicateMatch(null);
+			setDuplicateDismissed(false);
 		} catch (error) {
 			console.error(error);
 			addToast('Failed to create equipment', 'error');
@@ -344,127 +346,176 @@ export default function NewMachineCard({ onCreated }: Props) {
 		}
 	};
 
-	const brandSeriesProps = {
-		brand,
-		series,
-		brands,
-		seriesOptions,
-		brandsLoading,
-		seriesLoading,
-		onBrandChange: handleBrandChange,
-		onSeriesChange: setSeries
-	};
-
 	const submitProps = { isValid, isCreating, onClick: handleCreate };
 
+	const brandSeriesRow = (
+		<div className="flex items-center gap-1.5">
+			<PickerButton
+				label="Brand"
+				value={selectedBrand?.name ?? ''}
+				onClick={() => setShowBrandModal(true)}
+			/>
+			<span className="text-sub text-xs">·</span>
+			<PickerButton
+				label="Series"
+				value={series}
+				disabled={!selectedBrand}
+				tooltip={!selectedBrand ? 'Select a brand first' : undefined}
+				onClick={() => setShowSeriesModal(true)}
+			/>
+		</div>
+	);
+
 	return (
-		<div className="mx-auto w-full max-w-2xl">
-			{/* ── Desktop Layout ── */}
-			<div className="hidden flex-col gap-3 sm:flex">
-				<div className="grid grid-cols-2 gap-3">
+		<>
+			<div className="mx-auto w-full max-w-2xl">
+				{/* Duplicate banner */}
+				{showDuplicate && duplicateMatch && (
+					<div className="mb-3">
+						<DuplicateBanner
+							match={duplicateMatch}
+							onDismiss={() => setDuplicateDismissed(true)}
+						/>
+					</div>
+				)}
+
+				{/* ── Desktop Layout ── */}
+				<div className="hidden flex-col gap-3 sm:flex">
+					<div className="grid grid-cols-2 gap-3">
+						<ImageTile
+							preview={imagePreview}
+							onImageChange={handleImageChange}
+							className="aspect-square w-full"
+						/>
+
+						<div className="flex flex-col gap-3">
+							<div className="bg-surface flex flex-1 flex-col justify-between rounded-2xl p-5">
+								<div className="flex flex-col gap-3">
+									{brandSeriesRow}
+									<input
+										value={name}
+										onChange={(e) => setName(e.target.value)}
+										placeholder="Machine name"
+										className={`${bareInputCls} text-main text-2xl font-semibold leading-tight`}
+									/>
+								</div>
+								{slug && <p className="text-sub mt-2 truncate text-[11px]">{slug}</p>}
+							</div>
+
+							<div className="grid grid-cols-2 gap-3">
+								<div className={tileCls}>
+									<p className={labelCls}>type</p>
+									<TypeButtons type={type} setType={setType} col />
+								</div>
+								<div className={tileCls}>
+									<p className={labelCls}>resistance</p>
+									<ResistanceButtons
+										resistance={resistance}
+										setResistance={setResistance}
+										curve={resistanceCurve}
+										onCurveChange={setResistanceCurve}
+										col
+									/>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div className={tileCls}>
+						<p className={labelCls}>muscle groups</p>
+						<MuscleGroupButtons
+							categories={muscleGroups}
+							selectedIds={selectedMuscleIds}
+							onToggle={toggleMuscleGroup}
+							loading={muscleGroupsLoading}
+						/>
+					</div>
+
+					<div className="bg-sub-alt flex items-center gap-4 rounded-2xl px-4 py-3">
+						<p className={`${labelCls} shrink-0`}>your rating</p>
+						<RatingRow rating={userRating} setRating={setUserRating} />
+					</div>
+
+					<SubmitButton {...submitProps} />
+				</div>
+
+				{/* ── Mobile Stack Layout ── */}
+				<div className="flex flex-col gap-3 sm:hidden">
 					<ImageTile
 						preview={imagePreview}
 						onImageChange={handleImageChange}
 						className="aspect-square w-full"
 					/>
 
-					<div className="flex flex-col gap-3">
-						<div className="bg-surface flex flex-1 flex-col justify-between rounded-2xl p-5">
-							<div className="flex flex-col gap-3">
-								<BrandSeriesRow {...brandSeriesProps} />
-								<input
-									value={name}
-									onChange={(e) => setName(e.target.value)}
-									placeholder="Machine name"
-									className={`${bareInputCls} text-main text-2xl font-semibold leading-tight`}
-								/>
-							</div>
-							{slug && <p className="text-sub mt-2 truncate text-[11px]">{slug}</p>}
+					<div className="bg-surface flex flex-col justify-between rounded-2xl p-5">
+						<div className="flex flex-col gap-3">
+							{brandSeriesRow}
+							<input
+								value={name}
+								onChange={(e) => setName(e.target.value)}
+								placeholder="Machine name"
+								className={`${bareInputCls} text-main text-2xl font-semibold leading-tight`}
+							/>
 						</div>
+						{slug && <p className="text-sub mt-2 truncate text-[11px]">{slug}</p>}
+					</div>
 
-						<div className="grid grid-cols-2 gap-3">
-							<div className={tileCls}>
-								<p className={labelCls}>type</p>
-								<TypeButtons type={type} setType={setType} col />
-							</div>
-							<div className={tileCls}>
-								<p className={labelCls}>resistance</p>
-								<ResistanceButtons resistance={resistance} setResistance={setResistance} curve={resistanceCurve} onCurveChange={setResistanceCurve} col />
-							</div>
+					<div className="grid grid-cols-2 gap-3">
+						<div className={tileCls}>
+							<p className={labelCls}>type</p>
+							<TypeButtons type={type} setType={setType} col />
+						</div>
+						<div className={tileCls}>
+							<p className={labelCls}>resistance</p>
+							<ResistanceButtons
+								resistance={resistance}
+								setResistance={setResistance}
+								curve={resistanceCurve}
+								onCurveChange={setResistanceCurve}
+								col
+							/>
 						</div>
 					</div>
-				</div>
 
-				<div className={tileCls}>
-					<p className={labelCls}>muscle groups</p>
-					<MuscleGroupButtons
-						categories={muscleGroups}
-						selectedIds={selectedMuscleIds}
-						onToggle={toggleMuscleGroup}
-						loading={muscleGroupsLoading}
-					/>
-				</div>
-
-				<div className="bg-sub-alt flex items-center gap-4 rounded-2xl px-4 py-3">
-					<p className={`${labelCls} shrink-0`}>your rating</p>
-					<RatingRow rating={userRating} setRating={setUserRating} />
-				</div>
-
-				<SubmitButton {...submitProps} />
-			</div>
-
-			{/* ── Mobile Stack Layout ── */}
-			<div className="flex flex-col gap-3 sm:hidden">
-				<ImageTile
-					preview={imagePreview}
-					onImageChange={handleImageChange}
-					className="aspect-square w-full"
-				/>
-
-				<div className="bg-surface flex flex-col justify-between rounded-2xl p-5">
-					<div className="flex flex-col gap-3">
-						<BrandSeriesRow {...brandSeriesProps} />
-						<input
-							value={name}
-							onChange={(e) => setName(e.target.value)}
-							placeholder="Machine name"
-							className={`${bareInputCls} text-main text-2xl font-semibold leading-tight`}
+					<div className={tileCls}>
+						<p className={labelCls}>muscle groups</p>
+						<MuscleGroupButtons
+							categories={muscleGroups}
+							selectedIds={selectedMuscleIds}
+							onToggle={toggleMuscleGroup}
+							loading={muscleGroupsLoading}
 						/>
 					</div>
-					{slug && <p className="text-sub mt-2 truncate text-[11px]">{slug}</p>}
-				</div>
 
-				<div className="grid grid-cols-2 gap-3">
-					<div className={tileCls}>
-						<p className={labelCls}>type</p>
-						<TypeButtons type={type} setType={setType} col />
+					<div className="bg-sub-alt flex items-center gap-4 rounded-2xl px-4 py-3">
+						<p className={`${labelCls} shrink-0`}>your rating</p>
+						<RatingRow rating={userRating} setRating={setUserRating} />
 					</div>
-					<div className={tileCls}>
-						<p className={labelCls}>resistance</p>
-						<ResistanceButtons resistance={resistance} setResistance={setResistance} curve={resistanceCurve} onCurveChange={setResistanceCurve} col />
-					</div>
-				</div>
 
-				<div className={tileCls}>
-					<p className={labelCls}>muscle groups</p>
-					<MuscleGroupButtons
-						categories={muscleGroups}
-						selectedIds={selectedMuscleIds}
-						onToggle={toggleMuscleGroup}
-						loading={muscleGroupsLoading}
-					/>
+					<SubmitButton {...submitProps} />
 				</div>
-
-				<div className="bg-sub-alt flex items-center gap-4 rounded-2xl px-4 py-3">
-					<p className={`${labelCls} shrink-0`}>your rating</p>
-					<RatingRow
-						rating={userRating}
-						setRating={setUserRating}
-					/>
-				</div>
-
-				<SubmitButton {...submitProps} />
 			</div>
-		</div>
+
+			{/* ── Modals ── */}
+			{showBrandModal && (
+				<BrandPickerModal
+					selected={selectedBrand}
+					onConfirm={handleBrandConfirm}
+					onClose={() => setShowBrandModal(false)}
+				/>
+			)}
+			{showSeriesModal && selectedBrand && (
+				<SeriesPickerModal
+					brandId={selectedBrand.id}
+					brandName={selectedBrand.name}
+					selected={series}
+					onConfirm={(s) => {
+						setSeries(s);
+						setShowSeriesModal(false);
+					}}
+					onClose={() => setShowSeriesModal(false)}
+				/>
+			)}
+		</>
 	);
 }
