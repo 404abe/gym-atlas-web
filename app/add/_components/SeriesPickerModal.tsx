@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Loader2, Search, X } from 'lucide-react';
+import { Loader2, Plus, Search, X } from 'lucide-react';
 import { fetchSeriesByBrandId } from '@/lib/api';
 import type { EquipmentSeriesItem } from '@/lib/api';
 
@@ -38,9 +38,11 @@ export default function SeriesPickerModal({
 		inputRef.current?.focus();
 	}, []);
 
-	const filtered = search.trim()
-		? seriesOptions.filter((s) => s.name.toLowerCase().includes(search.toLowerCase()))
+	const trimmed = search.trim();
+	const filtered = trimmed
+		? seriesOptions.filter((s) => s.name.toLowerCase().includes(trimmed.toLowerCase()))
 		: seriesOptions;
+	const showCreateRow = trimmed.length > 0 && !filtered.some((s) => s.name.toLowerCase() === trimmed.toLowerCase());
 
 	const handleOverlayClick = useCallback(
 		(e: React.MouseEvent) => {
@@ -93,10 +95,6 @@ export default function SeriesPickerModal({
 						<div className="flex items-center justify-center py-8">
 							<Loader2 className="text-sub h-5 w-5 animate-spin" />
 						</div>
-					) : filtered.length === 0 ? (
-						<p className="text-sub py-4 text-center text-sm">
-							{seriesOptions.length === 0 ? 'No series found for this brand' : 'No series match your search'}
-						</p>
 					) : (
 						<div className="divide-border divide-y">
 							{filtered.map((item) => {
@@ -110,15 +108,32 @@ export default function SeriesPickerModal({
 											isSelected ? 'bg-sub-alt' : 'hover:bg-sub-alt'
 										}`}
 									>
-										<span
-											className={`text-sm font-medium ${isSelected ? 'text-main' : 'text-sub'}`}
-										>
+										<span className={`text-sm font-medium ${isSelected ? 'text-main' : 'text-sub'}`}>
 											{item.name}
 										</span>
 										<span className="text-sub text-xs">{item.equipment_count} machines</span>
 									</button>
 								);
 							})}
+
+							{showCreateRow && (
+								<button
+									type="button"
+									onClick={() => setPending(trimmed)}
+									className={`flex w-full items-center gap-2 px-5 py-3 text-left transition ${
+										pending === trimmed ? 'bg-sub-alt' : 'hover:bg-sub-alt'
+									}`}
+								>
+									<Plus className="text-sub h-3.5 w-3.5 shrink-0" />
+									<span className={`text-sm font-medium ${pending === trimmed ? 'text-main' : 'text-sub'}`}>
+										Use &ldquo;{trimmed}&rdquo; as new series
+									</span>
+								</button>
+							)}
+
+							{!showCreateRow && filtered.length === 0 && (
+								<p className="text-sub py-4 text-center text-sm">No series found for this brand</p>
+							)}
 						</div>
 					)}
 				</div>
@@ -134,8 +149,11 @@ export default function SeriesPickerModal({
 					</button>
 					<button
 						type="button"
-						onClick={() => { if (pending) onConfirm(pending); }}
-						disabled={!pending}
+						onClick={() => {
+							const value = pending || (showCreateRow ? trimmed : '');
+							if (value) onConfirm(value);
+						}}
+						disabled={!pending && !showCreateRow}
 						className="bg-main text-bg rounded-xl px-4 py-2 text-sm font-medium transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
 					>
 						Confirm
