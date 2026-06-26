@@ -4,15 +4,13 @@ import { useState, useEffect, useRef } from 'react';
 import { AlertTriangle, ChevronDown, ExternalLink, Loader2, Plus } from 'lucide-react';
 import { Equipment } from '@/types/equipment';
 import {
-	fetchBestInClassCategories,
+	fetchMachineExercises,
 	createEquipment,
 	uploadEquipmentImage,
 	rateEquipment,
-	setBestInClass,
 	checkEquipmentDuplicate
 } from '@/lib/api';
 import type { Brand, DuplicateMatch } from '@/lib/api';
-import type { BestInClassCategory } from '@/types/bestInClass';
 import ImageTile from './ImageTile';
 import TypeButtons from './TypeButtons';
 import ResistanceButtons from './ResistanceButtons';
@@ -22,7 +20,6 @@ import { DEFAULT_CURVE } from '@/components/ui/CustomCurveEditor';
 import RatingRow from './RatingRow';
 import { useToastContext } from '@/app/contexts/ToastContext';
 import { useAuthGate } from '@/app/contexts/AuthGateContext';
-import { getEquipmentCategorySuggestions } from '@/lib/equipment-categories';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -136,42 +133,71 @@ function DuplicateBanner({
 	);
 }
 
-function MuscleGroupButtons({
-	categories,
-	selectedIds,
-	onToggle,
-	loading
+function ExerciseCombobox({
+	label,
+	exercises,
+	search,
+	onSearchChange,
+	onSelect,
+	show,
+	setShow,
+	onClear
 }: {
-	categories: BestInClassCategory[];
-	selectedIds: number[];
-	onToggle: (id: number) => void;
-	loading: boolean;
+	label: string;
+	exercises: { id: string; name: string }[];
+	search: string;
+	onSearchChange: (value: string) => void;
+	onSelect: (id: string, name: string) => void;
+	show: boolean;
+	setShow: (value: boolean) => void;
+	onClear?: () => void;
 }) {
-	if (loading) {
-		return <p className="text-sub mt-2 text-xs">Loading muscle groups...</p>;
-	}
+	const filtered = exercises
+		.filter((ex) => ex.name.toLowerCase().includes(search.trim().toLowerCase()))
+		.slice(0, 8);
 
 	return (
-		<div className="mt-2 flex flex-wrap gap-2">
-			{categories.map((category) => {
-				const selected = selectedIds.includes(category.id);
-				return (
+		<div className="bg-sub-alt relative rounded-2xl p-3">
+			<div className="flex items-center justify-between">
+				<p className="text-sub mb-2 text-[11px]">{label}</p>
+				{onClear && (
 					<button
-						key={category.id}
 						type="button"
-						onClick={() => onToggle(category.id)}
-						className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition ${
-							selected
-								? 'bg-main text-bg border-transparent'
-								: 'border-border text-sub hover:text-main'
-						}`}
+						onClick={onClear}
+						className="text-sub hover:text-main -mt-1 text-xs transition"
+						aria-label="Clear secondary exercise"
 					>
-						{category.name}
+						✕
 					</button>
-				);
-			})}
-			{categories.length === 0 && (
-				<p className="text-sub py-1 text-xs">No muscle groups available yet.</p>
+				)}
+			</div>
+			<input
+				value={search}
+				onChange={(e) => {
+					onSearchChange(e.target.value);
+					setShow(true);
+				}}
+				onFocus={() => setShow(true)}
+				onBlur={() => setTimeout(() => setShow(false), 150)}
+				placeholder="Search exercises"
+				className="bg-transparent text-main placeholder:text-sub w-full border-none outline-none text-sm"
+			/>
+			{show && filtered.length > 0 && (
+				<div className="bg-sub-alt absolute left-0 right-0 top-full z-10 mt-1 overflow-hidden rounded-xl shadow-lg">
+					{filtered.map((ex) => (
+						<div
+							key={ex.id}
+							onMouseDown={(e) => {
+								e.preventDefault();
+								onSelect(ex.id, ex.name);
+								setShow(false);
+							}}
+							className="hover:bg-main/10 text-main cursor-pointer px-3 py-2 text-sm"
+						>
+							{ex.name}
+						</div>
+					))}
+				</div>
 			)}
 		</div>
 	);
@@ -194,9 +220,15 @@ export default function NewMachineCard({ onCreated }: Props) {
 	const [imagePreview, setImagePreview] = useState<string | null>(null);
 	const [isCreating, setIsCreating] = useState(false);
 
-	const [muscleGroups, setMuscleGroups] = useState<BestInClassCategory[]>([]);
-	const [muscleGroupsLoading, setMuscleGroupsLoading] = useState(true);
-	const [selectedMuscleIds, setSelectedMuscleIds] = useState<number[]>([]);
+	const [exercises, setExercises] = useState<{ id: string; name: string }[]>([]);
+	const [exerciseSearch, setExerciseSearch] = useState('');
+	const [secondarySearch, setSecondarySearch] = useState('');
+	const [selectedExerciseId, setSelectedExerciseId] = useState<string | null>(null);
+	const [selectedExerciseName, setSelectedExerciseName] = useState('');
+	const [selectedSecondaryId, setSelectedSecondaryId] = useState<string | null>(null);
+	const [selectedSecondaryName, setSelectedSecondaryName] = useState('');
+	const [showExerciseDropdown, setShowExerciseDropdown] = useState(false);
+	const [showSecondaryDropdown, setShowSecondaryDropdown] = useState(false);
 
 	const [showBrandModal, setShowBrandModal] = useState(false);
 	const [showSeriesModal, setShowSeriesModal] = useState(false);
@@ -207,36 +239,15 @@ export default function NewMachineCard({ onCreated }: Props) {
 
 	useEffect(() => {
 		let cancelled = false;
-		fetchBestInClassCategories()
+		fetchMachineExercises()
 			.then((data) => {
-				if (!cancelled) {
-					setMuscleGroups(
-						(data.categories ?? []).filter((c) => c.type === 'muscle_group')
-					);
-				}
+				if (!cancelled) setExercises(data);
 			})
 			.catch(() => {
-				if (!cancelled) addToast('Failed to load muscle groups', 'error');
-			})
-			.finally(() => {
-				if (!cancelled) setMuscleGroupsLoading(false);
+				if (!cancelled) addToast('Failed to load exercises', 'error');
 			});
 		return () => { cancelled = true; };
 	}, [addToast]);
-
-	// Muscle group suggestions based on name
-	useEffect(() => {
-		if (muscleGroupsLoading) return;
-		const suggested = getEquipmentCategorySuggestions(name);
-		if (!suggested) {
-			setSelectedMuscleIds([]);
-			return;
-		}
-		const ids = muscleGroups
-			.filter((mg) => suggested.muscles.includes(mg.name))
-			.map((mg) => mg.id);
-		setSelectedMuscleIds(ids);
-	}, [name, muscleGroups, muscleGroupsLoading]);
 
 	// Duplicate detection — debounced 600ms
 	useEffect(() => {
@@ -264,7 +275,7 @@ export default function NewMachineCard({ onCreated }: Props) {
 	}, [selectedBrand, series, name]);
 
 	const slug = [selectedBrand?.name ?? '', series, name].filter(Boolean).map(toSlug).join('-');
-	const isValid = !!name && !!selectedBrand && !!series && !!type;
+	const isValid = !!name && !!selectedBrand && !!series && !!type && !!selectedExerciseId;
 	const showDuplicate = !!duplicateMatch && !duplicateDismissed;
 
 	const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -284,18 +295,11 @@ export default function NewMachineCard({ onCreated }: Props) {
 		setShowBrandModal(false);
 	};
 
-	const toggleMuscleGroup = (id: number) => {
-		setSelectedMuscleIds((current) =>
-			current.includes(id) ? current.filter((sid) => sid !== id) : [...current, id]
-		);
-	};
-
 	const handleCreate = async () => {
 		if (!isValid || isCreating || !selectedBrand) return;
 		if (!requireAuth('add a machine')) return;
 		setIsCreating(true);
 		try {
-			let failedToAssignMuscles = false;
 			const created = await createEquipment({
 				name,
 				brand: selectedBrand.name,
@@ -304,27 +308,15 @@ export default function NewMachineCard({ onCreated }: Props) {
 				type,
 				resistance_profile: resistance || undefined,
 				resistance_curve: resistance === 'custom' ? resistanceCurve : undefined,
+				exercise_id: selectedExerciseId ?? undefined,
+				secondary_exercise_id: selectedSecondaryId || undefined,
 			});
 
 			if (imageFile && created.id) await uploadEquipmentImage(created.id, imageFile);
 			if (userRating > 0 && created.id) await rateEquipment(created.id, userRating);
-			if (created.id && selectedMuscleIds.length > 0) {
-				try {
-					await Promise.all(
-						selectedMuscleIds.map((categoryId) => setBestInClass(categoryId, created.id))
-					);
-				} catch {
-					failedToAssignMuscles = true;
-				}
-			}
 
 			onCreated(created);
-			addToast(
-				failedToAssignMuscles
-					? `"${selectedBrand.name} ${series} ${name}" submitted, but muscle groups failed to save`
-					: `"${selectedBrand.name} ${series} ${name}" submitted for review`,
-				failedToAssignMuscles ? 'error' : 'success'
-			);
+			addToast(`"${selectedBrand.name} ${series} ${name}" submitted for review`, 'success');
 
 			setSelectedBrand(null);
 			setSeries('');
@@ -335,7 +327,12 @@ export default function NewMachineCard({ onCreated }: Props) {
 			setUserRating(0);
 			setImageFile(null);
 			setImagePreview(null);
-			setSelectedMuscleIds([]);
+			setExerciseSearch('');
+			setSecondarySearch('');
+			setSelectedExerciseId(null);
+			setSelectedExerciseName('');
+			setSelectedSecondaryId(null);
+			setSelectedSecondaryName('');
 			setDuplicateMatch(null);
 			setDuplicateDismissed(false);
 		} catch (error) {
@@ -347,6 +344,52 @@ export default function NewMachineCard({ onCreated }: Props) {
 	};
 
 	const submitProps = { isValid, isCreating, onClick: handleCreate };
+
+	const exercisePickers = (
+		<div className="flex flex-col gap-3">
+			<ExerciseCombobox
+				label="primary exercise"
+				exercises={exercises}
+				search={exerciseSearch}
+				onSearchChange={(value) => {
+					setExerciseSearch(value);
+					setSelectedExerciseId(null);
+					setSelectedExerciseName('');
+				}}
+				onSelect={(id, exName) => {
+					setSelectedExerciseId(id);
+					setSelectedExerciseName(exName);
+					setExerciseSearch(exName);
+				}}
+				show={showExerciseDropdown}
+				setShow={setShowExerciseDropdown}
+			/>
+			{selectedExerciseId && (
+				<ExerciseCombobox
+					label="secondary exercise"
+					exercises={exercises}
+					search={secondarySearch}
+					onSearchChange={(value) => {
+						setSecondarySearch(value);
+						setSelectedSecondaryId(null);
+						setSelectedSecondaryName('');
+					}}
+					onSelect={(id, exName) => {
+						setSelectedSecondaryId(id);
+						setSelectedSecondaryName(exName);
+						setSecondarySearch(exName);
+					}}
+					show={showSecondaryDropdown}
+					setShow={setShowSecondaryDropdown}
+					onClear={() => {
+						setSelectedSecondaryId(null);
+						setSelectedSecondaryName('');
+						setSecondarySearch('');
+					}}
+				/>
+			)}
+		</div>
+	);
 
 	const brandSeriesRow = (
 		<div className="flex items-center gap-1.5">
@@ -421,15 +464,7 @@ export default function NewMachineCard({ onCreated }: Props) {
 						</div>
 					</div>
 
-					<div className={tileCls}>
-						<p className={labelCls}>muscle groups</p>
-						<MuscleGroupButtons
-							categories={muscleGroups}
-							selectedIds={selectedMuscleIds}
-							onToggle={toggleMuscleGroup}
-							loading={muscleGroupsLoading}
-						/>
-					</div>
+					{exercisePickers}
 
 					<div className="bg-sub-alt flex items-center gap-4 rounded-2xl px-4 py-3">
 						<p className={`${labelCls} shrink-0`}>your rating</p>
@@ -477,15 +512,7 @@ export default function NewMachineCard({ onCreated }: Props) {
 						</div>
 					</div>
 
-					<div className={tileCls}>
-						<p className={labelCls}>muscle groups</p>
-						<MuscleGroupButtons
-							categories={muscleGroups}
-							selectedIds={selectedMuscleIds}
-							onToggle={toggleMuscleGroup}
-							loading={muscleGroupsLoading}
-						/>
-					</div>
+					{exercisePickers}
 
 					<div className="bg-sub-alt flex items-center gap-4 rounded-2xl px-4 py-3">
 						<p className={`${labelCls} shrink-0`}>your rating</p>
