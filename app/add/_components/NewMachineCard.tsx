@@ -1,7 +1,18 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { AlertTriangle, ChevronDown, ExternalLink, Loader2, Plus } from 'lucide-react';
+import {
+	AlertTriangle,
+	ChevronDown,
+	Disc,
+	ExternalLink,
+	ImagePlus,
+	Layers,
+	Loader2,
+	Pencil,
+	Plus,
+	X
+} from 'lucide-react';
 import { Equipment } from '@/types/equipment';
 import {
 	fetchMachineExercises,
@@ -11,15 +22,13 @@ import {
 	checkEquipmentDuplicate
 } from '@/lib/api';
 import type { Brand, DuplicateMatch } from '@/lib/api';
-import ImageTile from './ImageTile';
-import TypeButtons from './TypeButtons';
-import ResistanceButtons from './ResistanceButtons';
 import BrandPickerModal from './BrandPickerModal';
 import SeriesPickerModal from './SeriesPickerModal';
+import ExercisePickerModal from './ExercisePickerModal';
 import { DEFAULT_CURVE } from '@/components/ui/CustomCurveEditor';
-import RatingRow from './RatingRow';
 import { useToastContext } from '@/app/contexts/ToastContext';
 import { useAuthGate } from '@/app/contexts/AuthGateContext';
+import { predictExercise } from '@/lib/exercise-match';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -27,12 +36,23 @@ type Props = {
 	onCreated: (equipment: Equipment) => void;
 };
 
+type ExerciseSlot = 'primary' | 'secondary';
+
 // ── Constants ────────────────────────────────────────────────────────────────
 
-const tileCls = 'bg-sub-alt flex flex-col justify-between rounded-2xl p-3';
-const labelCls = 'text-sub text-[11px]';
-const bareInputCls =
-	'bg-transparent text-main placeholder:text-sub w-full border-none outline-none font-[inherit]';
+const cellCls = 'bg-sub-alt border-border flex flex-col gap-3 overflow-hidden rounded-2xl border p-4';
+const labelCls = 'text-sub text-[10px] font-medium uppercase tracking-widest';
+const tileBase =
+	'flex aspect-square flex-col items-center justify-center gap-1.5 rounded-[10px] border transition';
+const tileActive = 'bg-main/8 border-main/40 text-main';
+const tileIdle = 'border-border text-sub hover:text-main';
+
+const RESISTANCE_TILES = [
+	{ key: 'constant', label: 'Constant', stroke: 'currentColor', d: 'M3,10 L33,10' },
+	{ key: 'ascending', label: 'Ascending', stroke: '#378ADD', d: 'M3,15 C13,15 23,5 33,5' },
+	{ key: 'descending', label: 'Descending', stroke: '#E24B4A', d: 'M3,5 C13,5 23,15 33,15' },
+	{ key: 'adjustable', label: 'Adjustable', stroke: '#1D9E75', d: 'M3,14 C8,14 12,5 18,5 C24,5 28,14 33,14' }
+] as const;
 
 const toSlug = (str: string) =>
 	str
@@ -41,63 +61,6 @@ const toSlug = (str: string) =>
 		.replace(/^-|-$/g, '');
 
 // ── Subcomponents ────────────────────────────────────────────────────────────
-
-function SubmitButton({
-	isValid,
-	isCreating,
-	onClick,
-	className = ''
-}: {
-	isValid: boolean;
-	isCreating: boolean;
-	onClick: () => void;
-	className?: string;
-}) {
-	return (
-		<button
-			type="button"
-			onClick={onClick}
-			disabled={!isValid || isCreating}
-			className={`bg-main text-bg flex items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-medium transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40 ${className}`}
-		>
-			{isCreating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-			{isCreating ? 'Creating...' : 'Create machine'}
-		</button>
-	);
-}
-
-function PickerButton({
-	label,
-	value,
-	disabled,
-	tooltip,
-	onClick
-}: {
-	label: string;
-	value: string;
-	disabled?: boolean;
-	tooltip?: string;
-	onClick: () => void;
-}) {
-	return (
-		<button
-			type="button"
-			onClick={onClick}
-			disabled={disabled}
-			title={tooltip}
-			className={`flex items-center gap-1 rounded-lg px-2 py-1 text-xs transition ${
-				disabled
-					? 'text-sub cursor-not-allowed opacity-40'
-					: value
-						? 'text-main hover:bg-sub-alt'
-						: 'text-sub hover:text-main hover:bg-sub-alt'
-			}`}
-		>
-			<span>{value || label}</span>
-			<ChevronDown className="h-3 w-3 shrink-0 opacity-60" />
-		</button>
-	);
-}
 
 function DuplicateBanner({
 	match,
@@ -124,7 +87,7 @@ function DuplicateBanner({
 			<button
 				type="button"
 				onClick={onDismiss}
-				className="text-sub hover:text-main transition text-xs"
+				className="text-sub hover:text-main text-xs transition"
 				aria-label="Dismiss"
 			>
 				✕
@@ -133,71 +96,77 @@ function DuplicateBanner({
 	);
 }
 
-function ExerciseCombobox({
-	label,
-	exercises,
-	search,
-	onSearchChange,
-	onSelect,
-	show,
-	setShow,
-	onClear
+function PickerField({
+	value,
+	placeholder,
+	disabled,
+	title,
+	onClick
 }: {
-	label: string;
-	exercises: { id: string; name: string }[];
-	search: string;
-	onSearchChange: (value: string) => void;
-	onSelect: (id: string, name: string) => void;
-	show: boolean;
-	setShow: (value: boolean) => void;
-	onClear?: () => void;
+	value: string;
+	placeholder: string;
+	disabled?: boolean;
+	title?: string;
+	onClick: () => void;
 }) {
-	const filtered = exercises
-		.filter((ex) => ex.name.toLowerCase().includes(search.trim().toLowerCase()))
-		.slice(0, 8);
-
 	return (
-		<div className="bg-sub-alt relative rounded-2xl p-3">
-			<div className="flex items-center justify-between">
-				<p className="text-sub mb-2 text-[11px]">{label}</p>
-				{onClear && (
-					<button
-						type="button"
-						onClick={onClear}
-						className="text-sub hover:text-main -mt-1 text-xs transition"
-						aria-label="Clear secondary exercise"
-					>
-						✕
-					</button>
-				)}
-			</div>
-			<input
-				value={search}
-				onChange={(e) => {
-					onSearchChange(e.target.value);
-					setShow(true);
-				}}
-				onFocus={() => setShow(true)}
-				onBlur={() => setTimeout(() => setShow(false), 150)}
-				placeholder="Search exercises"
-				className="bg-transparent text-main placeholder:text-sub w-full border-none outline-none text-sm"
-			/>
-			{show && filtered.length > 0 && (
-				<div className="bg-sub-alt absolute left-0 right-0 top-full z-10 mt-1 overflow-hidden rounded-xl shadow-lg">
-					{filtered.map((ex) => (
-						<div
-							key={ex.id}
-							onMouseDown={(e) => {
-								e.preventDefault();
-								onSelect(ex.id, ex.name);
-								setShow(false);
-							}}
-							className="hover:bg-main/10 text-main cursor-pointer px-3 py-2 text-sm"
-						>
-							{ex.name}
-						</div>
-					))}
-				</div>
+		<button
+			type="button"
+			onClick={onClick}
+			disabled={disabled}
+			title={title}
+			className={`border-border flex flex-1 items-center justify-between gap-1 rounded-[10px] border px-3 py-2 text-xs transition ${
+				disabled ? 'text-sub cursor-not-allowed opacity-40' : 'hover:border-sub'
+			}`}
+		>
+			<span className={value ? 'text-main truncate' : 'text-sub truncate'}>
+				{value || placeholder}
+			</span>
+			<ChevronDown className="text-sub h-3 w-3 shrink-0 opacity-60" />
+		</button>
+	);
+}
+
+function ExerciseRow({
+	name,
+	slot,
+	onEdit,
+	onRemove
+}: {
+	name: string;
+	slot: ExerciseSlot;
+	onEdit: () => void;
+	onRemove?: () => void;
+}) {
+	const isPrimary = slot === 'primary';
+	return (
+		<div className="border-border flex items-center gap-2 rounded-[10px] border px-3 py-2">
+			<button
+				type="button"
+				onClick={onEdit}
+				className="flex min-w-0 flex-1 items-center gap-2 text-left"
+			>
+				<span
+					className="h-2 w-2 shrink-0 rounded-full"
+					style={{ backgroundColor: isPrimary ? '#378ADD' : 'var(--color-sub)' }}
+				/>
+				<span className={`flex-1 truncate text-sm ${name ? 'text-main' : 'text-sub'}`}>
+					{name || 'Select exercise'}
+				</span>
+				<span className="text-sub text-[9px] font-medium uppercase tracking-wider">
+					{slot}
+				</span>
+				<Pencil className="text-sub h-3 w-3 shrink-0" />
+			</button>
+			{onRemove && (
+				<button
+					type="button"
+					onClick={onRemove}
+					aria-label="Remove secondary exercise"
+					className="text-sub hover:text-main shrink-0 transition"
+				>
+					<X className="h-3.5 w-3.5" />
+				</button>
 			)}
 		</div>
 	);
@@ -221,17 +190,16 @@ export default function NewMachineCard({ onCreated }: Props) {
 	const [isCreating, setIsCreating] = useState(false);
 
 	const [exercises, setExercises] = useState<{ id: string; name: string }[]>([]);
-	const [exerciseSearch, setExerciseSearch] = useState('');
-	const [secondarySearch, setSecondarySearch] = useState('');
 	const [selectedExerciseId, setSelectedExerciseId] = useState<string | null>(null);
 	const [selectedExerciseName, setSelectedExerciseName] = useState('');
 	const [selectedSecondaryId, setSelectedSecondaryId] = useState<string | null>(null);
 	const [selectedSecondaryName, setSelectedSecondaryName] = useState('');
-	const [showExerciseDropdown, setShowExerciseDropdown] = useState(false);
-	const [showSecondaryDropdown, setShowSecondaryDropdown] = useState(false);
+	// Once the user edits the primary picker manually, stop auto-predicting from the name.
+	const [exerciseTouched, setExerciseTouched] = useState(false);
 
 	const [showBrandModal, setShowBrandModal] = useState(false);
 	const [showSeriesModal, setShowSeriesModal] = useState(false);
+	const [exerciseModal, setExerciseModal] = useState<ExerciseSlot | null>(null);
 
 	const [duplicateMatch, setDuplicateMatch] = useState<DuplicateMatch>(null);
 	const [duplicateDismissed, setDuplicateDismissed] = useState(false);
@@ -274,7 +242,6 @@ export default function NewMachineCard({ onCreated }: Props) {
 		};
 	}, [selectedBrand, series, name]);
 
-	const slug = [selectedBrand?.name ?? '', series, name].filter(Boolean).map(toSlug).join('-');
 	const isValid = !!name && !!selectedBrand && !!series && !!type && !!selectedExerciseId;
 	const showDuplicate = !!duplicateMatch && !duplicateDismissed;
 
@@ -287,12 +254,43 @@ export default function NewMachineCard({ onCreated }: Props) {
 		reader.readAsDataURL(file);
 	};
 
+	const handleNameChange = (value: string) => {
+		setName(value);
+		// Auto-fill the primary exercise from the name until the user picks one themselves.
+		if (exerciseTouched) return;
+		const match = predictExercise(value, exercises);
+		if (match) {
+			setSelectedExerciseId(match.id);
+			setSelectedExerciseName(match.name);
+		} else {
+			setSelectedExerciseId(null);
+			setSelectedExerciseName('');
+		}
+	};
+
 	const handleBrandConfirm = (brand: Brand) => {
 		setSelectedBrand(brand);
 		setSeries('');
 		setDuplicateMatch(null);
 		setDuplicateDismissed(false);
 		setShowBrandModal(false);
+	};
+
+	const handleExerciseConfirm = (id: string, exName: string) => {
+		if (exerciseModal === 'primary') {
+			setExerciseTouched(true);
+			setSelectedExerciseId(id);
+			setSelectedExerciseName(exName);
+		} else if (exerciseModal === 'secondary') {
+			setSelectedSecondaryId(id);
+			setSelectedSecondaryName(exName);
+		}
+		setExerciseModal(null);
+	};
+
+	const clearSecondary = () => {
+		setSelectedSecondaryId(null);
+		setSelectedSecondaryName('');
 	};
 
 	const handleCreate = async () => {
@@ -327,12 +325,11 @@ export default function NewMachineCard({ onCreated }: Props) {
 			setUserRating(0);
 			setImageFile(null);
 			setImagePreview(null);
-			setExerciseSearch('');
-			setSecondarySearch('');
 			setSelectedExerciseId(null);
 			setSelectedExerciseName('');
 			setSelectedSecondaryId(null);
 			setSelectedSecondaryName('');
+			setExerciseTouched(false);
 			setDuplicateMatch(null);
 			setDuplicateDismissed(false);
 		} catch (error) {
@@ -343,184 +340,154 @@ export default function NewMachineCard({ onCreated }: Props) {
 		}
 	};
 
-	const submitProps = { isValid, isCreating, onClick: handleCreate };
-
-	const exercisePickers = (
-		<div className="flex flex-col gap-3">
-			<ExerciseCombobox
-				label="primary exercise"
-				exercises={exercises}
-				search={exerciseSearch}
-				onSearchChange={(value) => {
-					setExerciseSearch(value);
-					setSelectedExerciseId(null);
-					setSelectedExerciseName('');
-				}}
-				onSelect={(id, exName) => {
-					setSelectedExerciseId(id);
-					setSelectedExerciseName(exName);
-					setExerciseSearch(exName);
-				}}
-				show={showExerciseDropdown}
-				setShow={setShowExerciseDropdown}
-			/>
-			{selectedExerciseId && (
-				<ExerciseCombobox
-					label="secondary exercise"
-					exercises={exercises}
-					search={secondarySearch}
-					onSearchChange={(value) => {
-						setSecondarySearch(value);
-						setSelectedSecondaryId(null);
-						setSelectedSecondaryName('');
-					}}
-					onSelect={(id, exName) => {
-						setSelectedSecondaryId(id);
-						setSelectedSecondaryName(exName);
-						setSecondarySearch(exName);
-					}}
-					show={showSecondaryDropdown}
-					setShow={setShowSecondaryDropdown}
-					onClear={() => {
-						setSelectedSecondaryId(null);
-						setSelectedSecondaryName('');
-						setSecondarySearch('');
-					}}
-				/>
-			)}
-		</div>
-	);
-
-	const brandSeriesRow = (
-		<div className="flex items-center gap-1.5">
-			<PickerButton
-				label="Brand"
-				value={selectedBrand?.name ?? ''}
-				onClick={() => setShowBrandModal(true)}
-			/>
-			<span className="text-sub text-xs">·</span>
-			<PickerButton
-				label="Series"
-				value={series}
-				disabled={!selectedBrand}
-				tooltip={!selectedBrand ? 'Select a brand first' : undefined}
-				onClick={() => setShowSeriesModal(true)}
-			/>
-		</div>
-	);
+	const slug = [selectedBrand?.name ?? '', series, name].filter(Boolean).map(toSlug).join('-');
 
 	return (
 		<>
-			<div className="mx-auto w-full max-w-2xl">
+			<div className="mx-auto flex w-full max-w-2xl flex-col gap-3">
 				{/* Duplicate banner */}
 				{showDuplicate && duplicateMatch && (
-					<div className="mb-3">
-						<DuplicateBanner
-							match={duplicateMatch}
-							onDismiss={() => setDuplicateDismissed(true)}
-						/>
-					</div>
+					<DuplicateBanner match={duplicateMatch} onDismiss={() => setDuplicateDismissed(true)} />
 				)}
 
-				{/* ── Desktop Layout ── */}
-				<div className="hidden flex-col gap-3 sm:flex">
-					<div className="grid grid-cols-2 gap-3">
-						<ImageTile
-							preview={imagePreview}
-							onImageChange={handleImageChange}
-							className="aspect-square w-full"
+				{/* ── 2×2 Bento grid ── */}
+				<div className="grid aspect-square grid-cols-2 grid-rows-2 gap-2">
+					{/* Top-left — Photo */}
+					<label className={`${cellCls} cursor-pointer p-3`}>
+						<div className="border-border flex h-full w-full items-center justify-center overflow-hidden rounded-xl border border-dashed">
+							{imagePreview ? (
+								<img src={imagePreview} alt="cover preview" className="h-full w-full object-contain" />
+							) : (
+								<div className="flex flex-col items-center gap-2 px-4 text-center">
+									<ImagePlus className="text-sub h-7 w-7 opacity-60" />
+									<p className="text-main text-sm font-medium">Add cover photo</p>
+									<p className="text-sub text-[11px]">JPG or PNG · up to 10 MB</p>
+								</div>
+							)}
+						</div>
+						<input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+					</label>
+
+					{/* Top-right — Identity */}
+					<div className={cellCls}>
+						<div className="flex items-center gap-2">
+							<PickerField
+								value={selectedBrand?.name ?? ''}
+								placeholder="Brand"
+								onClick={() => setShowBrandModal(true)}
+							/>
+							<PickerField
+								value={series}
+								placeholder="Series"
+								disabled={!selectedBrand}
+								title={!selectedBrand ? 'Select a brand first' : undefined}
+								onClick={() => setShowSeriesModal(true)}
+							/>
+						</div>
+
+						<input
+							value={name}
+							onChange={(e) => handleNameChange(e.target.value)}
+							placeholder="Machine name"
+							className="bg-transparent text-main placeholder:text-sub w-full border-none text-base font-semibold leading-tight outline-none"
 						/>
+						{slug && <p className="text-sub -mt-1 truncate text-[10px]">{slug}</p>}
 
-						<div className="flex flex-col gap-3">
-							<div className="bg-surface flex flex-1 flex-col justify-between rounded-2xl p-5">
-								<div className="flex flex-col gap-3">
-									{brandSeriesRow}
-									<input
-										value={name}
-										onChange={(e) => setName(e.target.value)}
-										placeholder="Machine name"
-										className={`${bareInputCls} text-main text-2xl font-semibold leading-tight`}
-									/>
-								</div>
-								{slug && <p className="text-sub mt-2 truncate text-[11px]">{slug}</p>}
-							</div>
+						<div className="border-border border-t" />
 
-							<div className="grid grid-cols-2 gap-3">
-								<div className={tileCls}>
-									<p className={labelCls}>type</p>
-									<TypeButtons type={type} setType={setType} col />
-								</div>
-								<div className={tileCls}>
-									<p className={labelCls}>resistance</p>
-									<ResistanceButtons
-										resistance={resistance}
-										setResistance={setResistance}
-										curve={resistanceCurve}
-										onCurveChange={setResistanceCurve}
-										col
-									/>
-								</div>
-							</div>
+						<div className="mt-auto grid grid-cols-2 gap-2">
+							{(['pin_loaded', 'plate_loaded'] as const).map((t) => {
+								const active = type === t;
+								const Icon = t === 'pin_loaded' ? Layers : Disc;
+								return (
+									<button
+										key={t}
+										type="button"
+										onClick={() => setType(t)}
+										className={`${tileBase} ${active ? tileActive : tileIdle}`}
+									>
+										<Icon className="h-5 w-5" />
+										<span className="text-[11px] font-medium">
+											{t === 'pin_loaded' ? 'Pin loaded' : 'Plate loaded'}
+										</span>
+									</button>
+								);
+							})}
 						</div>
 					</div>
 
-					{exercisePickers}
+					{/* Bottom-left — Exercise */}
+					<div className={cellCls}>
+						<p className={labelCls}>Exercise</p>
 
-					<div className="bg-sub-alt flex items-center gap-4 rounded-2xl px-4 py-3">
-						<p className={`${labelCls} shrink-0`}>your rating</p>
-						<RatingRow rating={userRating} setRating={setUserRating} />
+						<div className="flex flex-1 flex-col gap-2">
+							<ExerciseRow
+								name={selectedExerciseName}
+								slot="primary"
+								onEdit={() => setExerciseModal('primary')}
+							/>
+							{selectedSecondaryId && (
+								<ExerciseRow
+									name={selectedSecondaryName}
+									slot="secondary"
+									onEdit={() => setExerciseModal('secondary')}
+									onRemove={clearSecondary}
+								/>
+							)}
+						</div>
+
+						<button
+							type="button"
+							onClick={() => setExerciseModal('secondary')}
+							disabled={!!selectedSecondaryId}
+							className={`border-border text-sub hover:text-main mt-auto flex items-center justify-center gap-1.5 rounded-[10px] border border-dashed px-3 py-2 text-xs transition ${
+								selectedSecondaryId ? 'pointer-events-none opacity-40' : ''
+							}`}
+						>
+							<Plus className="h-3.5 w-3.5" /> Add secondary exercise
+						</button>
 					</div>
 
-					<SubmitButton {...submitProps} />
+					{/* Bottom-right — Resistance curve */}
+					<div className={cellCls}>
+						<p className={labelCls}>Resistance curve</p>
+						<div className="grid flex-1 grid-cols-2 gap-2">
+							{RESISTANCE_TILES.map(({ key, label, stroke, d }) => {
+								const active = resistance === key;
+								return (
+									<button
+										key={key}
+										type="button"
+										onClick={() => setResistance(active ? null : key)}
+										className={`${tileBase} ${active ? tileActive : tileIdle}`}
+									>
+										<svg width="40" height="22" viewBox="0 0 36 20" fill="none" className="shrink-0">
+											<path
+												d={d}
+												stroke={stroke}
+												strokeWidth="1.75"
+												strokeLinecap="round"
+												strokeLinejoin="round"
+											/>
+										</svg>
+										<span className="text-[11px] font-medium">{label}</span>
+									</button>
+								);
+							})}
+						</div>
+					</div>
 				</div>
 
-				{/* ── Mobile Stack Layout ── */}
-				<div className="flex flex-col gap-3 sm:hidden">
-					<ImageTile
-						preview={imagePreview}
-						onImageChange={handleImageChange}
-						className="aspect-square w-full"
-					/>
-
-					<div className="bg-surface flex flex-col justify-between rounded-2xl p-5">
-						<div className="flex flex-col gap-3">
-							{brandSeriesRow}
-							<input
-								value={name}
-								onChange={(e) => setName(e.target.value)}
-								placeholder="Machine name"
-								className={`${bareInputCls} text-main text-2xl font-semibold leading-tight`}
-							/>
-						</div>
-						{slug && <p className="text-sub mt-2 truncate text-[11px]">{slug}</p>}
-					</div>
-
-					<div className="grid grid-cols-2 gap-3">
-						<div className={tileCls}>
-							<p className={labelCls}>type</p>
-							<TypeButtons type={type} setType={setType} col />
-						</div>
-						<div className={tileCls}>
-							<p className={labelCls}>resistance</p>
-							<ResistanceButtons
-								resistance={resistance}
-								setResistance={setResistance}
-								curve={resistanceCurve}
-								onCurveChange={setResistanceCurve}
-								col
-							/>
-						</div>
-					</div>
-
-					{exercisePickers}
-
-					<div className="bg-sub-alt flex items-center gap-4 rounded-2xl px-4 py-3">
-						<p className={`${labelCls} shrink-0`}>your rating</p>
-						<RatingRow rating={userRating} setRating={setUserRating} />
-					</div>
-
-					<SubmitButton {...submitProps} />
-				</div>
+				{/* Submit */}
+				<button
+					type="button"
+					onClick={handleCreate}
+					disabled={!isValid || isCreating}
+					className="bg-main text-bg flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-medium transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+				>
+					{isCreating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+					{isCreating ? 'Creating...' : 'Create machine'}
+				</button>
 			</div>
 
 			{/* ── Modals ── */}
@@ -541,6 +508,16 @@ export default function NewMachineCard({ onCreated }: Props) {
 						setShowSeriesModal(false);
 					}}
 					onClose={() => setShowSeriesModal(false)}
+				/>
+			)}
+			{exerciseModal && (
+				<ExercisePickerModal
+					title={exerciseModal === 'primary' ? 'Select exercise' : 'Select secondary exercise'}
+					exercises={exercises}
+					selectedId={exerciseModal === 'primary' ? selectedExerciseId : selectedSecondaryId}
+					excludeId={exerciseModal === 'primary' ? selectedSecondaryId : selectedExerciseId}
+					onConfirm={handleExerciseConfirm}
+					onClose={() => setExerciseModal(null)}
 				/>
 			)}
 		</>
