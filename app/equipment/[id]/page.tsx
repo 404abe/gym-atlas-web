@@ -165,7 +165,11 @@ export default function EquipmentProfilePage() {
 	const renderHero = () => (
 		<div className="bg-sub-alt relative aspect-[4/3] w-full overflow-hidden rounded-2xl sm:aspect-[16/9]">
 			{imageUrl ? (
-				<img src={imageUrl} alt={item.name} className="h-full w-full object-cover" />
+				<img
+					src={imageUrl}
+					alt={item.name}
+					className="h-full w-full object-contain object-center p-3 sm:p-4"
+				/>
 			) : (
 				<div className="flex h-full w-full items-center justify-center">
 					<Dumbbell className="text-sub h-12 w-12 opacity-30" />
