@@ -1,7 +1,7 @@
 import { API_URL } from './config';
-import type { Gym, GymEquipment, GymWithQuantity } from '@/types/gym';
+import type { Gym, GymEquipment, GymFreeWeightsInput, GymWithQuantity } from '@/types/gym';
 import type { Equipment, EquipmentVariant } from '@/types/equipment';
-import type { PendingGym, PendingEquipment, PendingSuggestion, PendingPhoto, PendingVariant, PendingWeightStack, PendingGymInstagram, AdminUser } from '@/types/admin';
+import type { PendingGym, PendingEquipment, PendingSuggestion, PendingPhoto, PendingVariant, PendingWeightStack, PendingGymInstagram, PendingFreeWeights, AdminUser } from '@/types/admin';
 import type { LeaderboardEntry } from '@/types/leaderboard';
 import { BestInClassCategory, BestInClassEntry } from '@/types/bestInClass';
 
@@ -70,6 +70,16 @@ export const updateGymInstagram = (
 		headers: { 'Content-Type': 'application/json', ...authHeaders() },
 		body: JSON.stringify(
 			{ instagram })
+	});
+
+export const submitGymFreeWeights = (
+	id: number,
+	body: GymFreeWeightsInput
+): Promise<GymFreeWeightsInput & { id: number; gym_id: number; status: string }> =>
+	apiFetch(`/gyms/${id}/free-weights`, {
+		method: 'PATCH',
+		headers: { 'Content-Type': 'application/json', ...authHeaders() },
+		body: JSON.stringify(body)
 	});
 
 export const uploadGymImage = async (id: number, file: File): Promise<string> => {
@@ -178,6 +188,23 @@ export const createEquipment = (body: {
 		body: JSON.stringify(body)
 	});
 
+export const updateAdminEquipment = (
+	id: string | number,
+	body: {
+		name: string;
+		brand: string;
+		series?: string | null;
+		type: Equipment['type'];
+		resistance_profile?: Equipment['resistance_profile'];
+		resistance_curve?: number[] | null;
+	}
+): Promise<Equipment> =>
+	apiFetch<Equipment>(`/admin/equipment/${id}`, {
+		method: 'PATCH',
+		headers: { 'Content-Type': 'application/json', ...authHeaders() },
+		body: JSON.stringify(body)
+	});
+
 export const rateEquipment = (id: string | number, rating: number): Promise<void> =>
 	apiFetch(`/equipment/${id}/rate`, {
 		method: 'POST',
@@ -218,6 +245,7 @@ export const fetchAdminPending = (): Promise<{
 	variants: PendingVariant[];
 	weightStacks: PendingWeightStack[];
 	gymInstagrams: PendingGymInstagram[];
+	freeWeights: PendingFreeWeights[];
 }> => apiFetch('/admin/pending', { headers: authHeaders() });
 
 export const adminPhotoAction = (action: 'approve' | 'reject', id: number): Promise<void> =>
@@ -231,7 +259,7 @@ export const fetchAdminUsers = (): Promise<{ users: AdminUser[] }> =>
 
 export const adminAction = (
 	action: 'approve' | 'reject',
-	type: 'gym' | 'equipment' | 'suggestion' | 'variant' | 'weight-stack' | 'gym-instagram',
+	type: 'gym' | 'equipment' | 'suggestion' | 'variant' | 'weight-stack' | 'gym-instagram' | 'free-weights',
 	id: number
 ): Promise<void> =>
 	apiFetch(`/admin/${action}/${type}/${id}`, {
@@ -283,7 +311,7 @@ export const fetchLeaderboardUser = (id: string | number): Promise<unknown> =>
 export const fetchUserByUsername = (username: string) =>
 	apiFetch(`/users/by-username/${username}`);
 
-export const syncUser = (): Promise<unknown> =>
+export const syncUser = (): Promise<{ id: string; email: string; username: string; role: 'user' | 'admin' | 'super_admin' }> =>
 	apiFetch('/users/sync', { method: 'POST', headers: authHeaders() });
 
 // ── Users ─────────────────────────────────────────────────────────────────────

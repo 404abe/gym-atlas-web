@@ -1,5 +1,13 @@
 //app/layout.tsx
+import type { Viewport } from 'next';
 import './globals.css';
+
+export const viewport: Viewport = {
+	width: 'device-width',
+	initialScale: 1,
+	maximumScale: 1,
+	userScalable: false,
+};
 import Topbar from '@/components/layout/Topbar';
 import MobileHeader from '@/components/layout/MobileHeader';
 import Footer from '@/components/layout/Footer';

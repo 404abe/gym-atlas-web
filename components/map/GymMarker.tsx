@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Dumbbell, Plus, Star, ArrowRight } from 'lucide-react';
+import { Check, Dumbbell, Plus, /*Star,*/ ArrowRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Gym, GymEquipment } from '@/types/gym';
@@ -15,11 +15,11 @@ function initialsFor(name: string) {
 		.join('');
 }
 
-function formatRating(gym: Gym) {
-	const rating = gym.avg_rating ?? gym.rating;
-	if (!rating) return null;
-	return Number(rating).toFixed(1).replace(/\.0$/, '');
-}
+// function formatRating(gym: Gym) {
+// 	const rating = gym.avg_rating ?? gym.rating;
+// 	if (!rating) return null;
+// 	return Number(rating).toFixed(1).replace(/\.0$/, '');
+// }
 
 export default function GymMarker({
 	gym,
@@ -33,9 +33,10 @@ export default function GymMarker({
 	onClick: () => void;
 }) {
 	const router = useRouter();
-	const rating = formatRating(gym);
+	// const rating = formatRating(gym);
 	const machineCount = gym.total_equipment ?? 0;
 	const [equipment, setEquipment] = useState<GymEquipment[]>([]);
+	const openGymDetail = () => router.push(`/gyms/${gym.id}`);
 
 	useEffect(() => {
 		if (!selected) return;
@@ -103,12 +104,12 @@ export default function GymMarker({
 								{gym.unique_machines} unique
 							</span>
 						)}
-						{rating && (
+						{/* {rating && (
 							<span className="flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-xs text-sub">
 								<Star className="h-2.5 w-2.5 fill-[#f4c35b] stroke-[#f4c35b]" />
 								{rating}
 							</span>
-						)}
+						)} */}
 					</div>
 
 					{/* Equipment thumbnails */}
@@ -129,17 +130,35 @@ export default function GymMarker({
 							))}
 							{/* mobile: show when > 3 */}
 							{equipment.length > 3 && (
-								<div className="flex h-15.5 w-15.5 shrink-0 flex-col items-center justify-center gap-0.5 rounded-xl bg-sub-alt sm:hidden">
+								<button
+									type="button"
+									onClick={(e) => {
+										e.stopPropagation();
+										openGymDetail();
+									}}
+									aria-label={`View all ${equipment.length} machines at ${gym.name}`}
+									title={`View all ${equipment.length} machines`}
+									className="flex h-15.5 w-15.5 shrink-0 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-xl bg-sub-alt transition-colors hover:bg-main/5 focus:outline-none focus:ring-2 focus:ring-main/40 sm:hidden"
+								>
 									<Plus className="h-4 w-4 text-sub" />
 									<span className="text-[11px] text-sub">{equipment.length - 3} more</span>
-								</div>
+								</button>
 							)}
 							{/* desktop: show when > 4 */}
 							{equipment.length > 4 && (
-								<div className="hidden h-15.5 w-15.5 shrink-0 flex-col items-center justify-center gap-0.5 rounded-xl bg-sub-alt sm:flex">
+								<button
+									type="button"
+									onClick={(e) => {
+										e.stopPropagation();
+										openGymDetail();
+									}}
+									aria-label={`View all ${equipment.length} machines at ${gym.name}`}
+									title={`View all ${equipment.length} machines`}
+									className="hidden h-15.5 w-15.5 shrink-0 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-xl bg-sub-alt transition-colors hover:bg-main/5 focus:outline-none focus:ring-2 focus:ring-main/40 sm:flex"
+								>
 									<Plus className="h-4 w-4 text-sub" />
 									<span className="text-[11px] text-sub">{equipment.length - 4} more</span>
-								</div>
+								</button>
 							)}
 						</div>
 					)}
@@ -149,7 +168,7 @@ export default function GymMarker({
 						type="button"
 						onClick={(e) => {
 							e.stopPropagation();
-							router.push(`/gyms/${gym.id}`);
+							openGymDetail();
 						}}
 						className="flex w-full items-center justify-between border-t border-border px-3 py-2.5 text-sm font-medium text-main transition-colors hover:bg-sub-alt"
 					>
