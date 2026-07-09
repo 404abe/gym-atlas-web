@@ -3,7 +3,7 @@ import { createContext, useState, useEffect, useContext, ReactNode } from 'react
 import { useRouter } from 'next/navigation';
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase';
-import { setAuthToken, syncUser } from '@/lib/api';
+import { setAuthToken, syncUser, updateCurrentUsername } from '@/lib/api';
 import type { User } from '@/types/user';
 
 type AuthContextType = {
@@ -11,6 +11,7 @@ type AuthContextType = {
 	token: string | null;
 	login: (email: string, password: string) => Promise<void>;
 	register: (email: string, password: string, username: string) => Promise<{ needsConfirmation: boolean }>;
+	updateUsername: (username: string) => Promise<void>;
 	logout: () => Promise<void>;
 	loading: boolean;
 };
@@ -126,6 +127,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		return { needsConfirmation: true };
 	};
 
+	const updateUsername = async (username: string) => {
+		const updated = await updateCurrentUsername(username);
+		setUser((current) => (current ? { ...current, username: updated.username } : current));
+	};
+
 	const logout = async () => {
 		try {
 			await supabase.auth.signOut();
@@ -138,7 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	};
 
 	return (
-		<AuthContext.Provider value={{ user, token, login, register, logout, loading }}>
+		<AuthContext.Provider value={{ user, token, login, register, updateUsername, logout, loading }}>
 			{children}
 		</AuthContext.Provider>
 	);
