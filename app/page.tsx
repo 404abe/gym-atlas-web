@@ -5,6 +5,7 @@ import MapView from '@/components/map/MapView';
 import GymSidebar from '@/components/sidebar/GymSidebar';
 import GymFinderSearch from '@/components/sidebar/GymFinderSearch';
 import GymStoriesRow from '@/components/sidebar/GymStoriesRow';
+import GymPeekCard from '@/components/sidebar/GymPeekCard';
 import { fetchGyms } from '@/lib/api';
 import { Gym } from '@/types/gym';
 import { useGymFilter } from '@/app/contexts/GymFilterContext';
@@ -110,6 +111,10 @@ export default function Page() {
 	const { matchedGymIds } = useGymFilter();
 	const userLocation = useUserLocation();
 
+	// Mobile: tapping the already-selected gym again (pin or story) closes the card.
+	const toggleSelectGym = (gym: Gym) =>
+		setSelectedGym((prev) => (prev?.id === gym.id ? null : gym));
+
 	useEffect(() => {
 		fetchGyms().then(setGyms);
 	}, []);
@@ -187,7 +192,7 @@ export default function Page() {
 						<MapView
 							gyms={mapGyms}
 							selectedGym={selectedGym}
-							onSelectGym={setSelectedGym}
+							onSelectGym={toggleSelectGym}
 							userLocation={userLocation}
 							matchedGymIds={mapMatched}
 						/>
@@ -211,11 +216,23 @@ export default function Page() {
 					)}
 				</div>
 
+				{/* selected-gym peek card — sits above the stories row (mobile only) */}
+				{selectedGym && (
+					<div className="shrink-0 px-3 pb-1">
+						<GymPeekCard
+							key={selectedGym.id}
+							gym={selectedGym}
+							userLocation={userLocation}
+							onDismiss={() => setSelectedGym(null)}
+						/>
+					</div>
+				)}
+
 				{/* gym stories row — circular avatars at the bottom (mobile only) */}
 				<GymStoriesRow
 					gyms={searchFilteredGyms}
 					selectedGym={selectedGym}
-					onSelectGym={setSelectedGym}
+					onSelectGym={toggleSelectGym}
 					userLocation={userLocation}
 				/>
 			</div>

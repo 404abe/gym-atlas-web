@@ -196,6 +196,7 @@ export default function MapView({
 	matchedGymIds?: Set<number> | null;
 }) {
 	const mapRef = useRef<MapRef>(null);
+	const lastFlownGymId = useRef<number | null>(null);
 	const [zoom, setZoom] = useState(5);
 	const { theme } = useTheme();
 	const mapStyle = theme === 'light' ? 'mapbox://styles/mapbox/light-v11' : 'mapbox://styles/mapbox/dark-v11';
@@ -208,6 +209,13 @@ export default function MapView({
 
 	useEffect(() => {
 		if (!selectedGym || !mapRef.current) return;
+		// Only fly when the selection actually changes to a different gym. Without
+		// this, re-selecting the same pin (e.g. tap to open → tap to close → tap to
+		// re-open) re-triggers a redundant flyTo, which re-renders the map mid-
+		// animation and makes the card visibly flash. Not reset on deselect, so
+		// re-opening the same gym stays put.
+		if (lastFlownGymId.current === selectedGym.id) return;
+		lastFlownGymId.current = selectedGym.id;
 
 		const mapWidth = mapRef.current.getContainer().offsetWidth;
 		// On narrow screens the card popup extends to the right of the pin.
