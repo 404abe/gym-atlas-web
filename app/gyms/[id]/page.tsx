@@ -564,34 +564,6 @@ export default function GymProfilePage() {
 							</summary>
 							<div className="border-border border-t px-4 pb-4 pt-3">
 								<div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-									<div className="border-border bg-bg/30 rounded-xl border px-3 py-2">
-										<p className="text-sub text-[11px]">Dumbbell Racks</p>
-										<p className="text-main text-base font-semibold">2</p>
-									</div>
-									<div className="border-border bg-bg/30 rounded-xl border px-3 py-2">
-										<p className="text-sub text-[11px]">Squat Racks</p>
-										<p className="text-main text-base font-semibold">4</p>
-									</div>
-									<div className="border-border bg-bg/30 rounded-xl border px-3 py-2">
-										<p className="text-sub text-[11px]">Flat Benches</p>
-										<p className="text-main text-base font-semibold">6</p>
-									</div>
-									<div className="border-border bg-bg/30 rounded-xl border px-3 py-2">
-										<p className="text-sub text-[11px]">Incline Benches</p>
-										<p className="text-main text-base font-semibold">2</p>
-									</div>
-								</div>
-								<div className="mt-2 flex flex-wrap gap-2">
-									<span className="border-border text-sub rounded-full border px-2.5 py-1 text-xs">
-										2 Platforms
-									</span>
-									<span className="border-border text-sub rounded-full border px-2.5 py-1 text-xs">
-										1 Preacher Curl Station
-									</span>
-									<span className="border-border text-sub rounded-full border px-2.5 py-1 text-xs">
-										Free Weight Area Verified
-									</span>
-								</div>
 									<FreeWeightStat label="Dumbbell Racks" value={displayFreeWeights.dumbbell_racks} />
 									<FreeWeightStat label="Squat Racks" value={displayFreeWeights.squat_racks} />
 									<FreeWeightStat label="Flat Benches" value={displayFreeWeights.flat_benches} />
