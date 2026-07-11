@@ -77,7 +77,7 @@ export default function ExercisePickerModal({
 							ref={inputRef}
 							value={search}
 							onChange={(e) => setSearch(e.target.value)}
-							placeholder="Search exercises…"
+							placeholder="Search exercises… eg T-Bar Row"
 							className="text-main placeholder:text-sub w-full bg-transparent text-sm outline-none"
 						/>
 					</div>

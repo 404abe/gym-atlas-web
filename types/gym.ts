@@ -1,3 +1,5 @@
+import type { ExerciseRef } from './equipment';
+
 export interface Gym {
 	created_at: string | number | Date;
 	is_favorite: boolean;
@@ -28,6 +30,13 @@ export interface Gym {
 	};
 	hours_updated_at?: string;
 	equipment_images?: string[];
+	// TODO(backend): `/gyms` does not return the gym's machine list or its derived
+	// exercises. When the API exposes them, a gym's available exercises are:
+	//   gym.exercises = unique(gym.machines.map(m => m.exercise))
+	// See deriveGymExercises() in lib/gym-filter.ts. Until then, matching gyms for
+	// a filter are resolved on demand via POST /gyms/search (GymFilterContext).
+	machines?: GymEquipment[];
+	exercises?: ExerciseRef[];
 }
 
 export interface GymEquipment {

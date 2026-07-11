@@ -4,7 +4,6 @@ import { Gym } from '@/types/gym';
 import GymCard from './GymCard';
 import { PanelLeftClose, Search, X } from 'lucide-react';
 import { useEffect, useMemo, useRef } from 'react';
-import { useGymFilter } from '@/app/contexts/GymFilterContext';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { cn } from '@/lib/utils';
 
@@ -30,10 +29,10 @@ export default function GymSidebar({
 }) {
 	const scrollRef = useRef<HTMLDivElement>(null);
 	const userLocation = useUserLocation();
-	const { filteredGyms } = useGymFilter();
 
-	const filteredGymIds = filteredGyms ? new Set(filteredGyms.map((g) => g.id)) : null;
-	const baseGyms = filteredGymIds ? gyms.filter((g) => filteredGymIds.has(g.id)) : gyms;
+	// The map filter highlights pins; it doesn't narrow the list. The sidebar
+	// always reflects the gyms passed in (already text-filtered by the parent).
+	const baseGyms = gyms;
 	const displayGyms = useMemo(
 		() =>
 			userLocation
@@ -74,9 +73,6 @@ export default function GymSidebar({
 		<div id="GymSidebar" className="flex h-full flex-col">
 			{!listOnly && (
 				<div className="shrink-0 p-3 pb-0">
-					{/* <div className="mb-2 mt-3">
-						<EquipmentSearch />
-					</div> */}
 					<div className={cn(pillCls, 'mb-2 gap-2 px-3 py-1.5')}>
 						<Search size={13} className="shrink-0 text-sub" />
 						<input
@@ -91,7 +87,7 @@ export default function GymSidebar({
 								<X size={12} className="text-sub hover:text-main transition" />
 							</button>
 						) : (
-							<span className="shrink-0 text-xs text-sub">{filteredGyms ? filteredGyms.length : gyms.length} gyms</span>
+							<span className="shrink-0 text-xs text-sub">{gyms.length} gyms</span>
 						)}
 						{onCollapse && (
 							<button

@@ -24,14 +24,17 @@ function initialsFor(name: string) {
 export default function GymMarker({
 	gym,
 	selected,
-	matched,
+	state = 'normal',
 	onClick
 }: {
 	gym: Gym;
 	selected: boolean;
-	matched: boolean;
+	/** normal = no active filter, matched = has the filter, dimmed = doesn't. */
+	state?: 'normal' | 'matched' | 'dimmed';
 	onClick: () => void;
 }) {
+	const matched = state === 'matched';
+	const dimmed = state === 'dimmed' && !selected;
 	const router = useRouter();
 	// const rating = formatRating(gym);
 	const machineCount = gym.total_equipment ?? 0;
@@ -46,7 +49,11 @@ export default function GymMarker({
 
 
 	return (
-		<div className="relative flex flex-col items-center">
+		<div
+			className={`relative flex flex-col items-center transition-opacity duration-500 ${
+				dimmed ? 'opacity-[0.28]' : 'opacity-100'
+			}`}
+		>
 			<button
 				type="button"
 				onClick={onClick}
