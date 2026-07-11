@@ -1,76 +1,164 @@
 'use client';
 
-import { createContext, useContext, useState } from 'react';
-import { Gym } from '@/types/gym';
-import type { Equipment } from '@/types/equipment';
+import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import { API_URL } from '@/lib/config';
+import { filterId, type ActiveFilter, type FilterKind } from '@/lib/gym-filter';
 
 interface GymFilterContextValue {
-	filteredGyms: Gym[] | null;
-	setFilteredGyms: (gyms: Gym[] | null) => void;
-	selectedEquipment: Equipment[];
-	setSelectedEquipment: (items: Equipment[]) => void;
-	searchByEquipment: (equipment: Equipment[]) => Promise<void>;
-	removeEquipment: (item: Equipment) => void;
+	/** Which tab is showing: exercises (broad) or machines (specific). */
+	tab: FilterKind;
+	/** Switching tabs clears the current filters. */
+	setTab: (tab: FilterKind) => void;
+	/** All selected filters (any mix of exercises and machines). */
+	activeFilters: ActiveFilter[];
+	/**
+	 * Ids of gyms matching *every* active filter — the pins to highlight. `null`
+	 * means "nothing selected / not yet resolved" → every pin renders normally.
+	 */
+	matchedGymIds: Set<number> | null;
+	/** True while any selected filter is still resolving its gyms. */
+	loading: boolean;
+	/**
+	 * Add a filter, or remove it if it's already selected (toggle). `machineNames`
+	 * is the set of machine names that satisfy the filter — one name for a
+	 * specific machine, or every machine mapping to an exercise. Matching gyms are
+	 * resolved from these without touching the rendered pin set.
+	 */
+	toggleFilter: (filter: ActiveFilter, machineNames: string[]) => void;
+	/** Remove a single filter (e.g. dismissing its card). */
+	removeFilter: (filter: ActiveFilter) => void;
+	/** Remove every filter. */
+	clearFilters: () => void;
 }
 
 const GymFilterContext = createContext<GymFilterContextValue>({
-	filteredGyms: null,
-	setFilteredGyms: () => {},
-	selectedEquipment: [],
-	setSelectedEquipment: () => {},
-	searchByEquipment: async () => {},
-	removeEquipment: () => {},
+	tab: 'exercises',
+	setTab: () => {},
+	activeFilters: [],
+	matchedGymIds: null,
+	loading: false,
+	toggleFilter: () => {},
+	removeFilter: () => {},
+	clearFilters: () => {}
 });
 
+/** Gyms whose machine names contain `name` (single-term POST /gyms/search). */
+async function gymIdsForMachine(name: string): Promise<number[]> {
+	try {
+		const res = await fetch(`${API_URL}/gyms/search`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ machines: [name] })
+		});
+		const data = await res.json();
+		const gyms = Array.isArray(data) ? data : (data.data ?? []);
+		return gyms.map((g: { id: number }) => Number(g.id)).filter((id: number) => Number.isFinite(id));
+	} catch {
+		return [];
+	}
+}
+
 export function GymFilterProvider({ children }: { children: React.ReactNode }) {
-	const [filteredGyms, setFilteredGyms] = useState<Gym[] | null>(null);
-	const [selectedEquipment, setSelectedEquipment] = useState<Equipment[]>([]);
+	const [tab, setTabState] = useState<FilterKind>('exercises');
+	const [activeFilters, setActiveFilters] = useState<ActiveFilter[]>([]);
+	// Resolved gym ids per filter, keyed by filterId(). Absent while resolving.
+	const [gymSets, setGymSets] = useState<Record<string, Set<number>>>({});
+	// filterIds still awaiting their /gyms/search results.
+	const [pending, setPending] = useState<string[]>([]);
+	// Per-filter token so a slow (or removed) filter's response can't apply late.
+	const tokens = useRef<Record<string, number>>({});
 
-	const searchByEquipment = async (equipment: Equipment[]) => {
-		if (equipment.length === 0) {
-			setFilteredGyms(null);
-			return;
+	const removeFilter = useCallback((filter: ActiveFilter) => {
+		const id = filterId(filter);
+		tokens.current[id] = (tokens.current[id] ?? 0) + 1; // invalidate any in-flight
+		setActiveFilters((prev) => prev.filter((f) => filterId(f) !== id));
+		setGymSets((prev) => {
+			if (!(id in prev)) return prev;
+			const next = { ...prev };
+			delete next[id];
+			return next;
+		});
+		setPending((prev) => prev.filter((p) => p !== id));
+	}, []);
+
+	const clearFilters = useCallback(() => {
+		for (const key of Object.keys(tokens.current)) {
+			tokens.current[key] = (tokens.current[key] ?? 0) + 1;
 		}
-		try {
-			const machines = equipment.map((e) =>
-				e.slug
-					.split('-')
-					.map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-					.join(' ')
-			);
-			const res = await fetch(`${API_URL}/gyms/search`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ machines }),
-			});
-			const data = await res.json();
-			setFilteredGyms(Array.isArray(data) ? data : (data.data ?? []));
-		} catch (e) {
-			console.error(e);
-		}
-	};
+		setActiveFilters([]);
+		setGymSets({});
+		setPending([]);
+	}, []);
 
-	const removeEquipment = (item: Equipment) => {
-		const next = selectedEquipment.filter((e) => e.id !== item.id);
-		setSelectedEquipment(next);
-		searchByEquipment(next);
-	};
-
-	return (
-		<GymFilterContext.Provider
-			value={{
-				filteredGyms,
-				setFilteredGyms,
-				selectedEquipment,
-				setSelectedEquipment,
-				searchByEquipment,
-				removeEquipment,
-			}}
-		>
-			{children}
-		</GymFilterContext.Provider>
+	const setTab = useCallback(
+		(next: FilterKind) => {
+			setTabState(next);
+			clearFilters();
+		},
+		[clearFilters]
 	);
+
+	const toggleFilter = useCallback(
+		(filter: ActiveFilter, machineNames: string[]) => {
+			const id = filterId(filter);
+			if (activeFilters.some((f) => filterId(f) === id)) {
+				removeFilter(filter);
+				return;
+			}
+
+			const token = (tokens.current[id] = (tokens.current[id] ?? 0) + 1);
+			setActiveFilters((prev) => [...prev, filter]);
+			setPending((prev) => [...prev, id]);
+
+			void Promise.all(machineNames.map(gymIdsForMachine)).then((lists) => {
+				if (token !== tokens.current[id]) return; // stale or removed
+				const ids = new Set<number>();
+				for (const list of lists) for (const gymId of list) ids.add(gymId);
+				setGymSets((prev) => ({ ...prev, [id]: ids }));
+				setPending((prev) => prev.filter((p) => p !== id));
+			});
+		},
+		[activeFilters, removeFilter]
+	);
+
+	// Highlight gyms matching EVERY resolved filter (intersection). Filters still
+	// resolving don't constrain yet; they tighten the set once their gyms arrive.
+	const matchedGymIds = useMemo(() => {
+		if (activeFilters.length === 0) return null;
+		const sets = activeFilters
+			.map((f) => gymSets[filterId(f)])
+			.filter((s): s is Set<number> => Boolean(s));
+		if (sets.length === 0) return null;
+		let result: Set<number> | null = null;
+		for (const set of sets) {
+			if (result === null) {
+				result = new Set(set);
+				continue;
+			}
+			const intersection = new Set<number>();
+			result.forEach((id) => {
+				if (set.has(id)) intersection.add(id);
+			});
+			result = intersection;
+		}
+		return result;
+	}, [activeFilters, gymSets]);
+
+	const value = useMemo(
+		() => ({
+			tab,
+			setTab,
+			activeFilters,
+			matchedGymIds,
+			loading: pending.length > 0,
+			toggleFilter,
+			removeFilter,
+			clearFilters
+		}),
+		[tab, setTab, activeFilters, matchedGymIds, pending, toggleFilter, removeFilter, clearFilters]
+	);
+
+	return <GymFilterContext.Provider value={value}>{children}</GymFilterContext.Provider>;
 }
 
 export const useGymFilter = () => useContext(GymFilterContext);

@@ -9,6 +9,7 @@ type Props = {
 	curve: number[];
 	onCurveChange: (curve: number[]) => void;
 	col?: boolean;
+	hideCustom?: boolean;
 };
 
 const PRESETS = [
@@ -18,7 +19,7 @@ const PRESETS = [
 	{ key: 'adjustable' as const, label: 'Adjustable', color: '#3b82f6', d: 'M3,14 C8,14 12,5 18,5 C24,5 28,14 33,14' },
 ] as const;
 
-export default function ResistanceButtons({ resistance, setResistance, curve, onCurveChange, col }: Props) {
+export default function ResistanceButtons({ resistance, setResistance, curve, onCurveChange, col, hideCustom }: Props) {
 	const btnClass = (active: boolean, color: string) =>
 		`flex flex-1 items-center gap-2 rounded-lg border px-2 py-2 text-[11px] font-medium transition ${
 			active
@@ -52,29 +53,31 @@ export default function ResistanceButtons({ resistance, setResistance, curve, on
 			})}
 
 			{/* Custom option */}
-			<button
-				type="button"
-				onClick={() => setResistance(resistance === 'custom' ? null : 'custom')}
-				className={btnClass(resistance === 'custom', '#3b82f6')}
-			>
-				<svg width="36" height="20" viewBox="0 0 36 20" fill="none" className="shrink-0">
-					<path
-						d="M3,14 C8,10 12,6 18,6 C24,6 28,14 33,10"
-						stroke={resistance === 'custom' ? 'currentColor' : '#a78bfa'}
-						strokeWidth="1.75"
-						strokeLinecap="round"
-						strokeLinejoin="round"
-					/>
-					<circle
-						cx="18" cy="6" r="2"
-						fill={resistance === 'custom' ? 'currentColor' : '#a78bfa'}
-					/>
-				</svg>
-				Custom
-			</button>
+			{!hideCustom && (
+				<button
+					type="button"
+					onClick={() => setResistance(resistance === 'custom' ? null : 'custom')}
+					className={btnClass(resistance === 'custom', '#3b82f6')}
+				>
+					<svg width="36" height="20" viewBox="0 0 36 20" fill="none" className="shrink-0">
+						<path
+							d="M3,14 C8,10 12,6 18,6 C24,6 28,14 33,10"
+							stroke={resistance === 'custom' ? 'currentColor' : '#a78bfa'}
+							strokeWidth="1.75"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+						/>
+						<circle
+							cx="18" cy="6" r="2"
+							fill={resistance === 'custom' ? 'currentColor' : '#a78bfa'}
+						/>
+					</svg>
+					Custom
+				</button>
+			)}
 
 			{/* Curve editor — expands when Custom is selected */}
-			{resistance === 'custom' && (
+			{!hideCustom && resistance === 'custom' && (
 				<div className="mt-1">
 					<p className="text-sub mb-1.5 text-[10px]">drag handles to shape the curve</p>
 					<CustomCurveEditor value={curve} onChange={onCurveChange} />

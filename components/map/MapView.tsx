@@ -149,15 +149,18 @@ function clusterGyms(gyms: Gym[], zoom: number): GymCluster[] {
 
 const FULL_CLUSTER_COUNT = 100;
 
-function ClusterMarker({ count, matched }: { count: number; matched: boolean }) {
+type MarkerState = 'normal' | 'matched' | 'dimmed';
+
+function ClusterMarker({ count, state }: { count: number; state: MarkerState }) {
 	const sizeClass = count < 4 ? 'h-[46px] w-[46px]' : count < 10 ? 'h-[50px] w-[50px]' : 'h-[54px] w-[54px]';
 	const innerClass = count < 4 ? 'inset-[13px]' : count < 10 ? 'inset-[14px]' : 'inset-[15px]';
 	const fill = Math.min(100, Math.round((count / FULL_CLUSTER_COUNT) * 100));
+	const matched = state === 'matched';
 
 	return (
 		<div
 			className={`map-marker-shell relative grid ${sizeClass} place-items-center rounded-full border border-border bg-surface shadow-[0_10px_24px_rgb(0_0_0/0.24)] ${
-				matched ? '' : 'opacity-85'
+				state === 'dimmed' ? 'opacity-[0.28]' : 'opacity-100'
 			}`}
 		>
 			<div
@@ -183,15 +186,17 @@ export default function MapView({
 	selectedGym,
 	onSelectGym,
 	userLocation,
-	isFiltered = false,
+	matchedGymIds = null,
 }: {
 	gyms: Gym[];
 	selectedGym: Gym | null;
 	onSelectGym: (gym: Gym) => void;
 	userLocation: { lat: number; lng: number } | null;
-	isFiltered?: boolean;
+	/** Ids to highlight; others dim. `null` = no active filter, all pins normal. */
+	matchedGymIds?: Set<number> | null;
 }) {
 	const mapRef = useRef<MapRef>(null);
+	const lastFlownGymId = useRef<number | null>(null);
 	const [zoom, setZoom] = useState(5);
 	const { theme } = useTheme();
 	const mapStyle = theme === 'light' ? 'mapbox://styles/mapbox/light-v11' : 'mapbox://styles/mapbox/dark-v11';
@@ -204,6 +209,13 @@ export default function MapView({
 
 	useEffect(() => {
 		if (!selectedGym || !mapRef.current) return;
+		// Only fly when the selection actually changes to a different gym. Without
+		// this, re-selecting the same pin (e.g. tap to open → tap to close → tap to
+		// re-open) re-triggers a redundant flyTo, which re-renders the map mid-
+		// animation and makes the card visibly flash. Not reset on deselect, so
+		// re-opening the same gym stays put.
+		if (lastFlownGymId.current === selectedGym.id) return;
+		lastFlownGymId.current = selectedGym.id;
 
 		const mapWidth = mapRef.current.getContainer().offsetWidth;
 		// On narrow screens the card popup extends to the right of the pin.
@@ -232,38 +244,51 @@ export default function MapView({
 				style={{ width: '100%', height: '100%' }}
 				onMove={(event) => setZoom(event.viewState.zoom)}
 			>
-				{clusters.map((cluster) => (
-					<Marker
-						key={cluster.id}
-						longitude={cluster.lng}
-						latitude={cluster.lat}
-						anchor="bottom"
-					>
-						{cluster.gyms.length > 1 ? (
-							<button
-								type="button"
-								aria-label={`${cluster.gyms.length} gyms in this area`}
-								onClick={() => {
-									mapRef.current?.flyTo({
-										center: [cluster.lng, cluster.lat],
-										zoom: Math.min(zoom + 1.35, 12),
-										duration: 1300
-									});
-								}}
-								className="cursor-pointer opacity-95 transition duration-500 ease-out hover:scale-105 hover:opacity-100"
-							>
-								<ClusterMarker count={cluster.gyms.length} matched={isFiltered} />
-							</button>
-						) : (
-							<GymMarker
-								gym={cluster.gyms[0]}
-								selected={selectedGym?.id === cluster.gyms[0].id}
-								matched={isFiltered}
-								onClick={() => onSelectGym(cluster.gyms[0])}
-							/>
-						)}
-					</Marker>
-				))}
+				{clusters.map((cluster) => {
+					const matchState = (gym: Gym): MarkerState =>
+						!matchedGymIds ? 'normal' : matchedGymIds.has(gym.id) ? 'matched' : 'dimmed';
+					// A cluster is "matched" if any gym inside it matches; dimmed only
+					// when a filter is active and none of its gyms match.
+					const clusterState: MarkerState = !matchedGymIds
+						? 'normal'
+						: cluster.gyms.some((gym) => matchedGymIds.has(gym.id))
+							? 'matched'
+							: 'dimmed';
+
+					return (
+						<Marker
+							key={cluster.id}
+							longitude={cluster.lng}
+							latitude={cluster.lat}
+							anchor="bottom"
+							style={{ zIndex: cluster.gyms.length === 1 && selectedGym?.id === cluster.gyms[0].id ? 30 : 10 }}
+						>
+							{cluster.gyms.length > 1 ? (
+								<button
+									type="button"
+									aria-label={`${cluster.gyms.length} gyms in this area`}
+									onClick={() => {
+										mapRef.current?.flyTo({
+											center: [cluster.lng, cluster.lat],
+											zoom: Math.min(zoom + 1.35, 12),
+											duration: 1300
+										});
+									}}
+									className="cursor-pointer opacity-95 transition duration-500 ease-out hover:scale-105 hover:opacity-100"
+								>
+									<ClusterMarker count={cluster.gyms.length} state={clusterState} />
+								</button>
+							) : (
+								<GymMarker
+									gym={cluster.gyms[0]}
+									selected={selectedGym?.id === cluster.gyms[0].id}
+									state={matchState(cluster.gyms[0])}
+									onClick={() => onSelectGym(cluster.gyms[0])}
+								/>
+							)}
+						</Marker>
+					);
+				})}
 			</ReactMap>
 		</div>
 	);

@@ -165,22 +165,75 @@ export const deleteVariant = (variantId: number): Promise<void> =>
 		headers: authHeaders()
 	});
 
-export const fetchEquipmentBrands = (): Promise<string[]> =>
+export type EquipmentBrand = { name: string; equipment_count: number };
+export type EquipmentSeriesItem = { name: string; equipment_count: number };
+export type DuplicateMatch = { id: string; slug: string; name: string } | null;
+
+export type Brand = {
+	id: number;
+	name: string;
+	slug: string;
+	logo_url: string | null;
+	equipment_count: number;
+};
+
+// ── Brands ────────────────────────────────────────────────────────────────────
+
+export const fetchBrands = (): Promise<Brand[]> => apiFetch('/brands');
+
+export const fetchSeriesByBrandId = (brandId: number): Promise<EquipmentSeriesItem[]> =>
+	apiFetch(`/brands/${brandId}/series`);
+
+export const createBrand = (name: string): Promise<Brand> =>
+	apiFetch('/brands', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json', ...authHeaders() },
+		body: JSON.stringify({ name })
+	});
+
+export const uploadBrandLogo = async (brandId: number, file: File): Promise<Brand> => {
+	const formData = new FormData();
+	formData.append('image', file);
+	return apiFetch(`/brands/${brandId}/logo`, {
+		method: 'POST',
+		headers: authHeaders(),
+		body: formData
+	});
+};
+
+// ── Equipment ─────────────────────────────────────────────────────────────────
+
+export const fetchEquipmentBrands = (): Promise<EquipmentBrand[]> =>
 	apiFetch('/equipment/brands');
 
-export const fetchEquipmentSeries = (brand: string): Promise<string[]> =>
+export const fetchEquipmentSeries = (brand: string): Promise<EquipmentSeriesItem[]> =>
 	apiFetch(`/equipment/series?brand=${encodeURIComponent(brand)}`);
+
+export const checkEquipmentDuplicate = (
+	brandId: number,
+	series: string,
+	name: string
+): Promise<{ match: DuplicateMatch }> =>
+	apiFetch(
+		`/equipment/check-duplicate?brandId=${brandId}&series=${encodeURIComponent(series)}&name=${encodeURIComponent(name)}`
+	);
 
 export const searchEquipment = (query: string): Promise<unknown[]> =>
 	apiFetch(`/equipment/search?q=${encodeURIComponent(query)}`);
 
+export const fetchMachineExercises = (): Promise<{ id: string; name: string }[]> =>
+	apiFetch('/exercises?category=machine');
+
 export const createEquipment = (body: {
 	name: string;
 	brand: string;
+	brand_id?: number;
 	series: string;
 	type: string;
 	resistance_profile?: string;
 	resistance_curve?: number[];
+	exercise_id?: string;
+	secondary_exercise_id?: string;
 }): Promise<Equipment> =>
 	apiFetch('/equipment', {
 		method: 'POST',

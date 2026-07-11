@@ -1,0 +1,123 @@
+// Two-level map-filter model: filter gyms by the *exercise* a machine trains
+// (broad) or by a *specific machine* (narrow). Selecting a filter highlights the
+// matching gym pins on the map and dims the rest — it never re-queries the gym
+// list or navigates.
+//
+// NOTE ON DATA: the backend does not yet expose the machine → exercise
+// relationship (equipment.exercise_id) on its read endpoints, nor a gym's
+// machine list on `/gyms`. Until it does, a machine's exercise is *inferred*
+// from its name with predictExercise(). Everything marked STUB below collapses
+// to a single lookup once the API returns exercise_id on `/equipment`.
+
+import type { Equipment, ExerciseRef } from '@/types/equipment';
+import { predictExercise } from './exercise-match';
+
+export type FilterKind = 'exercises' | 'machines';
+
+export interface ActiveFilter {
+	kind: FilterKind;
+	/** Stable identity — exercise id for exercises, machine slug for machines. */
+	key: string;
+	/** Human-readable label shown in the top-right card and map badge. */
+	name: string;
+	/** Thumbnail for the top-right card (machines only; exercises fall back to an icon). */
+	imageUrl?: string | null;
+	/** Secondary line in the card — machine series, or the exercise category. */
+	subtitle?: string | null;
+}
+
+/** Stable unique id for a filter, used to key its resolved gym set. */
+export const filterId = (filter: ActiveFilter): string => `${filter.kind}:${filter.key}`;
+
+/** Brand + series + name, matching how `/gyms/search` compares machine names. */
+export function machineFullName(machine: Equipment): string {
+	return [machine.brand, machine.series, machine.name].filter(Boolean).join(' ');
+}
+
+/** Short label for a machine chip (brand + name, series is usually noise). */
+export function machineLabel(machine: Equipment): string {
+	return [machine.brand, machine.name].filter(Boolean).join(' ');
+}
+
+/**
+ * The exercise a machine trains.
+ * STUB: reads machine.exercise if the backend ever provides it, otherwise infers
+ * it from the machine name. Replace with `machine.exercise` once exposed.
+ */
+export function exerciseForMachine(
+	machine: Equipment,
+	allExercises: ExerciseRef[]
+): ExerciseRef | null {
+	if (machine.exercise) return machine.exercise;
+	return predictExercise(machineFullName(machine), allExercises);
+}
+
+/** Every machine that maps to the given exercise. */
+export function machinesForExercise(
+	exercise: ExerciseRef,
+	allEquipment: Equipment[],
+	allExercises: ExerciseRef[]
+): Equipment[] {
+	return allEquipment.filter(
+		(machine) => exerciseForMachine(machine, allExercises)?.id === exercise.id
+	);
+}
+
+/**
+ * A gym's available exercises, derived from its machines.
+ *   gym.exercises = unique(gym.machines.map(m => m.exercise))
+ * Used once `gym.machines` is populated by the backend; kept here so the data
+ * model is in one place.
+ */
+export function deriveGymExercises(
+	machines: Equipment[],
+	allExercises: ExerciseRef[]
+): ExerciseRef[] {
+	const seen = new Map<string, ExerciseRef>();
+	for (const machine of machines) {
+		const exercise = exerciseForMachine(machine, allExercises);
+		if (exercise && !seen.has(exercise.id)) seen.set(exercise.id, exercise);
+	}
+	return [...seen.values()];
+}
+
+/** Popular exercises = those trained by the most machines in the catalogue. */
+export function popularExercises(
+	allEquipment: Equipment[],
+	allExercises: ExerciseRef[],
+	limit = 6
+): ExerciseRef[] {
+	const counts = new Map<string, number>();
+	for (const machine of allEquipment) {
+		const exercise = exerciseForMachine(machine, allExercises);
+		if (exercise) counts.set(exercise.id, (counts.get(exercise.id) ?? 0) + 1);
+	}
+	return allExercises
+		.filter((exercise) => counts.has(exercise.id))
+		.sort((a, b) => (counts.get(b.id) ?? 0) - (counts.get(a.id) ?? 0))
+		.slice(0, limit);
+}
+
+/**
+ * Popular machines = one representative machine per most-common brand, so the
+ * chips read as recognisable pieces of kit (e.g. "Hammer Strength Row").
+ */
+export function popularMachines(allEquipment: Equipment[], limit = 6): Equipment[] {
+	const brandCounts = new Map<string, number>();
+	for (const machine of allEquipment) {
+		if (machine.brand) brandCounts.set(machine.brand, (brandCounts.get(machine.brand) ?? 0) + 1);
+	}
+	const topBrands = [...brandCounts.entries()]
+		.sort((a, b) => b[1] - a[1])
+		.slice(0, limit)
+		.map(([brand]) => brand);
+
+	const chips: Equipment[] = [];
+	for (const brand of topBrands) {
+		const pick =
+			allEquipment.find((m) => m.brand === brand && m.image_url) ??
+			allEquipment.find((m) => m.brand === brand);
+		if (pick) chips.push(pick);
+	}
+	return chips;
+}

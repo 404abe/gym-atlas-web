@@ -1,3 +1,5 @@
+import type { ExerciseRef } from './equipment';
+
 export interface Gym {
 	created_at: string | number | Date;
 	is_favorite: boolean;
