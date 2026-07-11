@@ -4,6 +4,7 @@ import { Dumbbell, Eye, EyeOff, PanelLeftOpen, Search, X } from 'lucide-react';
 import MapView from '@/components/map/MapView';
 import GymSidebar from '@/components/sidebar/GymSidebar';
 import GymFinderSearch from '@/components/sidebar/GymFinderSearch';
+import GymStoriesRow from '@/components/sidebar/GymStoriesRow';
 import { fetchGyms } from '@/lib/api';
 import { Gym } from '@/types/gym';
 import { useGymFilter } from '@/app/contexts/GymFilterContext';
@@ -174,9 +175,9 @@ export default function Page() {
 					<GymFinderSearch gymCount={filteredGyms.length} />
 				</div>
 
-				{/* map */}
-				<div className="relative z-0 shrink-0 px-3 pt-2">
-					<div className="border-border relative h-[45vh] overflow-hidden rounded-2xl border">
+				{/* map — grows to fill the space above the gym search + stories row */}
+				<div className="relative z-0 min-h-0 flex-1 px-3 pt-2">
+					<div className="border-border relative h-full overflow-hidden rounded-2xl border">
 						<FilterCountBadge
 							total={gyms.length}
 							showUnmatched={showUnmatched}
@@ -210,10 +211,13 @@ export default function Page() {
 					)}
 				</div>
 
-				{/* gym list */}
-				<div className="min-h-0 flex-1">
-					<GymSidebar gyms={searchFilteredGyms} selectedGym={selectedGym} onSelectGym={setSelectedGym} listOnly />
-				</div>
+				{/* gym stories row — circular avatars at the bottom (mobile only) */}
+				<GymStoriesRow
+					gyms={searchFilteredGyms}
+					selectedGym={selectedGym}
+					onSelectGym={setSelectedGym}
+					userLocation={userLocation}
+				/>
 			</div>
 
 			{/* ── DESKTOP LAYOUT ── */}
