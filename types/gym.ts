@@ -30,14 +30,24 @@ export interface Gym {
 	};
 	hours_updated_at?: string;
 	equipment_images?: string[];
-	// TODO(backend): `/gyms` does not return the gym's machine list or its derived
-	// exercises. When the API exposes them, a gym's available exercises are:
-	//   gym.exercises = unique(gym.machines.map(m => m.exercise))
-	// See deriveGymExercises() in lib/gym-filter.ts. Until then, matching gyms for
-	// a filter are resolved on demand via POST /gyms/search (GymFilterContext).
-	machines?: GymEquipment[];
-	exercises?: ExerciseRef[];
+	free_weights?: GymFreeWeights | null;
 }
+
+export interface GymFreeWeights {
+	gym_id: number;
+	dumbbell_min_kg: number | null;
+	dumbbell_max_kg: number | null;
+	dumbbell_racks: number;
+	squat_racks: number;
+	flat_benches: number;
+	incline_benches: number;
+	platforms: number;
+	preacher_curl_stations: number;
+	verified: boolean;
+	updated_at?: string;
+}
+
+export type GymFreeWeightsInput = Omit<GymFreeWeights, 'gym_id' | 'verified' | 'updated_at'>;
 
 export interface GymEquipment {
 	equipment_id: number;

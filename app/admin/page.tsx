@@ -6,11 +6,11 @@ import { useAuth } from '@/app/contexts/AuthContext';
 import { Check, X, Building2, Dumbbell, Clock, Users, ShieldCheck, ImageIcon, Layers, Weight } from 'lucide-react';
 import { FaInstagram } from 'react-icons/fa';
 import { fetchAdminPending, fetchAdminUsers, adminAction, adminPhotoAction, makeAdmin } from '@/lib/api';
-import { PendingGym, PendingEquipment, PendingSuggestion, PendingPhoto, PendingVariant, PendingWeightStack, PendingGymInstagram, AdminUser } from '@/types/admin';
+import { PendingGym, PendingEquipment, PendingSuggestion, PendingPhoto, PendingVariant, PendingWeightStack, PendingGymInstagram, PendingFreeWeights, AdminUser } from '@/types/admin';
 
 type ActionState = Record<string, 'approving' | 'rejecting' | 'done'>;
 
-const TABS = ['equipment', 'gyms', 'suggestions', 'photos', 'variants', 'weights', 'instagram', 'users'] as const;
+const TABS = ['equipment', 'gyms', 'suggestions', 'photos', 'variants', 'weights', 'free-weights', 'instagram', 'users'] as const;
 type Tab = (typeof TABS)[number];
 
 const TAB_LABELS: Record<Tab, string> = {
@@ -20,6 +20,7 @@ const TAB_LABELS: Record<Tab, string> = {
 	photos: 'photos',
 	variants: 'variants',
 	weights: 'weight stacks',
+	'free-weights': 'free weights',
 	instagram: 'instagram',
 	users: 'users'
 };
@@ -39,6 +40,7 @@ export default function AdminPage() {
 	const [variants, setVariants] = useState<PendingVariant[]>([]);
 	const [weightStacks, setWeightStacks] = useState<PendingWeightStack[]>([]);
 	const [gymInstagrams, setGymInstagrams] = useState<PendingGymInstagram[]>([]);
+	const [freeWeights, setFreeWeights] = useState<PendingFreeWeights[]>([]);
 
 	const isSuperAdmin = user?.role === 'super_admin';
 
@@ -70,6 +72,7 @@ export default function AdminPage() {
 			setVariants(data.variants || []);
 			setWeightStacks(data.weightStacks || []);
 			setGymInstagrams(data.gymInstagrams || []);
+			setFreeWeights(data.freeWeights || []);
 		} catch (err) {
 			console.error('Failed to fetch pending:', err);
 		} finally {
@@ -87,7 +90,7 @@ export default function AdminPage() {
 	};
 
 	const handleAction = async (
-		type: 'gym' | 'equipment' | 'suggestion' | 'variant' | 'weight-stack' | 'gym-instagram',
+		type: 'gym' | 'equipment' | 'suggestion' | 'variant' | 'weight-stack' | 'gym-instagram' | 'free-weights',
 		id: number,
 		action: 'approve' | 'reject'
 	) => {
@@ -102,6 +105,7 @@ export default function AdminPage() {
 				else if (type === 'variant') setVariants((prev) => prev.filter((v) => v.id !== id));
 				else if (type === 'weight-stack') setWeightStacks((prev) => prev.filter((w) => w.id !== id));
 				else if (type === 'gym-instagram') setGymInstagrams((prev) => prev.filter((gi) => gi.id !== id));
+				else if (type === 'free-weights') setFreeWeights((prev) => prev.filter((fw) => fw.id !== id));
 				else setSuggestions((prev) => prev.filter((s) => s.id !== id));
 			}, 600);
 		} catch (err) {
@@ -148,8 +152,8 @@ export default function AdminPage() {
 
 	if (loading) return <div className="text-sub p-8 text-sm">Loading admin dashboard...</div>;
 
-	const totalPending = gyms.length + equipment.length + suggestions.length + photos.length + variants.length + weightStacks.length + gymInstagrams.length;
-	const visibleTabs = isSuperAdmin ? TABS : (['equipment', 'gyms', 'suggestions', 'photos', 'variants', 'weights', 'instagram'] as const);
+	const totalPending = gyms.length + equipment.length + suggestions.length + photos.length + variants.length + weightStacks.length + gymInstagrams.length + freeWeights.length;
+	const visibleTabs = isSuperAdmin ? TABS : (['equipment', 'gyms', 'suggestions', 'photos', 'variants', 'weights', 'free-weights', 'instagram'] as const);
 
 	return (
 		<div id="pageAdmin" className="content-grid py-8">
@@ -190,6 +194,7 @@ export default function AdminPage() {
 							{tab === 'photos' && <ImageIcon className="h-3.5 w-3.5" />}
 							{tab === 'variants' && <Layers className="h-3.5 w-3.5" />}
 							{tab === 'weights' && <Weight className="h-3.5 w-3.5" />}
+							{tab === 'free-weights' && <Weight className="h-3.5 w-3.5" />}
 							{tab === 'instagram' && <FaInstagram className="h-3.5 w-3.5" />}
 							{tab === 'users' && <Users className="h-3.5 w-3.5" />}
 
@@ -223,6 +228,11 @@ export default function AdminPage() {
 							{tab === 'weights' && weightStacks.length > 0 && (
 								<span className="bg-sub-alt text-sub rounded-full px-1.5 py-0.5 text-xs">
 									{weightStacks.length}
+								</span>
+							)}
+							{tab === 'free-weights' && freeWeights.length > 0 && (
+								<span className="bg-sub-alt text-sub rounded-full px-1.5 py-0.5 text-xs">
+									{freeWeights.length}
 								</span>
 							)}
 							{tab === 'instagram' && gymInstagrams.length > 0 && (
@@ -546,6 +556,73 @@ export default function AdminPage() {
 					</div>
 				)}
 
+				{/* Free Weights Tab Content */}
+				{activeTab === 'free-weights' && (
+					<div className="space-y-2">
+						{freeWeights.length === 0 ? (
+							<EmptyState label="No pending free weights updates" />
+						) : (
+							freeWeights.map((fw) => {
+								const key = `free-weights-${fw.id}`;
+								const state = actions[key];
+								const range =
+									fw.dumbbell_min_kg != null && fw.dumbbell_max_kg != null
+										? `${fw.dumbbell_min_kg}-${fw.dumbbell_max_kg}kg`
+										: 'unknown range';
+								return (
+									<div
+										key={fw.id}
+										className={`bg-surface rounded-2xl p-4 transition-opacity duration-300 ${
+											state === 'done' ? 'opacity-0' : 'opacity-100'
+										}`}
+									>
+										<div className="flex items-start gap-4">
+											<div className="bg-sub-alt flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl">
+												{fw.image_url ? (
+													<img
+														src={fw.image_url}
+														alt={fw.gym_name}
+														className="h-full w-full object-cover"
+													/>
+												) : (
+													<Weight className="text-sub h-4 w-4" />
+												)}
+											</div>
+											<div className="min-w-0 flex-1">
+												<p className="text-main text-sm font-medium">{fw.gym_name}</p>
+												<div className="text-sub mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
+													{[fw.city, fw.country].filter(Boolean).length > 0 && (
+														<span>{[fw.city, fw.country].filter(Boolean).join(', ')}</span>
+													)}
+													<span>Dumbbells {range}</span>
+													<span className="flex items-center gap-1">
+														<Clock className="h-3 w-3" />
+														{formatDate(fw.created_at)}
+													</span>
+													{fw.submitted_by && <span>by {fw.submitted_by}</span>}
+												</div>
+											</div>
+											<ActionButtons
+												state={state}
+												onApprove={() => handleAction('free-weights', fw.id, 'approve')}
+												onReject={() => handleAction('free-weights', fw.id, 'reject')}
+											/>
+										</div>
+										<div className="mt-3 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+											<MetricPill label="Dumbbell racks" value={fw.dumbbell_racks} />
+											<MetricPill label="Squat racks" value={fw.squat_racks} />
+											<MetricPill label="Flat benches" value={fw.flat_benches} />
+											<MetricPill label="Incline benches" value={fw.incline_benches} />
+											<MetricPill label="Platforms" value={fw.platforms} />
+											<MetricPill label="Preacher curl" value={fw.preacher_curl_stations} />
+										</div>
+									</div>
+								);
+							})
+						)}
+					</div>
+				)}
+
 				{/* Instagram Tab Content */}
 				{activeTab === 'instagram' && (
 					<div className="space-y-2">
@@ -694,6 +771,15 @@ function ActionButtons({
 			>
 				<Check className="h-3.5 w-3.5" />
 			</button>
+		</div>
+	);
+}
+
+function MetricPill({ label, value }: { label: string; value: number }) {
+	return (
+		<div className="border-border bg-bg/30 rounded-xl border px-3 py-2">
+			<p className="text-sub text-[11px]">{label}</p>
+			<p className="text-main text-sm font-semibold">{value}</p>
 		</div>
 	);
 }
