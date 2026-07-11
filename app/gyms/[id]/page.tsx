@@ -11,9 +11,10 @@ import {
 	unfavouriteGym,
 	uploadGymImage,
 	updateGymInstagram,
+	submitGymFreeWeights,
 	removeGymEquipment
 } from '@/lib/api';
-import { Gym, GymEquipment } from '@/types/gym';
+import { Gym, GymEquipment, GymFreeWeightsInput } from '@/types/gym';
 import type { Equipment } from '@/types/equipment';
 import { FaInstagram } from 'react-icons/fa';
 import FavoriteButton from '@/components/ui/FavoriteButton';
@@ -22,6 +23,17 @@ import { useAuthGate } from '@/app/contexts/AuthGateContext';
 import { useToastContext } from '@/app/contexts/ToastContext';
 import AddEquipmentPanel from '@/app/add/_components/AddEquipmentPanel';
 import { getOpenStatus } from '@/lib/openingHours';
+
+const FREE_WEIGHT_DEFAULTS: GymFreeWeightsInput = {
+	dumbbell_min_kg: null,
+	dumbbell_max_kg: null,
+	dumbbell_racks: 0,
+	squat_racks: 0,
+	flat_benches: 0,
+	incline_benches: 0,
+	platforms: 0,
+	preacher_curl_stations: 0
+};
 
 export default function GymProfilePage() {
 	const { id } = useParams();
@@ -46,6 +58,10 @@ export default function GymProfilePage() {
 	const [instaValue, setInstaValue] = useState('');
 	const [instaSubmitting, setInstaSubmitting] = useState(false);
 	const [instaSubmitted, setInstaSubmitted] = useState(false);
+	const [freeWeightsOpen, setFreeWeightsOpen] = useState(false);
+	const [freeWeightsForm, setFreeWeightsForm] = useState<GymFreeWeightsInput>(FREE_WEIGHT_DEFAULTS);
+	const [freeWeightsSubmitting, setFreeWeightsSubmitting] = useState(false);
+	const [freeWeightsSubmitted, setFreeWeightsSubmitted] = useState(false);
 
 	useEffect(() => {
 		const load = async () => {
@@ -60,6 +76,16 @@ export default function GymProfilePage() {
 				setEquipment(equipmentData);
 				setIsFavorite(gymData.is_favorite ?? false);
 				setImageUrl(gymData.image_url || null);
+				setFreeWeightsForm({
+					dumbbell_min_kg: gymData.free_weights?.dumbbell_min_kg ?? null,
+					dumbbell_max_kg: gymData.free_weights?.dumbbell_max_kg ?? null,
+					dumbbell_racks: gymData.free_weights?.dumbbell_racks ?? 0,
+					squat_racks: gymData.free_weights?.squat_racks ?? 0,
+					flat_benches: gymData.free_weights?.flat_benches ?? 0,
+					incline_benches: gymData.free_weights?.incline_benches ?? 0,
+					platforms: gymData.free_weights?.platforms ?? 0,
+					preacher_curl_stations: gymData.free_weights?.preacher_curl_stations ?? 0
+				});
 			} catch (err) {
 				console.error('Failed to load gym:', err);
 			} finally {
@@ -116,6 +142,41 @@ export default function GymProfilePage() {
 			console.error('Failed to upload image:', err);
 		} finally {
 			setUploading(false);
+		}
+	};
+
+	const displayFreeWeights = gym?.free_weights ?? FREE_WEIGHT_DEFAULTS;
+	const dumbbellRange =
+		displayFreeWeights.dumbbell_min_kg != null && displayFreeWeights.dumbbell_max_kg != null
+			? `${displayFreeWeights.dumbbell_min_kg}-${displayFreeWeights.dumbbell_max_kg}kg`
+			: 'unknown';
+
+	const setFreeWeightValue = (key: keyof GymFreeWeightsInput, value: number | null) => {
+		setFreeWeightsForm((prev) => ({ ...prev, [key]: value }));
+		setFreeWeightsSubmitted(false);
+	};
+
+	const adjustFreeWeightValue = (key: keyof GymFreeWeightsInput, delta: number) => {
+		setFreeWeightsForm((prev) => {
+			const current = Number(prev[key] ?? 0);
+			return { ...prev, [key]: Math.max(0, current + delta) };
+		});
+		setFreeWeightsSubmitted(false);
+	};
+
+	const handleSubmitFreeWeights = async () => {
+		if (!requireAuth('submit free weights')) return;
+		try {
+			setFreeWeightsSubmitting(true);
+			await submitGymFreeWeights(Number(id), freeWeightsForm);
+			setFreeWeightsSubmitted(true);
+			setFreeWeightsOpen(false);
+			addToast('Free weights update submitted for review', 'success');
+		} catch (err) {
+			console.error('Failed to submit free weights:', err);
+			addToast('Failed to submit free weights', 'error');
+		} finally {
+			setFreeWeightsSubmitting(false);
 		}
 	};
 
@@ -494,6 +555,7 @@ export default function GymProfilePage() {
 									<div className="border-border bg-bg/40 rounded-xl border px-3 py-2 text-right">
 										<p className="text-sub text-[10px] uppercase">Dumbbells</p>
 										<p className="text-main text-sm font-semibold">2-50kg</p>
+										<p className="text-main text-sm font-semibold">{dumbbellRange}</p>
 									</div>
 									<span className="border-border bg-bg/40 text-main hidden rounded-full border px-2.5 py-1 text-xs transition group-open:hidden sm:inline">
 										View details
@@ -502,34 +564,63 @@ export default function GymProfilePage() {
 							</summary>
 							<div className="border-border border-t px-4 pb-4 pt-3">
 								<div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-									<div className="border-border bg-bg/30 rounded-xl border px-3 py-2">
-										<p className="text-sub text-[11px]">Dumbbell Racks</p>
-										<p className="text-main text-base font-semibold">2</p>
-									</div>
-									<div className="border-border bg-bg/30 rounded-xl border px-3 py-2">
-										<p className="text-sub text-[11px]">Squat Racks</p>
-										<p className="text-main text-base font-semibold">4</p>
-									</div>
-									<div className="border-border bg-bg/30 rounded-xl border px-3 py-2">
-										<p className="text-sub text-[11px]">Flat Benches</p>
-										<p className="text-main text-base font-semibold">6</p>
-									</div>
-									<div className="border-border bg-bg/30 rounded-xl border px-3 py-2">
-										<p className="text-sub text-[11px]">Incline Benches</p>
-										<p className="text-main text-base font-semibold">2</p>
-									</div>
+									<FreeWeightStat label="Dumbbell Racks" value={displayFreeWeights.dumbbell_racks} />
+									<FreeWeightStat label="Squat Racks" value={displayFreeWeights.squat_racks} />
+									<FreeWeightStat label="Flat Benches" value={displayFreeWeights.flat_benches} />
+									<FreeWeightStat label="Incline Benches" value={displayFreeWeights.incline_benches} />
 								</div>
 								<div className="mt-2 flex flex-wrap gap-2">
 									<span className="border-border text-sub rounded-full border px-2.5 py-1 text-xs">
-										2 Platforms
+										{displayFreeWeights.platforms} Platforms
 									</span>
 									<span className="border-border text-sub rounded-full border px-2.5 py-1 text-xs">
-										1 Preacher Curl Station
+										{displayFreeWeights.preacher_curl_stations} Preacher Curl Stations
 									</span>
-									<span className="border-border text-sub rounded-full border px-2.5 py-1 text-xs">
-										Free Weight Area Verified
-									</span>
+									{gym.free_weights?.verified && (
+										<span className="border-border text-sub rounded-full border px-2.5 py-1 text-xs">
+											Free Weight Area Verified
+										</span>
+									)}
 								</div>
+								<div className="mt-3 flex flex-wrap items-center gap-2">
+									<button
+										type="button"
+										onClick={() => {
+											if (!requireAuth('submit free weights')) return;
+											setFreeWeightsOpen((prev) => !prev);
+										}}
+										className="border-border text-main hover:bg-main/5 rounded-full border px-3 py-1.5 text-xs transition"
+									>
+										{freeWeightsOpen ? 'Cancel edit' : gym.free_weights ? 'Suggest correction' : 'Add free weights'}
+									</button>
+									{freeWeightsSubmitted && (
+										<span className="text-xs text-[#3ee7a6]">Submitted for review</span>
+									)}
+								</div>
+								{freeWeightsOpen && (
+									<div className="border-border mt-3 rounded-xl border bg-bg/30 p-3">
+										<div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+											<CounterField label="Dumbbell min kg" value={freeWeightsForm.dumbbell_min_kg ?? 0} onChange={(value) => setFreeWeightValue('dumbbell_min_kg', value)} onAdjust={(delta) => adjustFreeWeightValue('dumbbell_min_kg', delta)} />
+											<CounterField label="Dumbbell max kg" value={freeWeightsForm.dumbbell_max_kg ?? 0} onChange={(value) => setFreeWeightValue('dumbbell_max_kg', value)} onAdjust={(delta) => adjustFreeWeightValue('dumbbell_max_kg', delta)} />
+											<CounterField label="Dumbbell racks" value={freeWeightsForm.dumbbell_racks} onChange={(value) => setFreeWeightValue('dumbbell_racks', value)} onAdjust={(delta) => adjustFreeWeightValue('dumbbell_racks', delta)} />
+											<CounterField label="Squat racks" value={freeWeightsForm.squat_racks} onChange={(value) => setFreeWeightValue('squat_racks', value)} onAdjust={(delta) => adjustFreeWeightValue('squat_racks', delta)} />
+											<CounterField label="Flat benches" value={freeWeightsForm.flat_benches} onChange={(value) => setFreeWeightValue('flat_benches', value)} onAdjust={(delta) => adjustFreeWeightValue('flat_benches', delta)} />
+											<CounterField label="Incline benches" value={freeWeightsForm.incline_benches} onChange={(value) => setFreeWeightValue('incline_benches', value)} onAdjust={(delta) => adjustFreeWeightValue('incline_benches', delta)} />
+											<CounterField label="Platforms" value={freeWeightsForm.platforms} onChange={(value) => setFreeWeightValue('platforms', value)} onAdjust={(delta) => adjustFreeWeightValue('platforms', delta)} />
+											<CounterField label="Preacher curl stations" value={freeWeightsForm.preacher_curl_stations} onChange={(value) => setFreeWeightValue('preacher_curl_stations', value)} onAdjust={(delta) => adjustFreeWeightValue('preacher_curl_stations', delta)} />
+										</div>
+										<div className="mt-3 flex justify-end">
+											<button
+												type="button"
+												onClick={handleSubmitFreeWeights}
+												disabled={freeWeightsSubmitting}
+												className="bg-main text-bg hover:opacity-90 disabled:opacity-60 rounded-full px-4 py-2 text-xs font-medium transition"
+											>
+												{freeWeightsSubmitting ? 'Submitting...' : 'Submit for review'}
+											</button>
+										</div>
+									</div>
+								)}
 							</div>
 						</details>
 
@@ -632,5 +723,58 @@ export default function GymProfilePage() {
 				</div>
 			)}
 		</>
+	);
+}
+
+function FreeWeightStat({ label, value }: { label: string; value: number }) {
+	return (
+		<div className="border-border bg-bg/30 rounded-xl border px-3 py-2">
+			<p className="text-sub text-[11px]">{label}</p>
+			<p className="text-main text-base font-semibold">{value}</p>
+		</div>
+	);
+}
+
+function CounterField({
+	label,
+	value,
+	onChange,
+	onAdjust
+}: {
+	label: string;
+	value: number;
+	onChange: (value: number) => void;
+	onAdjust: (delta: number) => void;
+}) {
+	return (
+		<label className="border-border bg-bg/40 rounded-xl border px-3 py-2">
+			<span className="text-sub block text-[11px]">{label}</span>
+			<div className="mt-1 flex items-center gap-2">
+				<button
+					type="button"
+					onClick={() => onAdjust(-1)}
+					className="border-border text-sub hover:text-main grid h-7 w-7 place-items-center rounded-lg border"
+					aria-label={`Decrease ${label}`}
+				>
+					<Minus className="h-3.5 w-3.5" />
+				</button>
+				<input
+					type="number"
+					min={0}
+					max={999}
+					value={value}
+					onChange={(event) => onChange(Math.max(0, Number(event.target.value || 0)))}
+					className="bg-bg text-main border-border h-7 min-w-0 flex-1 rounded-lg border px-2 text-center text-sm font-semibold outline-none focus:border-main"
+				/>
+				<button
+					type="button"
+					onClick={() => onAdjust(1)}
+					className="border-border text-sub hover:text-main grid h-7 w-7 place-items-center rounded-lg border"
+					aria-label={`Increase ${label}`}
+				>
+					<Plus className="h-3.5 w-3.5" />
+				</button>
+			</div>
+		</label>
 	);
 }
