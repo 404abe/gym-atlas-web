@@ -24,18 +24,22 @@ function initialsFor(name: string) {
 export default function GymMarker({
 	gym,
 	selected,
-	matched,
+	state = 'normal',
 	onClick
 }: {
 	gym: Gym;
 	selected: boolean;
-	matched: boolean;
+	/** normal = no active filter, matched = has the filter, dimmed = doesn't. */
+	state?: 'normal' | 'matched' | 'dimmed';
 	onClick: () => void;
 }) {
+	const matched = state === 'matched';
+	const dimmed = state === 'dimmed' && !selected;
 	const router = useRouter();
 	// const rating = formatRating(gym);
 	const machineCount = gym.total_equipment ?? 0;
 	const [equipment, setEquipment] = useState<GymEquipment[]>([]);
+	const openGymDetail = () => router.push(`/gyms/${gym.id}`);
 
 	useEffect(() => {
 		if (!selected) return;
@@ -46,7 +50,11 @@ export default function GymMarker({
 
 
 	return (
-		<div className="relative flex flex-col items-center">
+		<div
+			className={`relative flex flex-col items-center transition-opacity duration-500 ${
+				dimmed ? 'opacity-[0.28]' : 'opacity-100'
+			}`}
+		>
 			<button
 				type="button"
 				onClick={onClick}
@@ -129,17 +137,35 @@ export default function GymMarker({
 							))}
 							{/* mobile: show when > 3 */}
 							{equipment.length > 3 && (
-								<div className="flex h-15.5 w-15.5 shrink-0 flex-col items-center justify-center gap-0.5 rounded-xl bg-sub-alt sm:hidden">
+								<button
+									type="button"
+									onClick={(e) => {
+										e.stopPropagation();
+										openGymDetail();
+									}}
+									aria-label={`View all ${equipment.length} machines at ${gym.name}`}
+									title={`View all ${equipment.length} machines`}
+									className="flex h-15.5 w-15.5 shrink-0 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-xl bg-sub-alt transition-colors hover:bg-main/5 focus:outline-none focus:ring-2 focus:ring-main/40 sm:hidden"
+								>
 									<Plus className="h-4 w-4 text-sub" />
 									<span className="text-[11px] text-sub">{equipment.length - 3} more</span>
-								</div>
+								</button>
 							)}
 							{/* desktop: show when > 4 */}
 							{equipment.length > 4 && (
-								<div className="hidden h-15.5 w-15.5 shrink-0 flex-col items-center justify-center gap-0.5 rounded-xl bg-sub-alt sm:flex">
+								<button
+									type="button"
+									onClick={(e) => {
+										e.stopPropagation();
+										openGymDetail();
+									}}
+									aria-label={`View all ${equipment.length} machines at ${gym.name}`}
+									title={`View all ${equipment.length} machines`}
+									className="hidden h-15.5 w-15.5 shrink-0 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-xl bg-sub-alt transition-colors hover:bg-main/5 focus:outline-none focus:ring-2 focus:ring-main/40 sm:flex"
+								>
 									<Plus className="h-4 w-4 text-sub" />
 									<span className="text-[11px] text-sub">{equipment.length - 4} more</span>
-								</div>
+								</button>
 							)}
 						</div>
 					)}
@@ -149,7 +175,7 @@ export default function GymMarker({
 						type="button"
 						onClick={(e) => {
 							e.stopPropagation();
-							router.push(`/gyms/${gym.id}`);
+							openGymDetail();
 						}}
 						className="flex w-full items-center justify-between border-t border-border px-3 py-2.5 text-sm font-medium text-main transition-colors hover:bg-sub-alt"
 					>
