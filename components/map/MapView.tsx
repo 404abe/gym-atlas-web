@@ -147,6 +147,32 @@ function clusterGyms(gyms: Gym[], zoom: number): GymCluster[] {
 	});
 }
 
+function isClusterIntact(gyms: Gym[], clusterId: string, zoom: number) {
+	return clusterGyms(gyms, zoom).some((cluster) => cluster.id === clusterId);
+}
+
+// Cluster radius shrinks with zoom but scales continuously (screen-pixel
+// distance grows with 2^zoom), so a cluster can split at any zoom, not just
+// at the getClusterRadius() bracket boundaries. Binary-search the exact
+// point where this specific cluster's id (a stable hash of its gym ids)
+// stops appearing, so a single click always zooms in exactly far enough to
+// split it instead of relying on a fixed increment that may undershoot.
+function getExpansionZoom(gyms: Gym[], cluster: GymCluster, currentZoom: number, maxZoom = 14) {
+	if (isClusterIntact(gyms, cluster.id, maxZoom)) return maxZoom;
+
+	let lo = currentZoom;
+	let hi = maxZoom;
+	for (let i = 0; i < 18; i += 1) {
+		const mid = (lo + hi) / 2;
+		if (isClusterIntact(gyms, cluster.id, mid)) {
+			lo = mid;
+		} else {
+			hi = mid;
+		}
+	}
+	return hi;
+}
+
 const FULL_CLUSTER_COUNT = 100;
 
 type MarkerState = 'normal' | 'matched' | 'dimmed';
@@ -282,10 +308,16 @@ export default function MapView({
 									type="button"
 									aria-label={`${cluster.gyms.length} gyms in this area`}
 									onClick={() => {
+										const targetZoom = getExpansionZoom(gyms, cluster, zoom);
+										// Scale duration to the distance actually travelled: a
+										// cluster that's one nudge from splitting shouldn't take
+										// as long as one that needs to jump from a country-wide
+										// zoom all the way down to street level.
+										const duration = Math.min(1100, Math.max(350, (targetZoom - zoom) * 220));
 										mapRef.current?.flyTo({
 											center: [cluster.lng, cluster.lat],
-											zoom: Math.min(zoom + 1.35, 12),
-											duration: 1300
+											zoom: targetZoom,
+											duration
 										});
 									}}
 									className="cursor-pointer opacity-95 transition duration-500 ease-out hover:scale-105 hover:opacity-100"
