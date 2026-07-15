@@ -13,8 +13,12 @@ import ThemeToggle from '../ui/ThemeToggle';
 const pillCls =
 	'flex items-center bg-[var(--pill-bg)]  rounded-lg backdrop-blur pointer-events-auto';
 
-const iconLinkCls =
-	'flex items-center justify-center w-[var(--hit-size)] h-[var(--hit-size)] rounded-[var(--roundness)] text-sub hover:text-text transition-colors duration-[0.22s] no-underline';
+const iconLinkClsBase =
+	'flex items-center justify-center w-[var(--hit-size)] h-[var(--hit-size)] rounded-[var(--roundness)] transition-colors duration-[0.22s] no-underline';
+
+const iconLinkColorCls = 'text-sub hover:text-text';
+
+const iconLinkCls = cn(iconLinkClsBase, iconLinkColorCls);
 
 export default function Topbar() {
 	const { user } = useAuth();
@@ -27,37 +31,26 @@ export default function Topbar() {
 	return (
 		<div className="left-5.5 pointer-events-none fixed right-6 z-[60] hidden items-start justify-between p-3 md:flex">
 			{' '}
-			{/* Logo */}
-			<Link href="/" className="pointer-events-auto mt-[9px] flex items-center gap-2 no-underline">
-				<GymAtlasLogo size={28} />
+			{/* Logo + center nav pill */}
+			<div className="flex items-center gap-3">
+				<Link href="/" className="pointer-events-auto flex items-center gap-2 no-underline">
+					<GymAtlasLogo size={28} />
 
-				<span className="text-2xl font-medium uppercase tracking-[0.14em]">
-					<span className="text-text">GYM</span>
-					<span className="text-sub">ATLAS</span>
-				</span>
-			</Link>
-			{/* Center nav pill + search below */}
-			<div className="flex flex-col items-center gap-2">
-				<div className={pillCls}>
-					<Link
-						href="/"
-						className={cn(
-							'flex h-[var(--hit-size)] items-center justify-center rounded-[var(--roundness)] px-4 text-[10px] uppercase tracking-[0.08em] no-underline transition-colors duration-[0.22s]',
-							isMap ? 'text-text' : 'text-sub hover:text-text'
-						)}
-					>
+					{/* <span className="text-2xl font-medium uppercase tracking-[0.14em]">
+						<span className="text-text">GYM</span>
+						<span className="text-sub">ATLAS</span>
+					</span> */}
+				</Link>
+				<div className={cn(pillCls, 'gap-0.5')}>
+					<Link href="/" className={cn(iconLinkClsBase, isMap ? 'text-text' : iconLinkColorCls)}>
 						<FaMap size={18} />
 					</Link>
 					<Link
 						href="/data"
-						className={cn(
-							'flex h-[var(--hit-size)] items-center justify-center rounded-[var(--roundness)] px-4 text-[10px] uppercase tracking-[0.08em] no-underline transition-colors duration-[0.22s]',
-							isData ? 'text-text' : 'text-sub hover:text-text'
-						)}
+						className={cn(iconLinkClsBase, isData ? 'text-text' : iconLinkColorCls)}
 					>
 						<FaDatabase size={18} />
 					</Link>
-					<div className="bg-sub mx-1 h-4 w-px shrink-0" />
 					<Link
 						href="/add"
 						onClick={(e) => {

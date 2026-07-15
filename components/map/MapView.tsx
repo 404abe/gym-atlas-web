@@ -198,6 +198,7 @@ export default function MapView({
 	const mapRef = useRef<MapRef>(null);
 	const lastFlownGymId = useRef<number | null>(null);
 	const [zoom, setZoom] = useState(5);
+	const [mapLoaded, setMapLoaded] = useState(false);
 	const { theme } = useTheme();
 	const mapStyle = theme === 'light' ? 'mapbox://styles/mapbox/light-v11' : 'mapbox://styles/mapbox/dark-v11';
 	const clusters = useMemo(() => clusterGyms(gyms, zoom), [gyms, zoom]);
@@ -230,6 +231,18 @@ export default function MapView({
 		});
 	}, [selectedGym]);
 
+	// mapbox-gl only re-fits its canvas on a *window* resize, not on its
+	// container resizing (e.g. the sidebar collapsing/expanding), so the map
+	// is left stale — cropped or with dead space — until told to resize.
+	useEffect(() => {
+		if (!mapLoaded) return;
+		const container = mapRef.current?.getContainer();
+		if (!container) return;
+		const observer = new ResizeObserver(() => mapRef.current?.resize());
+		observer.observe(container);
+		return () => observer.disconnect();
+	}, [mapLoaded]);
+
 	return (
 		<div id="MapView" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
 			<ReactMap
@@ -243,6 +256,7 @@ export default function MapView({
 				mapStyle={mapStyle}
 				style={{ width: '100%', height: '100%' }}
 				onMove={(event) => setZoom(event.viewState.zoom)}
+				onLoad={() => setMapLoaded(true)}
 			>
 				{clusters.map((cluster) => {
 					const matchState = (gym: Gym): MarkerState =>
