@@ -29,11 +29,9 @@ export interface Equipment {
 	is_favorite?: boolean;
 	image_url?: string;
 	variants: EquipmentVariant[];
-	// TODO(backend): the machine → exercise relationship is stored in the DB
-	// (equipment.exercise_id / secondary_exercise_id) but is NOT returned by the
-	// `/equipment` read endpoint yet. Until it is, the exercise for a machine is
-	// inferred client-side from its name via predictExercise() — see
-	// lib/gym-filter.ts. Populate these once the API exposes the fields.
+	// Populated by `/equipment` from equipment.exercise_id / secondary_exercise_id
+	// when set. Older/uncategorized machines may still lack it, in which case
+	// exerciseForMachine() (lib/gym-filter.ts) falls back to a name-based guess.
 	exercise?: ExerciseRef | null;
 	secondary_exercise?: ExerciseRef | null;
 }

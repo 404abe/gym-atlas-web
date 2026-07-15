@@ -3,11 +3,11 @@
 // matching gym pins on the map and dims the rest — it never re-queries the gym
 // list or navigates.
 //
-// NOTE ON DATA: the backend does not yet expose the machine → exercise
-// relationship (equipment.exercise_id) on its read endpoints, nor a gym's
-// machine list on `/gyms`. Until it does, a machine's exercise is *inferred*
-// from its name with predictExercise(). Everything marked STUB below collapses
-// to a single lookup once the API returns exercise_id on `/equipment`.
+// NOTE ON DATA: `/equipment` now returns machine.exercise when
+// equipment.exercise_id is set, but a gym's machine list still isn't exposed on
+// `/gyms`. Machines without an assigned exercise_id (legacy entries) still fall
+// back to a name-based guess via predictExercise(). Everything marked STUB below
+// collapses further once `/gyms` exposes a per-gym machine list.
 
 import type { Equipment, ExerciseRef } from '@/types/equipment';
 import { predictExercise } from './exercise-match';
@@ -40,9 +40,8 @@ export function machineLabel(machine: Equipment): string {
 }
 
 /**
- * The exercise a machine trains.
- * STUB: reads machine.exercise if the backend ever provides it, otherwise infers
- * it from the machine name. Replace with `machine.exercise` once exposed.
+ * The exercise a machine trains. Uses machine.exercise when set; falls back to
+ * a name-based guess for legacy machines that predate the exercise_id field.
  */
 export function exerciseForMachine(
 	machine: Equipment,
