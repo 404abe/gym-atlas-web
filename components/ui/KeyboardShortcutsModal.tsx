@@ -47,6 +47,14 @@ export default function KeyboardShortcutsModal({ onClose }: { onClose: () => voi
 					<ShortcutRow label="Search" keys={['⌘', 'K']} />
 					<ShortcutRow label="Keyboard shortcuts" keys={['?']} />
 				</div>
+
+				<div className="border-border border-t px-2 py-1">
+					<p className="text-sub px-3 pb-1 pt-2 text-[11px] uppercase tracking-wide">Map</p>
+					<ShortcutRow label="Zoom in / out" keys={['+', '−']} />
+					<ShortcutRow label="Pan" keys={['↑', '↓', '←', '→']} />
+					<ShortcutRow label="Rotate" keys={['⇧', '←', '→']} />
+					<ShortcutRow label="Tilt" keys={['⇧', '↑', '↓']} />
+				</div>
 			</div>
 		</div>
 	);
