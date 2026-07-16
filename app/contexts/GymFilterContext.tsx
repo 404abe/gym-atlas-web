@@ -25,6 +25,8 @@ interface GymFilterContextValue {
 	 * resolved from these without touching the rendered pin set.
 	 */
 	toggleFilter: (filter: ActiveFilter, machineNames: string[]) => void;
+	/** Same as toggleFilter, but resolves gyms by brand id instead of machine names. */
+	toggleBrandFilter: (filter: ActiveFilter, brandId: number) => void;
 	/** Remove a single filter (e.g. dismissing its card). */
 	removeFilter: (filter: ActiveFilter) => void;
 	/** Remove every filter. */
@@ -38,6 +40,7 @@ const GymFilterContext = createContext<GymFilterContextValue>({
 	matchedGymIds: null,
 	loading: false,
 	toggleFilter: () => {},
+	toggleBrandFilter: () => {},
 	removeFilter: () => {},
 	clearFilters: () => {}
 });
@@ -49,6 +52,22 @@ async function gymIdsForMachine(name: string): Promise<number[]> {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ machines: [name] })
+		});
+		const data = await res.json();
+		const gyms = Array.isArray(data) ? data : (data.data ?? []);
+		return gyms.map((g: { id: number }) => Number(g.id)).filter((id: number) => Number.isFinite(id));
+	} catch {
+		return [];
+	}
+}
+
+/** Gyms with any equipment from the given brand (POST /gyms/search). */
+async function gymIdsForBrand(brandId: number): Promise<number[]> {
+	try {
+		const res = await fetch(`${API_URL}/gyms/search`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ brand_id: brandId })
 		});
 		const data = await res.json();
 		const gyms = Array.isArray(data) ? data : (data.data ?? []);
@@ -98,8 +117,9 @@ export function GymFilterProvider({ children }: { children: React.ReactNode }) {
 		[clearFilters]
 	);
 
-	const toggleFilter = useCallback(
-		(filter: ActiveFilter, machineNames: string[]) => {
+	// Shared by toggleFilter and toggleBrandFilter — only how gym ids are resolved differs.
+	const runToggle = useCallback(
+		(filter: ActiveFilter, resolve: () => Promise<number[]>) => {
 			const id = filterId(filter);
 			if (activeFilters.some((f) => filterId(f) === id)) {
 				removeFilter(filter);
@@ -110,15 +130,29 @@ export function GymFilterProvider({ children }: { children: React.ReactNode }) {
 			setActiveFilters((prev) => [...prev, filter]);
 			setPending((prev) => [...prev, id]);
 
-			void Promise.all(machineNames.map(gymIdsForMachine)).then((lists) => {
+			void resolve().then((ids) => {
 				if (token !== tokens.current[id]) return; // stale or removed
-				const ids = new Set<number>();
-				for (const list of lists) for (const gymId of list) ids.add(gymId);
-				setGymSets((prev) => ({ ...prev, [id]: ids }));
+				setGymSets((prev) => ({ ...prev, [id]: new Set(ids) }));
 				setPending((prev) => prev.filter((p) => p !== id));
 			});
 		},
 		[activeFilters, removeFilter]
+	);
+
+	const toggleFilter = useCallback(
+		(filter: ActiveFilter, machineNames: string[]) =>
+			runToggle(filter, async () => {
+				const lists = await Promise.all(machineNames.map(gymIdsForMachine));
+				const ids = new Set<number>();
+				for (const list of lists) for (const gymId of list) ids.add(gymId);
+				return [...ids];
+			}),
+		[runToggle]
+	);
+
+	const toggleBrandFilter = useCallback(
+		(filter: ActiveFilter, brandId: number) => runToggle(filter, () => gymIdsForBrand(brandId)),
+		[runToggle]
 	);
 
 	// Highlight gyms matching EVERY resolved filter (intersection). Filters still
@@ -152,10 +186,21 @@ export function GymFilterProvider({ children }: { children: React.ReactNode }) {
 			matchedGymIds,
 			loading: pending.length > 0,
 			toggleFilter,
+			toggleBrandFilter,
 			removeFilter,
 			clearFilters
 		}),
-		[tab, setTab, activeFilters, matchedGymIds, pending, toggleFilter, removeFilter, clearFilters]
+		[
+			tab,
+			setTab,
+			activeFilters,
+			matchedGymIds,
+			pending,
+			toggleFilter,
+			toggleBrandFilter,
+			removeFilter,
+			clearFilters
+		]
 	);
 
 	return <GymFilterContext.Provider value={value}>{children}</GymFilterContext.Provider>;

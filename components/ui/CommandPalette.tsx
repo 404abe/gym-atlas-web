@@ -1,6 +1,6 @@
 'use client';
 
-import { Dumbbell, MapPin, Search } from 'lucide-react';
+import { Dumbbell, MapPin, Search, Tag } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { cn, matchesSearch } from '@/lib/utils';
 import { useGymFilter } from '@/app/contexts/GymFilterContext';
@@ -8,17 +8,20 @@ import {
 	machineFullName,
 	machineLabel,
 	machinesForExercise,
+	popularBrands,
 	popularExercises,
 	popularMachines
 } from '@/lib/gym-filter';
 import { useEquipmentCatalog } from '@/hooks/useEquipmentCatalog';
 import type { Gym } from '@/types/gym';
 import type { Equipment, ExerciseRef } from '@/types/equipment';
+import type { Brand } from '@/lib/api';
 
 type Row =
 	| { kind: 'gym'; gym: Gym }
 	| { kind: 'exercise'; exercise: ExerciseRef }
-	| { kind: 'machine'; machine: Equipment };
+	| { kind: 'machine'; machine: Equipment }
+	| { kind: 'brand'; brand: Brand };
 
 const PER_GROUP = 5;
 // A few default suggestions per group, shown before the user types anything.
@@ -42,8 +45,8 @@ export default function CommandPalette({
 	/** When set, the panel expands in place from this box instead of centering. */
 	anchor?: PaletteAnchor;
 }) {
-	const { toggleFilter } = useGymFilter();
-	const { equipment, exercises } = useEquipmentCatalog();
+	const { toggleFilter, toggleBrandFilter } = useGymFilter();
+	const { equipment, exercises, brands } = useEquipmentCatalog();
 	const [query, setQuery] = useState(initialQuery);
 	const [activeIndex, setActiveIndex] = useState(0);
 	const inputRef = useRef<HTMLInputElement>(null);
@@ -82,6 +85,13 @@ export default function CommandPalette({
 				: popularMachines(equipment, SUGGEST_COUNT),
 		[trimmed, query, equipment]
 	);
+	const brandResults = useMemo(
+		() =>
+			trimmed
+				? brands.filter((b) => matchesSearch(query, b.name)).slice(0, PER_GROUP)
+				: popularBrands(brands, SUGGEST_COUNT),
+		[trimmed, query, brands]
+	);
 
 	// Every visible row, in display order, so arrow keys can move through the
 	// whole palette regardless of which group a row is in.
@@ -89,9 +99,10 @@ export default function CommandPalette({
 		() => [
 			...gymResults.map((gym): Row => ({ kind: 'gym', gym })),
 			...exerciseResults.map((exercise): Row => ({ kind: 'exercise', exercise })),
-			...machineResults.map((machine): Row => ({ kind: 'machine', machine }))
+			...machineResults.map((machine): Row => ({ kind: 'machine', machine })),
+			...brandResults.map((brand): Row => ({ kind: 'brand', brand }))
 		],
-		[gymResults, exerciseResults, machineResults]
+		[gymResults, exerciseResults, machineResults, brandResults]
 	);
 
 	const activate = (row: Row) => {
@@ -103,7 +114,7 @@ export default function CommandPalette({
 				{ kind: 'exercises', key: row.exercise.id, name: row.exercise.name, subtitle: 'Exercise' },
 				names
 			);
-		} else {
+		} else if (row.kind === 'machine') {
 			toggleFilter(
 				{
 					kind: 'machines',
@@ -113,6 +124,17 @@ export default function CommandPalette({
 					subtitle: row.machine.series
 				},
 				[machineFullName(row.machine)]
+			);
+		} else {
+			toggleBrandFilter(
+				{
+					kind: 'brands',
+					key: String(row.brand.id),
+					name: row.brand.name,
+					imageUrl: row.brand.logo_url,
+					subtitle: 'Brand'
+				},
+				row.brand.id
 			);
 		}
 		onClose();
@@ -167,7 +189,7 @@ export default function CommandPalette({
 								activate(rows[activeIndex]);
 							}
 						}}
-						placeholder="Search gyms, exercises, or machines…"
+						placeholder="Search gyms, exercises, machines, or brands…"
 						className="text-text placeholder:text-sub min-w-0 flex-1 bg-transparent text-[13px] outline-none"
 					/>
 				</div>
@@ -226,6 +248,28 @@ export default function CommandPalette({
 									title={`${machine.brand} ${machine.name}`}
 									subtitle={machine.series}
 									onClick={() => activate({ kind: 'machine', machine })}
+								/>
+							))}
+						</ResultGroup>
+						<ResultGroup label="Brands">
+							{brandResults.map((brand, i) => (
+								<Row
+									key={`brand-${brand.id}`}
+									active={
+										activeIndex ===
+										gymResults.length + exerciseResults.length + machineResults.length + i
+									}
+									icon={
+										brand.logo_url ? (
+											// eslint-disable-next-line @next/next/no-img-element
+											<img src={brand.logo_url} alt="" className="h-full w-full object-cover" />
+										) : (
+											<Tag size={14} />
+										)
+									}
+									title={brand.name}
+									subtitle={`${brand.equipment_count} machine${brand.equipment_count === 1 ? '' : 's'}`}
+									onClick={() => activate({ kind: 'brand', brand })}
 								/>
 							))}
 						</ResultGroup>

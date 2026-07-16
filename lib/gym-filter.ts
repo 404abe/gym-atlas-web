@@ -1,7 +1,7 @@
-// Two-level map-filter model: filter gyms by the *exercise* a machine trains
-// (broad) or by a *specific machine* (narrow). Selecting a filter highlights the
-// matching gym pins on the map and dims the rest — it never re-queries the gym
-// list or navigates.
+// Map-filter model: filter gyms by the *exercise* a machine trains (broadest),
+// by *brand* (broad), or by a *specific machine* (narrow). Selecting a filter
+// highlights the matching gym pins on the map and dims the rest — it never
+// re-queries the gym list or navigates.
 //
 // NOTE ON DATA: `/equipment` now returns machine.exercise when
 // equipment.exercise_id is set, but a gym's machine list still isn't exposed on
@@ -10,9 +10,10 @@
 // collapses further once `/gyms` exposes a per-gym machine list.
 
 import type { Equipment, ExerciseRef } from '@/types/equipment';
+import type { Brand } from './api';
 import { predictExercise } from './exercise-match';
 
-export type FilterKind = 'exercises' | 'machines';
+export type FilterKind = 'exercises' | 'machines' | 'brands';
 
 export interface ActiveFilter {
 	kind: FilterKind;
@@ -119,4 +120,9 @@ export function popularMachines(allEquipment: Equipment[], limit = 6): Equipment
 		if (pick) chips.push(pick);
 	}
 	return chips;
+}
+
+/** Popular brands = those with the most equipment in the catalogue. */
+export function popularBrands(brands: Brand[], limit = 6): Brand[] {
+	return [...brands].sort((a, b) => b.equipment_count - a.equipment_count).slice(0, limit);
 }
