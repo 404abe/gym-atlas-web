@@ -7,6 +7,7 @@ import { Heart, Dumbbell, Navigation, ArrowRight, Clock, Building } from 'lucide
 import { getOpenStatus } from '@/lib/openingHours';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import Image from 'next/image';
 
 function getDistanceKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
 	const R = 6371;
@@ -85,9 +86,9 @@ export default function GymCard({
 		>
 			{/* Header row: avatar + name/location + arrow */}
 			<div className="flex items-start gap-2.5">
-				<div className="bg-sub-alt border-border flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border">
+				<div className="bg-sub-alt border-border relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border">
 					{gym.image_url ? (
-						<img src={gym.image_url} alt={gym.name} className="h-full w-full object-cover" />
+						<Image src={gym.image_url} alt={gym.name} fill sizes="44px" className="object-cover" />
 					) : (
 						<Building className="text-sub h-5 w-5" />
 					)}
@@ -160,21 +161,39 @@ export default function GymCard({
 			{images.length > 0 && (
 				<div className="mt-2 grid max-h-36 grid-cols-2 gap-1 overflow-hidden rounded-xl">
 					{/* Left: tall image spanning both rows */}
-					<div className="bg-sub-alt row-span-2 h-full overflow-hidden">
-						<img src={images[0]} alt="" className="h-full w-full object-cover brightness-105 contrast-105" />
+					<div className="bg-sub-alt relative row-span-2 h-full overflow-hidden">
+						<Image
+							src={images[0]}
+							alt=""
+							fill
+							sizes="(max-width: 768px) 45vw, 160px"
+							className="object-cover brightness-105 contrast-105"
+						/>
 					</div>
 
 					{/* Top-right */}
-					<div className="bg-sub-alt h-18 overflow-hidden">
+					<div className="bg-sub-alt relative h-18 overflow-hidden">
 						{images[1] ? (
-							<img src={images[1]} alt="" className="h-full w-full object-cover brightness-105 contrast-105" />
+							<Image
+								src={images[1]}
+								alt=""
+								fill
+								sizes="(max-width: 768px) 22vw, 80px"
+								className="object-cover brightness-105 contrast-105"
+							/>
 						) : null}
 					</div>
 
 					{/* Bottom-right: +N overlay if more than 3 */}
 					<div className="bg-sub-alt relative h-18 overflow-hidden">
 						{images[2] ? (
-							<img src={images[2]} alt="" className="h-full w-full object-cover brightness-105 contrast-105" />
+							<Image
+								src={images[2]}
+								alt=""
+								fill
+								sizes="(max-width: 768px) 22vw, 80px"
+								className="object-cover brightness-105 contrast-105"
+							/>
 						) : null}
 						{images.length > 3 && (
 							<div className="absolute inset-0 flex items-center justify-center bg-black/60">

@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
 	Building2,
 	Dumbbell,
@@ -265,11 +266,15 @@ export default function ProfileView({
 									className="bg-sub-alt group flex flex-col gap-1.5 rounded-xl p-3 transition"
 								>
 									{b.image_url ? (
-										<img
-											src={b.image_url}
-											alt={b.equipment_name}
-											className="mb-1 h-16 w-full rounded-lg object-cover"
-										/>
+										<div className="relative mb-1 h-16 w-full">
+											<Image
+												src={b.image_url}
+												alt={b.equipment_name}
+												fill
+												sizes="(max-width: 640px) 45vw, 200px"
+												className="rounded-lg object-cover"
+											/>
+										</div>
 									) : (
 										<div className="bg-main/5 mb-1 flex h-16 w-full items-center justify-center rounded-lg">
 											<Dumbbell className="text-sub h-6 w-6 opacity-30" />
@@ -383,9 +388,11 @@ export default function ProfileView({
 								>
 									<div className="flex min-w-0 items-center gap-3">
 										{photo.image_url && (
-											<img
+											<Image
 												src={photo.image_url}
 												alt={photo.name}
+												width={32}
+												height={32}
 												className="h-8 w-8 shrink-0 rounded object-cover"
 											/>
 										)}

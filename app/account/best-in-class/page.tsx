@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { useAuth } from '@/app/contexts/AuthContext';
 import {
 	fetchBestInClassCategories,
@@ -129,11 +130,15 @@ export default function BestInClassPage() {
 								<X className="text-sub h-3 w-3" />
 							</button>
 							{sel.image_url ? (
-								<img
-									src={sel.image_url}
-									alt={sel.equipment_name}
-									className="mb-2 h-16 w-full rounded-lg object-cover"
-								/>
+								<div className="relative mb-2 h-16 w-full">
+									<Image
+										src={sel.image_url}
+										alt={sel.equipment_name}
+										fill
+										sizes="(max-width: 640px) 45vw, 200px"
+										className="rounded-lg object-cover"
+									/>
+								</div>
 							) : (
 								<div className="bg-main/5 mb-2 flex h-16 w-full items-center justify-center rounded-lg">
 									<Dumbbell className="text-sub h-5 w-5 opacity-30" />

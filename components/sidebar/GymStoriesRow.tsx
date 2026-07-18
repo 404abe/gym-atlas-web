@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef } from 'react';
 import { Dumbbell } from 'lucide-react';
+import Image from 'next/image';
 import { Gym } from '@/types/gym';
 
 function getDistanceKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -69,13 +70,12 @@ export default function GymStoriesRow({
 					className="flex shrink-0 flex-col items-center gap-1"
 				>
 					<div
-						className={`flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border-[2.5px] ${
+						className={`relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border-[2.5px] ${
 							selectedGym?.id === gym.id ? 'border-main' : 'border-border'
 						} bg-sub-alt`}
 					>
 						{gym.image_url ? (
-							// eslint-disable-next-line @next/next/no-img-element
-							<img src={gym.image_url} alt={gym.name} className="h-full w-full object-cover" />
+							<Image src={gym.image_url} alt={gym.name} fill sizes="48px" className="object-cover" />
 						) : (
 							<Dumbbell size={18} className="text-sub" />
 						)}

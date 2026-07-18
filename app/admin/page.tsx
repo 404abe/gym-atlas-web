@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { Check, X, Building2, Dumbbell, Clock, Users, ShieldCheck, ImageIcon, Layers, Weight } from 'lucide-react';
@@ -260,12 +261,14 @@ export default function AdminPage() {
 											state === 'done' ? 'opacity-0' : 'opacity-100'
 										}`}
 									>
-										<div className="bg-sub-alt flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl">
+										<div className="bg-sub-alt relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl">
 											{e.image_url ? (
-												<img
+												<Image
 													src={e.image_url}
 													alt={e.name}
-													className="h-full w-full object-cover"
+													fill
+													sizes="40px"
+													className="object-cover"
 												/>
 											) : (
 												<Dumbbell className="text-sub h-4 w-4" />
@@ -365,12 +368,14 @@ export default function AdminPage() {
 											state === 'done' ? 'opacity-0' : 'opacity-100'
 										}`}
 									>
-										<div className="bg-sub-alt flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl">
+										<div className="bg-sub-alt relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl">
 											{s.equipment_image_url ? (
-												<img
+												<Image
 													src={s.equipment_image_url}
 													alt={s.equipment_name}
-													className="h-full w-full object-cover"
+													fill
+													sizes="40px"
+													className="object-cover"
 												/>
 											) : (
 												<Dumbbell className="text-sub h-4 w-4" />
@@ -419,9 +424,11 @@ export default function AdminPage() {
 										}`}
 									>
 										{p.image_url ? (
-											<img
+											<Image
 												src={p.image_url}
 												alt={p.name}
+												width={56}
+												height={56}
 												className="h-14 w-14 shrink-0 rounded-xl object-cover"
 											/>
 										) : (
@@ -469,12 +476,14 @@ export default function AdminPage() {
 											state === 'done' ? 'opacity-0' : 'opacity-100'
 										}`}
 									>
-										<div className="bg-sub-alt flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl">
+										<div className="bg-sub-alt relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl">
 											{v.equipment_image_url ? (
-												<img
+												<Image
 													src={v.equipment_image_url}
 													alt={v.equipment_name}
-													className="h-full w-full object-cover"
+													fill
+													sizes="40px"
+													className="object-cover"
 												/>
 											) : (
 												<Layers className="text-sub h-4 w-4" />
@@ -522,12 +531,14 @@ export default function AdminPage() {
 											state === 'done' ? 'opacity-0' : 'opacity-100'
 										}`}
 									>
-										<div className="bg-sub-alt flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl">
+										<div className="bg-sub-alt relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl">
 											{w.image_url ? (
-												<img
+												<Image
 													src={w.image_url}
 													alt={w.name}
-													className="h-full w-full object-cover"
+													fill
+													sizes="40px"
+													className="object-cover"
 												/>
 											) : (
 												<Weight className="text-sub h-4 w-4" />
@@ -577,12 +588,14 @@ export default function AdminPage() {
 										}`}
 									>
 										<div className="flex items-start gap-4">
-											<div className="bg-sub-alt flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl">
+											<div className="bg-sub-alt relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl">
 												{fw.image_url ? (
-													<img
+													<Image
 														src={fw.image_url}
 														alt={fw.gym_name}
-														className="h-full w-full object-cover"
+														fill
+														sizes="40px"
+														className="object-cover"
 													/>
 												) : (
 													<Weight className="text-sub h-4 w-4" />
@@ -639,12 +652,14 @@ export default function AdminPage() {
 											state === 'done' ? 'opacity-0' : 'opacity-100'
 										}`}
 									>
-										<div className="bg-sub-alt flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl">
+										<div className="bg-sub-alt relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl">
 											{gi.image_url ? (
-												<img
+												<Image
 													src={gi.image_url}
 													alt={gi.name}
-													className="h-full w-full object-cover"
+													fill
+													sizes="40px"
+													className="object-cover"
 												/>
 											) : (
 												<FaInstagram className="text-sub h-4 w-4" />

@@ -1,6 +1,7 @@
 'use client';
 
 import { Dumbbell, MapPin, Search, Tag } from 'lucide-react';
+import Image from 'next/image';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { cn, matchesSearch } from '@/lib/utils';
 import { useGymFilter } from '@/app/contexts/GymFilterContext';
@@ -209,8 +210,7 @@ export default function CommandPalette({
 									active={activeIndex === i}
 									icon={
 										gym.image_url ? (
-											// eslint-disable-next-line @next/next/no-img-element
-											<img src={gym.image_url} alt="" className="h-full w-full object-cover" />
+											<Image src={gym.image_url} alt="" fill sizes="32px" className="object-cover" />
 										) : (
 											<MapPin size={14} />
 										)
@@ -239,8 +239,13 @@ export default function CommandPalette({
 									active={activeIndex === gymResults.length + exerciseResults.length + i}
 									icon={
 										machine.image_url ? (
-											// eslint-disable-next-line @next/next/no-img-element
-											<img src={machine.image_url} alt="" className="h-full w-full object-cover" />
+											<Image
+												src={machine.image_url}
+												alt=""
+												fill
+												sizes="32px"
+												className="object-cover"
+											/>
 										) : (
 											<Dumbbell size={14} />
 										)
@@ -261,8 +266,7 @@ export default function CommandPalette({
 									}
 									icon={
 										brand.logo_url ? (
-											// eslint-disable-next-line @next/next/no-img-element
-											<img src={brand.logo_url} alt="" className="h-full w-full object-cover" />
+											<Image src={brand.logo_url} alt="" fill sizes="32px" className="object-cover" />
 										) : (
 											<Tag size={14} />
 										)
@@ -312,7 +316,7 @@ function Row({
 				active ? 'bg-text/5' : 'hover:bg-text/5'
 			)}
 		>
-			<span className="bg-sub-alt text-sub grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-lg">
+			<span className="bg-sub-alt text-sub relative grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-lg">
 				{icon}
 			</span>
 			<span className="min-w-0 flex-1">

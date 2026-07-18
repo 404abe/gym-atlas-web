@@ -3,6 +3,7 @@
 
 import { ChevronUp, ChevronDown, Search, Building2, MapPin, Heart, Plus } from 'lucide-react';
 import { FaExpandAlt } from 'react-icons/fa';
+import Image from 'next/image';
 import RatingStars from '@/components/ui/RatingStars';
 import FavoriteButton from '@/components/ui/FavoriteButton';
 import { useRouter } from 'next/navigation';
@@ -134,12 +135,14 @@ export default function GymTable({
 										className={`flex items-center gap-3 rounded-xl px-4 py-3 ${index % 2 === 0 ? 'bg-sub-alt' : ''}`}
 									>
 										{/* Gym image */}
-										<div className="bg-main/5 h-14 w-14 shrink-0 overflow-hidden rounded-xl">
+										<div className="bg-main/5 relative h-14 w-14 shrink-0 overflow-hidden rounded-xl">
 											{gym.image_url ? (
-												<img
+												<Image
 													src={gym.image_url}
 													alt={gym.name}
-													className="h-full w-full object-cover"
+													fill
+													sizes="56px"
+													className="object-cover"
 												/>
 											) : (
 												<div className="flex h-full w-full items-center justify-center">

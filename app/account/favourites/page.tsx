@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { fetchUserFavouritesGyms, fetchUserFavouritesEquipment } from '@/lib/api';
 import Link from 'next/link';
+import Image from 'next/image';
 import { MapPin, Dumbbell } from 'lucide-react';
 import type { Gym } from '@/types/gym';
 import type { Equipment } from '@/types/equipment';
@@ -70,9 +71,11 @@ export default function FavouritesPage() {
 								className="bg-sub-alt hover:bg-main/5 flex items-center gap-3 rounded-xl px-4 py-3 transition"
 							>
 								{g.image_url ? (
-									<img
+									<Image
 										src={g.image_url}
 										alt={g.name}
+										width={36}
+										height={36}
 										className="h-9 w-9 shrink-0 rounded-lg object-cover"
 									/>
 								) : (
@@ -102,9 +105,11 @@ export default function FavouritesPage() {
 								className="bg-sub-alt hover:bg-main/5 flex items-center gap-3 rounded-xl px-4 py-3 transition"
 							>
 								{e.image_url ? (
-									<img
+									<Image
 										src={e.image_url}
 										alt={e.name}
+										width={36}
+										height={36}
 										className="h-9 w-9 shrink-0 rounded-lg object-cover"
 									/>
 								) : (

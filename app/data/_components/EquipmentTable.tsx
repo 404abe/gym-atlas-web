@@ -2,6 +2,7 @@
 
 import { ChevronUp, ChevronDown, Heart, Search } from 'lucide-react';
 import { FaExpandAlt, FaHashtag } from 'react-icons/fa';
+import Image from 'next/image';
 import ResistanceProfile from '@/components/ui/ResistanceProfile';
 import RatingStars from '@/components/ui/RatingStars';
 import FavoriteButton from '@/components/ui/FavoriteButton';
@@ -53,9 +54,9 @@ function ExpandedRow({ item: e, index = 0, onToggleFavorite, onUpdateRating }: R
 				<div
 					className={`flex items-center gap-3 rounded-xl px-4 py-3 ${index % 2 === 0 ? 'bg-sub-alt' : ''}`}
 				>
-					<div className="bg-main/5 h-14 w-14 shrink-0 overflow-hidden rounded-xl">
+					<div className="bg-main/5 relative h-14 w-14 shrink-0 overflow-hidden rounded-xl">
 						{e.image_url ? (
-							<img src={e.image_url} alt={e.name} className="h-full w-full object-cover" />
+							<Image src={e.image_url} alt={e.name} fill sizes="56px" className="object-cover" />
 						) : (
 							<div className="flex h-full w-full items-center justify-center">
 								<span className="text-sub text-xs">No img</span>

@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import RatingStars from '@/components/ui/RatingStars';
 import FavoriteButton from '@/components/ui/FavoriteButton';
@@ -165,10 +166,13 @@ export default function EquipmentProfileClient() {
 	const renderHero = () => (
 		<div className="bg-sub-alt relative aspect-[4/3] w-full overflow-hidden rounded-2xl sm:aspect-[16/9]">
 			{imageUrl ? (
-				<img
+				<Image
 					src={imageUrl}
 					alt={item.name}
-					className="h-full w-full object-contain object-center p-3 sm:p-4"
+					fill
+					priority
+					sizes="(max-width: 768px) 100vw, 896px"
+					className="object-contain object-center p-3 sm:p-4"
 				/>
 			) : (
 				<div className="flex h-full w-full items-center justify-center">

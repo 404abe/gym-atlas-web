@@ -2,6 +2,7 @@
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Building, Clock, Heart, Navigation, Star } from 'lucide-react';
+import Image from 'next/image';
 import { Gym } from '@/types/gym';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { favouriteGym, unfavouriteGym } from '@/lib/api';
@@ -129,10 +130,9 @@ export default function GymPeekCard({
 		>
 			{/* Header: avatar + name/distance + favourite toggle */}
 			<div className="flex items-start gap-2.5">
-				<div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-sub-alt">
+				<div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-sub-alt">
 					{gym.image_url ? (
-						// eslint-disable-next-line @next/next/no-img-element
-						<img src={gym.image_url} alt={gym.name} className="h-full w-full object-cover" />
+						<Image src={gym.image_url} alt={gym.name} fill sizes="44px" className="object-cover" />
 					) : (
 						<Building className="h-5 w-5 text-sub" />
 					)}

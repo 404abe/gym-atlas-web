@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { fetchUserRatingsGyms, fetchUserRatingsEquipment } from '@/lib/api';
 import Link from 'next/link';
+import Image from 'next/image';
 import { MapPin, Dumbbell, Star } from 'lucide-react';
 import type { Gym } from '@/types/gym';
 import type { Equipment } from '@/types/equipment';
@@ -108,9 +109,11 @@ export default function RatingsPage() {
 							>
 								<div className="flex items-center gap-3">
 									{e.image_url ? (
-										<img
+										<Image
 											src={e.image_url}
 											alt={e.name}
+											width={36}
+											height={36}
 											className="h-9 w-9 shrink-0 rounded-lg object-cover"
 										/>
 									) : (

@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { Dumbbell, Eye, EyeOff, PanelLeftOpen, X } from 'lucide-react';
+import Image from 'next/image';
 import MapView from '@/components/map/MapView';
 import GymSidebar from '@/components/sidebar/GymSidebar';
 import GymStoriesRow from '@/components/sidebar/GymStoriesRow';
@@ -77,10 +78,9 @@ function ActiveFilterCards() {
 					key={`${filter.kind}:${filter.key}`}
 					className="border-border bg-bg/92 flex items-center gap-3 rounded-2xl border p-3 shadow-lg backdrop-blur-sm"
 				>
-					<div className="bg-sub-alt flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl">
+					<div className="bg-sub-alt relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl">
 						{filter.imageUrl ? (
-							// eslint-disable-next-line @next/next/no-img-element
-							<img src={filter.imageUrl} alt="" className="h-full w-full object-cover" />
+							<Image src={filter.imageUrl} alt="" fill sizes="40px" className="object-cover" />
 						) : (
 							<Dumbbell size={16} className="text-sub" />
 						)}
