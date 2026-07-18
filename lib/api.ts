@@ -371,6 +371,15 @@ export const fetchUserByUsername = (username: string) =>
 export const syncUser = (): Promise<{ id: string; email: string; username: string; role: 'user' | 'admin' | 'super_admin' }> =>
 	apiFetch('/users/sync', { method: 'POST', headers: authHeaders() });
 
+export const updateCurrentUsername = (
+	username: string
+): Promise<{ id: string; email: string; username: string; role: 'user' | 'admin' | 'super_admin'; created_at: string }> =>
+	apiFetch('/users/me/username', {
+		method: 'PATCH',
+		headers: { 'Content-Type': 'application/json', ...authHeaders() },
+		body: JSON.stringify({ username })
+	});
+
 // ── Users ─────────────────────────────────────────────────────────────────────
 
 export const fetchUser = (id: string | number): Promise<unknown> =>
