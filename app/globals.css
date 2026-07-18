@@ -3,18 +3,19 @@
 
 /* ── Design Tokens ───────────────────────────── */
 :root {
-	--bg-color: #f5f5f5;
-	--surface-color: #ebebeb;
-	--sub-alt-color: #e2e2e2;
-	--border-color: #d0d0d0;
-	--sub-color: #999999;
-	--text-color: #111111;
-	--main-color: #111111;
-	--caret-color: #111111;
-	--accent: #111111;
+	/* ── Light mode (default) ── */
+	--bg-color: #ffffff;
+	--surface-color: #f6f6f7;
+	--sub-alt-color: #eeeeef;
+	--border-color: #e0e0e2;
+	--sub-color: #8a8a8f;
+	--text-color: #16161a;
+	--main-color: #16161a;
+	--caret-color: #16161a;
+	--accent: #16161a;
 	--success-color: #4a7200;
 	--roundness: 6px;
-	--pill-bg: rgba(235, 235, 235, 0.92);
+	--pill-bg: rgba(255, 255, 255, 0.92);
 
 	/* ── Hit targets ── */
 	--hit-size: 44px; /* touch (iPad default) */
@@ -42,6 +43,24 @@
 	--accent: #e7e7e7;
 	--success-color: #5c8f00;
 	--pill-bg: rgba(20, 20, 20, 0.92);
+}
+
+/* ── Paper theme (legacy light mode) ─────────────
+   Kept for reference in case we want to switch back.
+   Not wired into the light/dark toggle — only active
+   if something explicitly sets data-theme="paper". ── */
+[data-theme='paper'] {
+	--bg-color: #f5f5f5;
+	--surface-color: #ebebeb;
+	--sub-alt-color: #e2e2e2;
+	--border-color: #d0d0d0;
+	--sub-color: #999999;
+	--text-color: #111111;
+	--main-color: #111111;
+	--caret-color: #111111;
+	--accent: #111111;
+	--success-color: #4a7200;
+	--pill-bg: rgba(235, 235, 235, 0.92);
 }
 
 @media (pointer: fine) {

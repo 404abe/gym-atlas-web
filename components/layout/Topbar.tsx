@@ -28,6 +28,8 @@ export default function Topbar() {
 	const isMap = pathname === '/';
 	const isData = pathname === '/data';
 
+	if (pathname === '/landing' || pathname === '/about') return null;
+
 	return (
 		<div className="left-5.5 pointer-events-none fixed right-6 z-[60] hidden items-start justify-between p-3 md:flex">
 			{' '}
@@ -42,17 +44,23 @@ export default function Topbar() {
 					</span> */}
 				</Link>
 				<div className={cn(pillCls, 'gap-0.5')}>
-					<Link href="/" className={cn(iconLinkClsBase, isMap ? 'text-text' : iconLinkColorCls)}>
+					<Link
+						href="/"
+						aria-label="Map view"
+						className={cn(iconLinkClsBase, isMap ? 'text-text' : iconLinkColorCls)}
+					>
 						<FaMap size={18} />
 					</Link>
 					<Link
 						href="/data"
+						aria-label="Equipment database"
 						className={cn(iconLinkClsBase, isData ? 'text-text' : iconLinkColorCls)}
 					>
 						<FaDatabase size={18} />
 					</Link>
 					<Link
 						href="/add"
+						aria-label="Add to library"
 						onClick={(e) => {
 							if (!requireAuth('make a contribution')) e.preventDefault();
 						}}
@@ -65,11 +73,11 @@ export default function Topbar() {
 			{/* Right icon pills */}
 			<div className="flex gap-2">
 				<div className={cn(pillCls, 'gap-0.5')}>
-					<Link href="/leaderboard" className={iconLinkCls}>
+					<Link href="/leaderboard" aria-label="Leaderboard" className={iconLinkCls}>
 						<Trophy size={18} />
 					</Link>
 					{(user?.role === 'admin' || user?.role === 'super_admin') && (
-						<Link href="/admin" title="Admin" className={iconLinkCls}>
+						<Link href="/admin" title="Admin" aria-label="Admin" className={iconLinkCls}>
 							<ShieldCheck size={18} />
 						</Link>
 					)}
@@ -78,7 +86,7 @@ export default function Topbar() {
 				</div>
 
 				<div className={pillCls}>
-					<Link href="/account" className={iconLinkCls}>
+					<Link href="/account" aria-label="Account" className={iconLinkCls}>
 						<UserCircle size={18} />
 					</Link>
 				</div>

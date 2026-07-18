@@ -1,10 +1,11 @@
 'use client';
 
 import { Check, Dumbbell, Plus, /*Star,*/ ArrowRight } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Gym, GymEquipment } from '@/types/gym';
 import { fetchGymEquipment } from '@/lib/api';
+import { useGymFilter } from '@/app/contexts/GymFilterContext';
 
 function initialsFor(name: string) {
 	return name
@@ -40,6 +41,7 @@ export default function GymMarker({
 	const machineCount = gym.total_equipment ?? 0;
 	const [equipment, setEquipment] = useState<GymEquipment[]>([]);
 	const openGymDetail = () => router.push(`/gyms/${gym.id}`);
+	const { activeFilters } = useGymFilter();
 
 	useEffect(() => {
 		if (!selected) return;
@@ -48,6 +50,14 @@ export default function GymMarker({
 			.catch(() => setEquipment([]));
 	}, [selected, gym.id]);
 
+	// When a brand filter is active, surface that brand's machines first so the
+	// thumbnails explain why this gym matched, instead of just its earliest uploads.
+	const brandFilter = activeFilters.find((f) => f.kind === 'brands');
+	const displayEquipment = useMemo(() => {
+		if (!brandFilter) return equipment;
+		const isMatch = (eq: GymEquipment) => eq.brand?.toLowerCase() === brandFilter.name.toLowerCase();
+		return [...equipment].sort((a, b) => Number(isMatch(b)) - Number(isMatch(a)));
+	}, [equipment, brandFilter]);
 
 	return (
 		<div
@@ -120,9 +130,9 @@ export default function GymMarker({
 					</div>
 
 					{/* Equipment thumbnails */}
-					{equipment.length > 0 && (
+					{displayEquipment.length > 0 && (
 						<div className="flex gap-1.5 px-3 pb-2.5">
-							{equipment.slice(0, 4).map((eq, i) => (
+							{displayEquipment.slice(0, 4).map((eq, i) => (
 								<div
 									key={eq.equipment_id}
 									className={`h-15.5 w-15.5 shrink-0 overflow-hidden rounded-xl bg-sub-alt ${i === 3 ? 'hidden sm:flex' : 'flex'} items-center justify-center`}

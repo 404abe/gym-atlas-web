@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { Dumbbell, Eye, EyeOff, PanelLeftOpen, Search, X } from 'lucide-react';
+import { Dumbbell, Eye, EyeOff, PanelLeftOpen, X } from 'lucide-react';
 import MapView from '@/components/map/MapView';
 import GymSidebar from '@/components/sidebar/GymSidebar';
 import GymStoriesRow from '@/components/sidebar/GymStoriesRow';
@@ -252,26 +252,6 @@ export default function Page() {
 								matchedGymIds={mapMatched}
 							/>
 						</div>
-					</div>
-
-					{/* gym search */}
-					<div className="relative shrink-0 px-3 py-2">
-						<Search size={14} className="text-sub absolute left-6 top-1/2 -translate-y-1/2" />
-						<input
-							type="text"
-							placeholder="Search gyms..."
-							value={gymSearch}
-							onChange={(e) => setGymSearch(e.target.value)}
-							className="border-border bg-sub-alt text-main placeholder:text-sub h-9 w-full rounded-xl border pl-8 pr-8 text-sm outline-none"
-						/>
-						{gymSearch && (
-							<button
-								onClick={() => setGymSearch('')}
-								className="absolute right-6 top-1/2 -translate-y-1/2"
-							>
-								<X size={13} className="text-sub" />
-							</button>
-						)}
 					</div>
 
 					{/* selected-gym peek card — sits above the stories row (mobile only) */}

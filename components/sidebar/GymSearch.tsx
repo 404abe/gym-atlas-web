@@ -151,7 +151,7 @@ export default function GymSearch({ onResults }: { onResults: (gyms: Gym[] | nul
 								className="text-main placeholder:text-sub flex-1 bg-transparent text-sm outline-none"
 							/>
 							{machineInputs.length > 1 && (
-								<button onClick={() => removeFilter(index)}>
+								<button onClick={() => removeFilter(index)} aria-label="Remove filter">
 									<X className="text-sub hover:text-main h-3.5 w-3.5" />
 								</button>
 							)}

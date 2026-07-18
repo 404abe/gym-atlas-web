@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import {
 	Building2,
@@ -10,7 +10,10 @@ import {
 	Calendar,
 	ChevronRight,
 	ImageIcon,
-	LogOut
+	LogOut,
+	Pencil,
+	Check,
+	X
 } from 'lucide-react';
 import { BestInClass } from '@/types/bestInClass';
 import { UserProfile, UserContributions } from '@/types/user';
@@ -31,8 +34,47 @@ export default function ProfileView({
 	isOwn = false
 }: ProfileViewProps) {
 	const [bicTab, setBicTab] = useState<'exercise' | 'muscle_group'>('exercise');
-	const { user, loading, logout } = useAuth();
+	const { logout, updateUsername } = useAuth();
+	const [updatedUsername, setUpdatedUsername] = useState<string | null>(null);
+	const [usernameDraft, setUsernameDraft] = useState(profile.username);
+	const [editingUsername, setEditingUsername] = useState(false);
+	const [savingUsername, setSavingUsername] = useState(false);
+	const [usernameError, setUsernameError] = useState<string | null>(null);
+	const displayUsername = updatedUsername ?? profile.username;
 
+	const startUsernameEdit = () => {
+		setUsernameDraft(displayUsername);
+		setUsernameError(null);
+		setEditingUsername(true);
+	};
+
+	const cancelUsernameEdit = () => {
+		setUsernameDraft(displayUsername);
+		setUsernameError(null);
+		setEditingUsername(false);
+	};
+
+	const saveUsername = async (event: FormEvent<HTMLFormElement>) => {
+		event.preventDefault();
+		const username = usernameDraft.trim();
+		if (!/^[A-Za-z0-9_]{3,20}$/.test(username)) {
+			setUsernameError('Use 3-20 letters, numbers, or underscores.');
+			return;
+		}
+
+		setSavingUsername(true);
+		setUsernameError(null);
+		try {
+			await updateUsername(username);
+			setUpdatedUsername(username);
+			setUsernameDraft(username);
+			setEditingUsername(false);
+		} catch (err) {
+			setUsernameError(err instanceof Error ? err.message : 'Failed to update username');
+		} finally {
+			setSavingUsername(false);
+		}
+	};
 
 	const joinedDate = new Date(profile.created_at).toLocaleDateString('en-GB', {
 		day: 'numeric',
@@ -83,14 +125,61 @@ export default function ProfileView({
 					{/* Avatar + identity */}
 					<div className="flex items-center gap-4">
 						<div className="bg-main/10 text-main flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-xl font-semibold">
-							{profile.username.slice(0, 2).toUpperCase()}
+							{displayUsername.slice(0, 2).toUpperCase()}
 						</div>
-						<div>
-							<h1 className="text-main text-xl font-semibold leading-none">{profile.username}</h1>
+						<div className="min-w-0">
+							{editingUsername && isOwn ? (
+								<form onSubmit={saveUsername} className="flex items-center gap-1.5">
+									<input
+										autoFocus
+										value={usernameDraft}
+										onChange={(event) => setUsernameDraft(event.target.value)}
+										maxLength={20}
+										disabled={savingUsername}
+										aria-label="Username"
+										className="border-border bg-main/5 text-main h-8 w-44 rounded-md border px-2 text-base font-semibold outline-none focus:border-white/60"
+									/>
+									<button
+										type="submit"
+										disabled={savingUsername}
+										aria-label="Save username"
+										title="Save username"
+										className="text-sub hover:text-main disabled:text-sub/40 grid h-8 w-8 place-items-center transition"
+									>
+										<Check className="h-4 w-4" />
+									</button>
+									<button
+										type="button"
+										onClick={cancelUsernameEdit}
+										disabled={savingUsername}
+										aria-label="Cancel username edit"
+										title="Cancel"
+										className="text-sub hover:text-main disabled:text-sub/40 grid h-8 w-8 place-items-center transition"
+									>
+										<X className="h-4 w-4" />
+									</button>
+								</form>
+							) : (
+								<div className="flex items-center gap-1.5">
+									<h1 className="text-main text-xl font-semibold leading-none">{displayUsername}</h1>
+									{isOwn && (
+										<button
+											type="button"
+											onClick={startUsernameEdit}
+											aria-label="Edit username"
+											title="Edit username"
+											className="text-sub hover:text-main grid h-7 w-7 place-items-center transition"
+										>
+											<Pencil className="h-3.5 w-3.5" />
+										</button>
+									)}
+								</div>
+							)}
 							<div className="text-sub mt-1.5 flex items-center gap-1.5 text-sm">
 								<Calendar className="h-3.5 w-3.5" />
 								<span>Joined {joinedDate}</span>
 							</div>
+							{usernameError && <p className="mt-1 text-xs text-red-400">{usernameError}</p>}
 						</div>
 					</div>
 

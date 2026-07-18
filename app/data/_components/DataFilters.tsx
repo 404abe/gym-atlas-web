@@ -68,6 +68,7 @@ export default function DataFilters({
 						{search && (
 							<button
 								onClick={() => onSearchChange('')}
+								aria-label="Clear search"
 								className="absolute right-2 top-1/2 -translate-y-1/2"
 							>
 								<X className="text-sub h-3.5 w-3.5" />

@@ -1,16 +1,24 @@
 //app/layout.tsx
-import type { Viewport } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
+
+export const metadata: Metadata = {
+	title: {
+		default: 'GymAtlas | Find Gyms by the Equipment They Actually Have',
+		template: '%s | GymAtlas'
+	},
+	description:
+		'GymAtlas is a community-driven gym discovery platform with per-machine equipment data. Search gyms by brand, machine, and exercise — not just location.'
+};
 
 export const viewport: Viewport = {
 	width: 'device-width',
 	initialScale: 1,
-	maximumScale: 1,
-	userScalable: false,
 };
 import Topbar from '@/components/layout/Topbar';
 import MobileHeader from '@/components/layout/MobileHeader';
 import Footer from '@/components/layout/Footer';
+import AppMain from '@/components/layout/AppMain';
 import Providers from '@/app/contexts/Providers';
 // import Header from '@/components/layout/Header';
 import ApiWakeUp from '@/components/ApiWakeUp';
@@ -32,7 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 						<Topbar />
 						<MobileHeader />
 						{/* <Header/> */}
-						<main className="md:pt-17 min-h-0 flex-1 overflow-y-auto">{children}</main>
+						<AppMain>{children}</AppMain>
 						<Footer />
 					</div>
 				</Providers>

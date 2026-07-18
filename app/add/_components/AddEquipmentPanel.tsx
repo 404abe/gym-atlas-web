@@ -8,6 +8,7 @@ import { Equipment } from '@/types/equipment';
 import { addGymEquipment } from '@/lib/api';
 import { useToastContext } from '@/app/contexts/ToastContext';
 import { useAuth } from '@/app/contexts/AuthContext';
+import { useAuthGate } from '@/app/contexts/AuthGateContext';
 
 type Props = {
 	gymId: number;
@@ -30,6 +31,7 @@ export default function AddEquipmentPanel({
 	);
 	const { addToast } = useToastContext();
 	const { user } = useAuth();
+	const { requireAuth } = useAuthGate();
 	const [query, setQuery] = useState('');
 	const [adding, setAdding] = useState<number | null>(null);
 	const [justAdded, setJustAdded] = useState<number | null>(null);
@@ -48,6 +50,7 @@ export default function AddEquipmentPanel({
 
 	const handleAdd = async (item: Equipment) => {
 		if (adding !== null) return;
+		if (!requireAuth('add equipment to a gym')) return;
 		setConfirmItem(null);
 		setAdding(item.id);
 		try {

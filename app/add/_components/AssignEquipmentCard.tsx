@@ -222,6 +222,14 @@ export default function AssignEquipmentCard({ gyms, equipment, preselectedEquipm
 					{isAdding ? 'Adding...' : 'Add to gym'}
 				</button>
 			</div>
+			<div>
+				demo
+				<div>
+					<div>gym</div>
+					<div>equipment</div>
+				</div>
+				<div>assign to gym</div>
+			</div>
 		</div>
 	);
 }

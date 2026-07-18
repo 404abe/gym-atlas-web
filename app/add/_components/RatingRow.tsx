@@ -19,6 +19,7 @@ export default function RatingRow({ rating, setRating }: RatingRowProps) {
 					onMouseEnter={() => setHoverRating(s)}
 					onMouseLeave={() => setHoverRating(0)}
 					onClick={() => setRating(s === rating ? 0 : s)}
+					aria-label={`Rate ${s} star${s === 1 ? '' : 's'}`}
 					className="p-0.5 transition"
 				>
 					<Star

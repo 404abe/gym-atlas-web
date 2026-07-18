@@ -41,6 +41,10 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
 
 export const fetchGyms = (): Promise<Gym[]> => apiFetch('/gyms');
 
+export type GymTickerEntry = { type: 'gym' | 'equipment'; name: string; lat: number; lng: number };
+
+export const fetchGymTicker = (): Promise<GymTickerEntry[]> => apiFetch('/gyms/ticker');
+
 export const fetchGymById = (id: number): Promise<Gym> => apiFetch(`/gyms/${id}`);
 
 export const fetchGymEquipment = (id: number): Promise<GymEquipment[]> =>
@@ -366,6 +370,15 @@ export const fetchUserByUsername = (username: string) =>
 
 export const syncUser = (): Promise<{ id: string; email: string; username: string; role: 'user' | 'admin' | 'super_admin' }> =>
 	apiFetch('/users/sync', { method: 'POST', headers: authHeaders() });
+
+export const updateCurrentUsername = (
+	username: string
+): Promise<{ id: string; email: string; username: string; role: 'user' | 'admin' | 'super_admin'; created_at: string }> =>
+	apiFetch('/users/me/username', {
+		method: 'PATCH',
+		headers: { 'Content-Type': 'application/json', ...authHeaders() },
+		body: JSON.stringify({ username })
+	});
 
 // ── Users ─────────────────────────────────────────────────────────────────────
 

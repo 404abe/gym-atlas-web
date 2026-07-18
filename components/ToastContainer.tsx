@@ -29,6 +29,7 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) =
 			<span className="flex-1">{toast.message}</span>
 			<button
 				onClick={() => onRemove(toast.id)}
+				aria-label="Dismiss notification"
 				className="ml-1 opacity-70 hover:opacity-100 transition shrink-0"
 			>
 				<X className="h-3.5 w-3.5" />

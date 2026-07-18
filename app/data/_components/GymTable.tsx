@@ -191,6 +191,7 @@ export default function GymTable({
 											/>
 											<button
 												onClick={() => router.push(`/gyms/${gym.id}`)}
+												aria-label="View gym"
 												className="text-sub hover:text-main flex items-center justify-center rounded-lg p-1 transition"
 											>
 												<FaExpandAlt className="h-3.5 w-3.5" />
@@ -263,6 +264,7 @@ export default function GymTable({
 								<td className="px-2 py-3 sm:px-4">
 									<button
 										onClick={() => router.push(`/gyms/${gym.id}`)}
+										aria-label="View gym"
 										className="text-sub hover:text-main flex items-center justify-center rounded-lg p-1 transition"
 									>
 										<FaExpandAlt className="h-3.5 w-3.5" />
