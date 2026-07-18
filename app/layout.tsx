@@ -11,6 +11,7 @@ export const viewport: Viewport = {
 import Topbar from '@/components/layout/Topbar';
 import MobileHeader from '@/components/layout/MobileHeader';
 import Footer from '@/components/layout/Footer';
+import AppMain from '@/components/layout/AppMain';
 import Providers from '@/app/contexts/Providers';
 // import Header from '@/components/layout/Header';
 import ApiWakeUp from '@/components/ApiWakeUp';
@@ -32,7 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 						<Topbar />
 						<MobileHeader />
 						{/* <Header/> */}
-						<main className="md:pt-17 min-h-0 flex-1 overflow-y-auto">{children}</main>
+						<AppMain>{children}</AppMain>
 						<Footer />
 					</div>
 				</Providers>

@@ -18,6 +18,8 @@ export default function MobileHeader() {
 	const pathname = usePathname();
 	const active = (href: string) => pathname === href;
 
+	if (pathname === '/landing' || pathname === '/about') return null;
+
 	return (
 		<header className="bg-bg border-border flex shrink-0 items-center px-2 py-1 md:hidden">
 			<Link href="/" className="flex items-center no-underline">

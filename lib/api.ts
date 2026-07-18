@@ -41,6 +41,10 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
 
 export const fetchGyms = (): Promise<Gym[]> => apiFetch('/gyms');
 
+export type GymTickerEntry = { type: 'gym' | 'equipment'; name: string; lat: number; lng: number };
+
+export const fetchGymTicker = (): Promise<GymTickerEntry[]> => apiFetch('/gyms/ticker');
+
 export const fetchGymById = (id: number): Promise<Gym> => apiFetch(`/gyms/${id}`);
 
 export const fetchGymEquipment = (id: number): Promise<GymEquipment[]> =>

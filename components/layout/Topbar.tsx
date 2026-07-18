@@ -28,6 +28,8 @@ export default function Topbar() {
 	const isMap = pathname === '/';
 	const isData = pathname === '/data';
 
+	if (pathname === '/landing' || pathname === '/about') return null;
+
 	return (
 		<div className="left-5.5 pointer-events-none fixed right-6 z-[60] hidden items-start justify-between p-3 md:flex">
 			{' '}
