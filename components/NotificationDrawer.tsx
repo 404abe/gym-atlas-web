@@ -101,6 +101,7 @@ export default function NotificationDrawer({ buttonClassName }: Props) {
 		<>
 			<button
 				onClick={() => setIsOpen(true)}
+				aria-label={unreadCount > 0 ? `Notifications (${unreadCount} unread)` : 'Notifications'}
 				className={
 					buttonClassName ??
 					'h-(--hit-size) w-(--hit-size) rounded-(--roundness) text-sub hover:text-text flex items-center justify-center transition-colors'
@@ -138,6 +139,7 @@ export default function NotificationDrawer({ buttonClassName }: Props) {
 								</div>
 								<button
 									onClick={() => setIsOpen(false)}
+									aria-label="Close notifications"
 									className="text-sub hover:text-main transition"
 								>
 									<X className="h-5 w-5" />

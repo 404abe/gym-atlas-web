@@ -1,12 +1,19 @@
 //app/layout.tsx
-import type { Viewport } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
+
+export const metadata: Metadata = {
+	title: {
+		default: 'GymAtlas | Find Gyms by the Equipment They Actually Have',
+		template: '%s | GymAtlas'
+	},
+	description:
+		'GymAtlas is a community-driven gym discovery platform with per-machine equipment data. Search gyms by brand, machine, and exercise — not just location.'
+};
 
 export const viewport: Viewport = {
 	width: 'device-width',
 	initialScale: 1,
-	maximumScale: 1,
-	userScalable: false,
 };
 import Topbar from '@/components/layout/Topbar';
 import MobileHeader from '@/components/layout/MobileHeader';

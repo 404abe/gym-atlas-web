@@ -27,14 +27,19 @@ export default function MobileHeader() {
 			</Link>
 
 			<div className="flex items-center">
-				<Link href="/" className={cn(iconCls, active('/') ? 'text-text' : '')}>
+				<Link href="/" aria-label="Map view" className={cn(iconCls, active('/') ? 'text-text' : '')}>
 					<Map size={18} />
 				</Link>
-				<Link href="/data" className={cn(iconCls, active('/data') ? 'text-text' : '')}>
+				<Link
+					href="/data"
+					aria-label="Equipment database"
+					className={cn(iconCls, active('/data') ? 'text-text' : '')}
+				>
 					<Database size={18} />
 				</Link>
 				<Link
 					href="/add"
+					aria-label="Add to library"
 					onClick={(e) => {
 						if (!requireAuth('make a contribution')) e.preventDefault();
 					}}
@@ -44,6 +49,7 @@ export default function MobileHeader() {
 				</Link>
 				<Link
 					href="/leaderboard"
+					aria-label="Leaderboard"
 					className={cn(iconCls, active('/leaderboard') ? 'text-text' : '')}
 				>
 					<Trophy size={18} />
@@ -57,12 +63,16 @@ export default function MobileHeader() {
 			<div className="flex items-center">
 				<ThemeToggle className={iconCls} />
 				{(user?.role === 'admin' || user?.role === 'super_admin') && (
-					<Link href="/admin" title="Admin" className={iconCls}>
+					<Link href="/admin" title="Admin" aria-label="Admin" className={iconCls}>
 						<ShieldCheck size={18} />
 					</Link>
 				)}
 				<NotificationDrawer buttonClassName={iconCls} />
-				<Link href="/account" className={cn(iconCls, active('/account') ? 'text-text' : '')}>
+				<Link
+					href="/account"
+					aria-label="Account"
+					className={cn(iconCls, active('/account') ? 'text-text' : '')}
+				>
 					<UserCircle size={18} />
 				</Link>
 			</div>

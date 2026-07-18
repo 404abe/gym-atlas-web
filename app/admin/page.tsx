@@ -760,6 +760,7 @@ function ActionButtons({
 			<button
 				onClick={onReject}
 				disabled={!!state}
+				aria-label="Reject"
 				className="border-border text-sub flex h-8 w-8 items-center justify-center rounded-lg border transition hover:border-red-500/50 hover:text-red-400 disabled:opacity-40"
 			>
 				<X className="h-3.5 w-3.5" />
@@ -767,6 +768,7 @@ function ActionButtons({
 			<button
 				onClick={onApprove}
 				disabled={!!state}
+				aria-label="Approve"
 				className="border-border text-sub flex h-8 w-8 items-center justify-center rounded-lg border transition hover:border-green-500/50 hover:text-green-400 disabled:opacity-40"
 			>
 				<Check className="h-3.5 w-3.5" />

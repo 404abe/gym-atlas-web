@@ -22,7 +22,11 @@ export default function FavoriteButton({
 	};
 
 	return (
-		<button onClick={handleClick} className="transition-transform hover:scale-110 active:scale-95">
+		<button
+			onClick={handleClick}
+			aria-label={isFavorite ? 'Remove from favourites' : 'Add to favourites'}
+			className="transition-transform hover:scale-110 active:scale-95"
+		>
 			<Heart
 				className={`h-4 w-4 transition-colors ${
 					isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400 hover:text-red-400'

@@ -83,7 +83,7 @@ export default function GymSidebar({
 							className="min-w-0 flex-1 bg-transparent text-xs text-main placeholder:text-sub outline-none"
 						/>
 						{gymSearch ? (
-							<button onClick={() => onGymSearchChange?.('')}>
+							<button onClick={() => onGymSearchChange?.('')} aria-label="Clear search">
 								<X size={12} className="text-sub hover:text-main transition" />
 							</button>
 						) : (

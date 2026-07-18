@@ -240,6 +240,7 @@ export default function BrandPickerModal({ selected, onConfirm, onClose }: Props
 						<button
 							type="button"
 							onClick={() => setView('grid')}
+							aria-label="Back"
 							className="text-sub hover:text-main shrink-0 rounded-lg p-0.5 transition"
 						>
 							<ArrowLeft className="h-4 w-4" />
@@ -251,6 +252,7 @@ export default function BrandPickerModal({ selected, onConfirm, onClose }: Props
 					<button
 						type="button"
 						onClick={onClose}
+						aria-label="Close"
 						className="text-sub hover:text-main shrink-0 rounded-lg p-1 transition"
 					>
 						<X className="h-4 w-4" />

@@ -63,6 +63,7 @@ export default function ExercisePickerModal({
 					<button
 						type="button"
 						onClick={onClose}
+						aria-label="Close"
 						className="text-sub hover:text-main rounded-lg p-1 transition"
 					>
 						<X className="h-4 w-4" />

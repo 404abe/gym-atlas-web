@@ -123,6 +123,7 @@ export default function BestInClassPage() {
 						<div key={cat.id} className="bg-sub-alt group relative rounded-xl p-3">
 							<button
 								onClick={() => handleRemove(cat.id)}
+								aria-label="Remove"
 								className="bg-bg/80 absolute right-2 top-2 hidden rounded-full p-0.5 group-hover:flex"
 							>
 								<X className="text-sub h-3 w-3" />
@@ -184,6 +185,7 @@ export default function BestInClassPage() {
 									setQuery('');
 									setResults([]);
 								}}
+								aria-label="Close"
 							>
 								<X className="text-sub h-4 w-4" />
 							</button>

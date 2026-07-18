@@ -35,6 +35,7 @@ export default function KeyboardShortcutsModal({ onClose }: { onClose: () => voi
 					<button
 						type="button"
 						onClick={onClose}
+						aria-label="Close keyboard shortcuts"
 						className="text-sub hover:text-main shrink-0 rounded-lg p-1 transition"
 					>
 						<X className="h-4 w-4" />
