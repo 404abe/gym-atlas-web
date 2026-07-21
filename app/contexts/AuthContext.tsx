@@ -25,7 +25,7 @@ const supabase = createClient();
 // Reads the post-auth destination from the current URL's `redirect` param.
 // Only internal paths are honoured, so a crafted `?redirect=https://evil.com`
 // can't turn the login flow into an open redirect.
-export function getRedirectTarget(fallback = '/'): string {
+export function getRedirectTarget(fallback = '/map'): string {
 	if (typeof window === 'undefined') return fallback;
 	const target = new URLSearchParams(window.location.search).get('redirect');
 	return target && target.startsWith('/') && !target.startsWith('//') ? target : fallback;

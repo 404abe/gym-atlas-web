@@ -156,12 +156,12 @@ export default function GymTable({
 											<div className="flex flex-wrap items-center gap-2">
 												<p className="text-main text-sm font-semibold">{gym.name}</p>
 												{gym.total_equipment != null && (
-													<span className="inline-flex rounded bg-blue-900/30 px-2 py-0.5 text-xs font-medium text-blue-400">
+													<span className="bg-main/10 text-sub inline-flex rounded-full px-2 py-0.5 text-xs font-medium">
 														{gym.total_equipment} items
 													</span>
 												)}
 												{gym.unique_machines != null && (
-													<span className="hidden rounded bg-green-900/30 px-2 py-0.5 text-xs font-medium text-green-400 sm:inline-flex">
+													<span className="bg-main/10 text-sub hidden rounded-full px-2 py-0.5 text-xs font-medium sm:inline-flex">
 														{gym.unique_machines} unique
 													</span>
 												)}
@@ -235,12 +235,12 @@ export default function GymTable({
 									</div>
 								</td>
 								<td className="hidden px-2 py-3 sm:table-cell sm:px-4">
-									<span className="inline-flex rounded bg-blue-900/30 px-2 py-0.5 text-xs font-medium text-blue-400">
+									<span className="bg-main/10 text-sub inline-flex rounded-full px-2 py-0.5 text-xs font-medium">
 										{gym.total_equipment || 0} items
 									</span>
 								</td>
 								<td className="hidden px-2 py-3 lg:table-cell lg:px-4">
-									<span className="inline-flex rounded bg-green-900/30 px-2 py-0.5 text-xs font-medium text-green-400">
+									<span className="bg-main/10 text-sub inline-flex rounded-full px-2 py-0.5 text-xs font-medium">
 										{gym.unique_machines || 0} unique
 									</span>
 								</td>

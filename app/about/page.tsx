@@ -53,7 +53,7 @@ export default function AboutPage() {
 				</div>
 
 				<Link
-					href="/"
+					href="/map"
 					className="bg-main text-bg mt-10 inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-medium no-underline transition-opacity hover:opacity-90"
 				>
 					Open the map

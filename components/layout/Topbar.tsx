@@ -25,17 +25,17 @@ export default function Topbar() {
 	const { requireAuth } = useAuthGate();
 	const pathname = usePathname();
 
-	const isMap = pathname === '/';
+	const isMap = pathname === '/map';
 	const isData = pathname === '/data';
 
-	if (pathname === '/landing' || pathname === '/about') return null;
+	if (pathname === '/' || pathname === '/about') return null;
 
 	return (
 		<div className="left-5.5 pointer-events-none fixed right-6 z-[60] hidden items-start justify-between p-3 md:flex">
 			{' '}
 			{/* Logo + center nav pill */}
 			<div className="flex items-center gap-3">
-				<Link href="/" className="pointer-events-auto flex items-center gap-2 no-underline">
+				<Link href="/map" className="pointer-events-auto flex items-center gap-2 no-underline">
 					<GymAtlasLogo size={28} />
 
 					{/* <span className="text-2xl font-medium uppercase tracking-[0.14em]">
@@ -45,7 +45,7 @@ export default function Topbar() {
 				</Link>
 				<div className={cn(pillCls, 'gap-0.5')}>
 					<Link
-						href="/"
+						href="/map"
 						aria-label="Map view"
 						className={cn(iconLinkClsBase, isMap ? 'text-text' : iconLinkColorCls)}
 					>

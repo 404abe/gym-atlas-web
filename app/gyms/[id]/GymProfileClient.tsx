@@ -608,7 +608,7 @@ export default function GymProfileClient() {
 										{freeWeightsOpen ? 'Cancel edit' : gym.free_weights ? 'Suggest correction' : 'Add free weights'}
 									</button>
 									{freeWeightsSubmitted && (
-										<span className="text-xs text-[#3ee7a6]">Submitted for review</span>
+										<span className="text-xs text-green-400">Submitted for review</span>
 									)}
 								</div>
 								{freeWeightsOpen && (

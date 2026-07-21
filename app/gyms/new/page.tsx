@@ -3,7 +3,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import NewGymCard from '@/app/add/_components/NewGymCard';
 
-export default function NewEquipmentPage() {
+export default function NewGymPage() {
 	const router = useRouter();
 
 	return (
@@ -20,8 +20,8 @@ export default function NewEquipmentPage() {
 
 				{/* Page heading */}
 				<div className="mb-6">
-					<h1 className="text-main text-2xl font-semibold">Add Gym</h1>
-					<p className="text-sub mt-1 text-sm">Register a new machine to the database</p>
+					<h1 className="text-main text-2xl font-semibold">Add gym</h1>
+					<p className="text-sub mt-1 text-sm">Register a new gym to the database</p>
 				</div>
 
 				{/* Bento form */}

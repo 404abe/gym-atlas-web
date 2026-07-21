@@ -2,7 +2,7 @@
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
-const MARKETING_ROUTES = ['/landing', '/about'];
+const MARKETING_ROUTES = ['/', '/about'];
 
 export default function AppMain({ children }: { children: React.ReactNode }) {
 	const pathname = usePathname();

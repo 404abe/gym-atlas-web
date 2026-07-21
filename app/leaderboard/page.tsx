@@ -41,9 +41,9 @@ export default function LeaderboardPage() {
 	const totalPhotos = leaderboard.reduce((s, e) => s + parseInt(e.photos_added), 0);
 
 	const rankStyle = (rank: number) => {
-		if (rank === 1) return 'bg-yellow-500/20 text-yellow-500';
-		if (rank === 2) return 'bg-gray-400/20 text-gray-400';
-		if (rank === 3) return 'bg-orange-600/20 text-orange-600';
+		if (rank === 1) return 'bg-amber-400/20 text-amber-400';
+		if (rank === 2) return 'bg-main/10 text-sub';
+		if (rank === 3) return 'bg-orange-400/20 text-orange-400';
 		return 'bg-sub-alt text-sub';
 	};
 
@@ -90,7 +90,7 @@ export default function LeaderboardPage() {
 						key={key}
 						onClick={() => setSortBy(key)}
 						className={`rounded-md px-3 py-1 text-sm transition ${
-							sortBy === key ? 'bg-main text-sub-alt' : 'text-sub hover:text-main'
+							sortBy === key ? 'bg-main text-bg' : 'text-sub hover:text-main'
 						}`}
 					>
 						{label}

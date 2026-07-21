@@ -24,8 +24,7 @@ export default function LoginPage() {
 
 	return (
 		<div
-			id="pageSignIn
-		"
+			id="pageSignIn"
 			className="content-grid min-h-[calc(100vh-120px)]"
 		>
 			<div className="flex items-center justify-center py-24">

@@ -2,6 +2,7 @@
 
 import { Equipment } from '@/types/equipment';
 import CustomCurveEditor from '@/components/ui/CustomCurveEditor';
+import { RESISTANCE_COLORS } from '@/lib/resistanceColors';
 
 type Props = {
 	resistance: Equipment['resistance_profile'] | null;
@@ -13,10 +14,10 @@ type Props = {
 };
 
 const PRESETS = [
-	{ key: 'constant' as const, label: 'Constant', color: '#6b7280', d: 'M3,10 L33,10' },
-	{ key: 'ascending' as const, label: 'Ascending', color: '#22c55e', d: 'M3,15 C13,15 23,5 33,5' },
-	{ key: 'descending' as const, label: 'Descending', color: '#ef4444', d: 'M3,5 C13,5 23,15 33,15' },
-	{ key: 'adjustable' as const, label: 'Adjustable', color: '#3b82f6', d: 'M3,14 C8,14 12,5 18,5 C24,5 28,14 33,14' },
+	{ key: 'constant' as const, label: 'Constant', color: RESISTANCE_COLORS.constant, d: 'M3,10 L33,10' },
+	{ key: 'ascending' as const, label: 'Ascending', color: RESISTANCE_COLORS.ascending, d: 'M3,15 C13,15 23,5 33,5' },
+	{ key: 'descending' as const, label: 'Descending', color: RESISTANCE_COLORS.descending, d: 'M3,5 C13,5 23,15 33,15' },
+	{ key: 'adjustable' as const, label: 'Adjustable', color: RESISTANCE_COLORS.adjustable, d: 'M3,14 C8,14 12,5 18,5 C24,5 28,14 33,14' },
 ] as const;
 
 export default function ResistanceButtons({ resistance, setResistance, curve, onCurveChange, col, hideCustom }: Props) {
@@ -57,19 +58,19 @@ export default function ResistanceButtons({ resistance, setResistance, curve, on
 				<button
 					type="button"
 					onClick={() => setResistance(resistance === 'custom' ? null : 'custom')}
-					className={btnClass(resistance === 'custom', '#3b82f6')}
+					className={btnClass(resistance === 'custom', RESISTANCE_COLORS.custom)}
 				>
 					<svg width="36" height="20" viewBox="0 0 36 20" fill="none" className="shrink-0">
 						<path
 							d="M3,14 C8,10 12,6 18,6 C24,6 28,14 33,10"
-							stroke={resistance === 'custom' ? 'currentColor' : '#a78bfa'}
+							stroke={resistance === 'custom' ? 'currentColor' : RESISTANCE_COLORS.custom}
 							strokeWidth="1.75"
 							strokeLinecap="round"
 							strokeLinejoin="round"
 						/>
 						<circle
 							cx="18" cy="6" r="2"
-							fill={resistance === 'custom' ? 'currentColor' : '#a78bfa'}
+							fill={resistance === 'custom' ? 'currentColor' : RESISTANCE_COLORS.custom}
 						/>
 					</svg>
 					Custom

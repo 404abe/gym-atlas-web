@@ -40,26 +40,23 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
 	const isActive = (href: string) => pathname === href;
 
 	const navItems = [
-		{ label: 'Profile', href: '/account', icon: User, iconClass: 'text-blue-400' },
+		{ label: 'Profile', href: '/account', icon: User },
 		{
 			label: 'Favourites',
 			href: '/account/favourites',
 			icon: Heart,
-			iconClass: 'text-red-400',
 			count: counts.favGyms + counts.favEquipment
 		},
 		{
 			label: 'Ratings',
 			href: '/account/ratings',
 			icon: Star,
-			iconClass: 'text-amber-400',
 			count: counts.ratedGyms + counts.ratedEquipment
 		},
 		{
 			label: 'Best in Class',
 			href: '/account/best-in-class',
-			icon: Trophy,
-			iconClass: 'text-amber-400'
+			icon: Trophy
 		}
 	];
 
@@ -69,7 +66,7 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
 				{/* Sidebar */}
 				<div className="col-span-12 md:col-span-3">
 					<div className="bg-sub-alt rounded-2xl p-2">
-						{navItems.map(({ label, href, icon: Icon, iconClass, count }) => (
+						{navItems.map(({ label, href, icon: Icon, count }) => (
 							<Link
 								key={href}
 								href={href}
@@ -78,7 +75,7 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
 								}`}
 							>
 								<div className="flex items-center gap-2.5">
-									<Icon className={`h-3.5 w-3.5 ${isActive(href) ? 'text-bg' : iconClass}`} />
+									<Icon className="h-3.5 w-3.5" />
 									<span className="font-medium">{label}</span>
 								</div>
 								{(count ?? 0) > 0 && (

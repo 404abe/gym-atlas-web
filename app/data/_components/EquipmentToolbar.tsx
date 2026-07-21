@@ -105,7 +105,7 @@ export default function EquipmentToolbar({
 					<button
 						onClick={() => onViewModeChange('expanded')}
 						className={`flex items-center rounded-md px-2 py-1 text-sm transition ${
-							viewMode === 'expanded' ? 'bg-main text-sub-alt' : 'text-sub hover:text-main'
+							viewMode === 'expanded' ? 'bg-main text-bg' : 'text-sub hover:text-main'
 						}`}
 						title="Expanded view"
 						aria-label="Expanded view"
@@ -115,7 +115,7 @@ export default function EquipmentToolbar({
 					<button
 						onClick={() => onViewModeChange('compact')}
 						className={`flex items-center rounded-md px-2 py-1 text-sm transition ${
-							viewMode === 'compact' ? 'bg-main text-sub-alt' : 'text-sub hover:text-main'
+							viewMode === 'compact' ? 'bg-main text-bg' : 'text-sub hover:text-main'
 						}`}
 						title="Compact view"
 						aria-label="Compact view"
@@ -130,14 +130,14 @@ export default function EquipmentToolbar({
 					onClick={onToggleFilters}
 					className={`flex shrink-0 items-center gap-1.5 rounded-lg p-2 text-sm transition ${
 						showFilters || hasActiveFilters
-							? 'text-sub-alt bg-main'
-							: 'bg-sub-alt text-sub hover:text-sub-alt hover:bg-main'
+							? 'text-bg bg-main'
+							: 'bg-sub-alt text-sub hover:text-bg hover:bg-main'
 					}`}
 					aria-label="Toggle filters"
 				>
 					<Filter className="h-3.5 w-3.5" />
 					{hasActiveFilters && (
-						<span className="bg-main text-sub-alt rounded-full px-1.5 py-0.5 text-[10px]">
+						<span className="bg-main text-bg rounded-full px-1.5 py-0.5 text-[10px]">
 							{activeFilterCount}
 						</span>
 					)}

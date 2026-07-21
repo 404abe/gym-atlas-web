@@ -51,7 +51,7 @@ export default function AdminPage() {
 			return;
 		}
 		if (user.role !== 'admin' && user.role !== 'super_admin') {
-			router.push('/');
+			router.push('/map');
 			return;
 		}
 
@@ -279,13 +279,7 @@ export default function AdminPage() {
 												{[e.brand, e.series, e.name].filter(Boolean).join(' ')}
 											</p>
 											<div className="text-sub mt-0.5 flex items-center gap-2 text-xs">
-												<span
-													className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${
-														e.type === 'pin_loaded'
-															? 'bg-blue-900/30 text-blue-400'
-															: 'bg-orange-900/30 text-orange-400'
-													}`}
-												>
+												<span className="bg-main/10 text-sub rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase">
 													{e.type === 'pin_loaded' ? 'Pin loaded' : 'Plate loaded'}
 												</span>
 												<span className="flex items-center gap-1">
@@ -743,13 +737,13 @@ export default function AdminPage() {
 function RoleBadge({ role }: { role: string }) {
 	if (role === 'super_admin')
 		return (
-			<span className="rounded bg-purple-900/30 px-1.5 py-0.5 text-[10px] text-xs font-semibold uppercase tracking-wide text-purple-400">
+			<span className="bg-main text-bg rounded px-1.5 py-0.5 text-[10px] text-xs font-semibold uppercase tracking-wide">
 				super admin
 			</span>
 		);
 	if (role === 'admin')
 		return (
-			<span className="rounded bg-blue-900/30 px-1.5 py-0.5 text-[10px] text-xs font-semibold uppercase tracking-wide text-blue-400">
+			<span className="bg-main/10 text-sub rounded px-1.5 py-0.5 text-[10px] text-xs font-semibold uppercase tracking-wide">
 				admin
 			</span>
 		);

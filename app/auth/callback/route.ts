@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
 			// where they started; ignore anything that isn't a local path.
 			const redirect = searchParams.get('redirect');
 			const target =
-				redirect && redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : '/';
+				redirect && redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : '/map';
 			return NextResponse.redirect(`${origin}${target}`);
 		}
 	}

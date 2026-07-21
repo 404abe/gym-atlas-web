@@ -30,11 +30,7 @@ function SortIcon({ field, sortField, sortDirection }: { field: string; sortFiel
 
 function TypeBadge({ type, short }: { type: Equipment['type']; short?: boolean }) {
 	return (
-		<span
-			className={`inline-flex rounded px-2 py-0.5 text-xs font-medium ${
-				type === 'pin_loaded' ? 'bg-blue-900/30 text-blue-400' : 'bg-orange-900/30 text-orange-400'
-			}`}
-		>
+		<span className="bg-main/10 text-sub inline-flex rounded-full px-2 py-0.5 text-xs font-medium">
 			{type === 'pin_loaded' ? (short ? 'Pin' : 'Pin loaded') : (short ? 'Plate' : 'Plate loaded')}
 		</span>
 	);

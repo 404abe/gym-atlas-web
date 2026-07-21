@@ -89,26 +89,22 @@ export default function ProfileView({
 		{
 			label: 'gyms added',
 			value: contributions.summary.gyms_added,
-			icon: Building2,
-			color: 'text-blue-400'
+			icon: Building2
 		},
 		{
 			label: 'equipment added',
 			value: contributions.summary.equipment_added,
-			icon: Dumbbell,
-			color: 'text-green-400'
+			icon: Dumbbell
 		},
 		{
 			label: 'equipment linked',
 			value: contributions.summary.equipment_linked,
-			icon: LinkIcon,
-			color: 'text-purple-400'
+			icon: LinkIcon
 		},
 		{
 			label: 'photos added',
 			value: contributions.summary.photos_added,
-			icon: ImageIcon,
-			color: 'text-orange-400'
+			icon: ImageIcon
 		}
 	];
 
@@ -213,9 +209,9 @@ export default function ProfileView({
 
 			{/* ── Contribution counts ── */}
 			<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-				{contributionStats.map(({ label, value, icon: Icon, color }) => (
+				{contributionStats.map(({ label, value, icon: Icon }) => (
 					<div key={label} className="bg-sub-alt rounded-2xl p-4">
-						<div className={`text-sub mb-1 flex items-center gap-1.5 text-xs ${color}`}>
+						<div className="text-sub mb-1 flex items-center gap-1.5 text-xs">
 							<Icon className="h-3.5 w-3.5" />
 							<span className="text-sub">{label}</span>
 						</div>
@@ -304,7 +300,7 @@ export default function ProfileView({
 				{contributions.recent.gyms.length > 0 && (
 					<div className="bg-sub-alt rounded-2xl p-4">
 						<div className="mb-3 flex items-center gap-2">
-							<Building2 className="h-3.5 w-3.5 text-blue-400" />
+							<Building2 className="text-sub h-3.5 w-3.5" />
 							<h2 className="text-main text-sm font-semibold">Gyms added</h2>
 							<span className="bg-main/10 text-sub rounded-full px-2 py-0.5 text-xs">
 								{contributions.summary.gyms_added}
@@ -341,7 +337,7 @@ export default function ProfileView({
 				{contributions.recent.equipment.length > 0 && (
 					<div className="bg-sub-alt rounded-2xl p-4">
 						<div className="mb-3 flex items-center gap-2">
-							<Dumbbell className="h-3.5 w-3.5 text-green-400" />
+							<Dumbbell className="text-sub h-3.5 w-3.5" />
 							<h2 className="text-main text-sm font-semibold">Equipment added</h2>
 							<span className="bg-main/10 text-sub rounded-full px-2 py-0.5 text-xs">
 								{contributions.summary.equipment_added}
@@ -373,7 +369,7 @@ export default function ProfileView({
 				{contributions.recent.photos.length > 0 && (
 					<div className="bg-sub-alt rounded-2xl p-4">
 						<div className="mb-3 flex items-center gap-2">
-							<ImageIcon className="h-3.5 w-3.5 text-orange-400" />
+							<ImageIcon className="text-sub h-3.5 w-3.5" />
 							<h2 className="text-main text-sm font-semibold">Photos added</h2>
 							<span className="bg-main/10 text-sub rounded-full px-2 py-0.5 text-xs">
 								{contributions.summary.photos_added}
@@ -416,7 +412,7 @@ export default function ProfileView({
 				{contributions.recent.links.length > 0 && (
 					<div className="bg-sub-alt rounded-2xl p-4">
 						<div className="mb-3 flex items-center gap-2">
-							<LinkIcon className="h-3.5 w-3.5 text-purple-400" />
+							<LinkIcon className="text-sub h-3.5 w-3.5" />
 							<h2 className="text-main text-sm font-semibold">Equipment linked to gyms</h2>
 							<span className="bg-main/10 text-sub rounded-full px-2 py-0.5 text-xs">
 								{contributions.summary.equipment_linked}

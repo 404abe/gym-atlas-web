@@ -22,11 +22,26 @@ import AppMain from '@/components/layout/AppMain';
 import Providers from '@/app/contexts/Providers';
 // import Header from '@/components/layout/Header';
 import ApiWakeUp from '@/components/ApiWakeUp';
+import { SITE_URL } from '@/lib/config';
+
+const organizationJsonLd = {
+	'@context': 'https://schema.org',
+	'@type': 'Organization',
+	name: 'GymAtlas',
+	url: SITE_URL,
+	logo: `${SITE_URL}/gymatlas_logo_white.png`,
+	description:
+		'GymAtlas is a community-driven gym and equipment discovery platform with per-machine equipment data, helping people search gyms by brand, machine, and exercise.'
+};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
 	return (
 		<html lang="en" className="h-full" suppressHydrationWarning>
 			<head>
+				<script
+					type="application/ld+json"
+					dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+				/>
 				<script
 					dangerouslySetInnerHTML={{
 						__html: `(function(){var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);})()`
