@@ -35,7 +35,7 @@ export default function Topbar() {
 			{' '}
 			{/* Logo + center nav pill */}
 			<div className="flex items-center gap-3">
-				<Link href="/map" className="pointer-events-auto flex items-center gap-2 no-underline">
+				<Link href="/" className="pointer-events-auto flex items-center gap-2 no-underline">
 					<GymAtlasLogo size={28} />
 
 					{/* <span className="text-2xl font-medium uppercase tracking-[0.14em]">

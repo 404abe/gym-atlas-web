@@ -22,7 +22,7 @@ export default function MobileHeader() {
 
 	return (
 		<header className="bg-bg border-border flex shrink-0 items-center px-2 py-1 md:hidden">
-			<Link href="/map" className="flex items-center no-underline">
+			<Link href="/" className="flex items-center no-underline">
 				<GymAtlasLogo size={40} />
 			</Link>
 
