@@ -3,19 +3,7 @@
 import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import {
-	Building2,
-	Dumbbell,
-	LinkIcon,
-	Trophy,
-	Calendar,
-	ChevronRight,
-	ImageIcon,
-	LogOut,
-	Pencil,
-	Check,
-	X
-} from 'lucide-react';
+import { Dumbbell, Trophy, Calendar, LogOut, Pencil, Check, X } from 'lucide-react';
 import { BestInClass } from '@/types/bestInClass';
 import { UserProfile, UserContributions } from '@/types/user';
 import { useAuth } from '@/app/contexts/AuthContext';
@@ -86,26 +74,10 @@ export default function ProfileView({
 	const filteredBic = bestInClass.filter((b) => b.category_type === bicTab);
 
 	const contributionStats = [
-		{
-			label: 'gyms added',
-			value: contributions.summary.gyms_added,
-			icon: Building2
-		},
-		{
-			label: 'equipment added',
-			value: contributions.summary.equipment_added,
-			icon: Dumbbell
-		},
-		{
-			label: 'equipment linked',
-			value: contributions.summary.equipment_linked,
-			icon: LinkIcon
-		},
-		{
-			label: 'photos added',
-			value: contributions.summary.photos_added,
-			icon: ImageIcon
-		}
+		{ label: 'gyms added', value: contributions.summary.gyms_added },
+		{ label: 'equipment added', value: contributions.summary.equipment_added },
+		{ label: 'equipment linked', value: contributions.summary.equipment_linked },
+		{ label: 'photos added', value: contributions.summary.photos_added }
 	];
 
 	const activityStats = [
@@ -114,10 +86,16 @@ export default function ProfileView({
 		{ label: 'total contributions', value: contributions.summary.total_contributions }
 	];
 
+	const noContributions =
+		contributions.recent.gyms.length === 0 &&
+		contributions.recent.equipment.length === 0 &&
+		contributions.recent.links.length === 0 &&
+		contributions.recent.photos.length === 0;
+
 	return (
-		<div className="space-y-4">
+		<div className="xs:space-y-10 space-y-8 sm:space-y-12">
 			{/* ── Profile header ── */}
-			<div className="bg-sub-alt rounded-2xl p-5">
+			<div>
 				<div className="flex items-start justify-between gap-4">
 					{/* Avatar + identity */}
 					<div className="flex items-center gap-4">
@@ -208,29 +186,22 @@ export default function ProfileView({
 			</div>
 
 			{/* ── Contribution counts ── */}
-			<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-				{contributionStats.map(({ label, value, icon: Icon }) => (
-					<div key={label} className="bg-sub-alt rounded-2xl p-4">
-						<div className="text-sub mb-1 flex items-center gap-1.5 text-xs">
-							<Icon className="h-3.5 w-3.5" />
-							<span className="text-sub">{label}</span>
-						</div>
-						<p className="text-main text-2xl font-semibold">{value}</p>
+			<div className="flex flex-wrap gap-6 md:gap-12">
+				{contributionStats.map(({ label, value }) => (
+					<div key={label} className="basis-[calc(50%-0.75rem)] md:basis-auto">
+						<p className="text-main text-3xl font-medium tabular-nums sm:text-4xl">{value}</p>
+						<p className="text-sub mt-1 text-xs uppercase tracking-wide">{label}</p>
 					</div>
 				))}
 			</div>
 
 			{/* ── Best in Class ── */}
 			{bestInClass.length > 0 && (
-				<div className="bg-sub-alt rounded-2xl p-5">
-					<div className="mb-4 flex items-center justify-between">
-						<div className="flex items-center gap-2">
-							<Trophy className="h-4 w-4 text-amber-400" />
-							<h2 className="text-main text-sm font-semibold">Best in Class</h2>
-							<span className="bg-main/10 text-sub rounded-full px-2 py-0.5 text-xs">
-								{bestInClass.length}
-							</span>
-						</div>
+				<div className="xs:pt-10 xs:pb-12 pt-8 pb-10 sm:pt-12 sm:pb-14">
+					<div className="mb-5 flex items-center justify-between">
+						<p className="text-sub text-xs uppercase tracking-wide">
+							Best in Class · {bestInClass.length}
+						</p>
 
 						{/* Toggle */}
 						<div className="bg-main/5 flex items-center rounded-lg p-0.5">
@@ -254,34 +225,33 @@ export default function ProfileView({
 					</div>
 
 					{filteredBic.length > 0 ? (
-						<div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+						<div className="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
 							{filteredBic.map((b) => (
 								<Link
 									key={b.id}
 									href={`/equipment/${b.equipment_id}`}
-									className="bg-sub-alt group flex flex-col gap-1.5 rounded-xl p-3 transition"
+									className="group flex items-center gap-3 transition hover:opacity-70"
 								>
-									{b.image_url ? (
-										<div className="relative mb-1 h-16 w-full">
+									<div className="bg-sub-alt relative h-24 w-24 shrink-0 overflow-hidden rounded-lg">
+										{b.image_url ? (
 											<Image
 												src={b.image_url}
 												alt={b.equipment_name}
 												fill
-												sizes="(max-width: 640px) 45vw, 200px"
-												className="rounded-lg object-cover"
+												sizes="96px"
+												className="h-full w-full object-cover"
 											/>
-										</div>
-									) : (
-										<div className="bg-main/5 mb-1 flex h-16 w-full items-center justify-center rounded-lg">
-											<Dumbbell className="text-sub h-6 w-6 opacity-30" />
-										</div>
-									)}
-									<p className="text-sub text-[10px] uppercase tracking-wide">{b.category_name}</p>
-									<div className="flex items-center justify-between">
-										<p className="text-main text-xs font-medium leading-tight">
+										) : (
+											<div className="flex h-full w-full items-center justify-center">
+												<Dumbbell className="text-sub h-6 w-6 opacity-30" />
+											</div>
+										)}
+									</div>
+									<div>
+										<p className="text-sub text-[10px] uppercase tracking-wide">{b.category_name}</p>
+										<p className="text-main text-sm font-medium leading-tight">
 											{b.brand} {b.equipment_name}
 										</p>
-										<ChevronRight className="text-sub h-3 w-3 opacity-0 transition group-hover:opacity-100" />
 									</div>
 								</Link>
 							))}
@@ -294,168 +264,154 @@ export default function ProfileView({
 				</div>
 			)}
 
-			{/* ── Recent contributions ── */}
-			<div className="space-y-3">
-				{/* Gyms added */}
-				{contributions.recent.gyms.length > 0 && (
-					<div className="bg-sub-alt rounded-2xl p-4">
-						<div className="mb-3 flex items-center gap-2">
-							<Building2 className="text-sub h-3.5 w-3.5" />
-							<h2 className="text-main text-sm font-semibold">Gyms added</h2>
-							<span className="bg-main/10 text-sub rounded-full px-2 py-0.5 text-xs">
-								{contributions.summary.gyms_added}
-							</span>
-						</div>
-						<div className="space-y-0.5">
-							{contributions.recent.gyms.map((gym) => (
-								<Link
-									key={gym.id}
-									href={`/gyms/${gym.id}`}
-									className="hover:bg-main/5 flex items-center justify-between rounded-lg px-3 py-2 transition"
-								>
-									<div>
-										<p className="text-main text-sm">{gym.name}</p>
-										{(gym.city || gym.country) && (
-											<p className="text-sub text-xs">
-												{[gym.city, gym.country].filter(Boolean).join(', ')}
-											</p>
-										)}
-									</div>
-									<span className="text-sub text-xs">
-										{new Date(gym.created_at).toLocaleDateString('en-GB', {
-											day: 'numeric',
-											month: 'short'
-										})}
-									</span>
-								</Link>
-							))}
-						</div>
-					</div>
-				)}
-
-				{/* Equipment added */}
-				{contributions.recent.equipment.length > 0 && (
-					<div className="bg-sub-alt rounded-2xl p-4">
-						<div className="mb-3 flex items-center gap-2">
-							<Dumbbell className="text-sub h-3.5 w-3.5" />
-							<h2 className="text-main text-sm font-semibold">Equipment added</h2>
-							<span className="bg-main/10 text-sub rounded-full px-2 py-0.5 text-xs">
-								{contributions.summary.equipment_added}
-							</span>
-						</div>
-						<div className="space-y-0.5">
-							{contributions.recent.equipment.map((eq) => (
-								<Link
-									key={eq.id}
-									href={`/equipment/${eq.id}`}
-									className="hover:bg-main/5 flex items-center justify-between rounded-lg px-3 py-2 transition"
-								>
-									<p className="text-main text-sm">
-										{[eq.brand, eq.series, eq.name].filter(Boolean).join(' ')}
-									</p>
-									<span className="text-sub text-xs">
-										{new Date(eq.created_at).toLocaleDateString('en-GB', {
-											day: 'numeric',
-											month: 'short'
-										})}
-									</span>
-								</Link>
-							))}
-						</div>
-					</div>
-				)}
-
-				{/* Photos added */}
-				{contributions.recent.photos.length > 0 && (
-					<div className="bg-sub-alt rounded-2xl p-4">
-						<div className="mb-3 flex items-center gap-2">
-							<ImageIcon className="text-sub h-3.5 w-3.5" />
-							<h2 className="text-main text-sm font-semibold">Photos added</h2>
-							<span className="bg-main/10 text-sub rounded-full px-2 py-0.5 text-xs">
-								{contributions.summary.photos_added}
-							</span>
-						</div>
-						<div className="space-y-0.5">
-							{contributions.recent.photos.map((photo) => (
-								<Link
-									key={photo.id}
-									href={`/equipment/${photo.id}`}
-									className="hover:bg-main/5 flex items-center justify-between gap-3 rounded-lg px-3 py-2 transition"
-								>
-									<div className="flex min-w-0 items-center gap-3">
-										{photo.image_url && (
-											<Image
-												src={photo.image_url}
-												alt={photo.name}
-												width={32}
-												height={32}
-												className="h-8 w-8 shrink-0 rounded object-cover"
-											/>
-										)}
-										<p className="text-main truncate text-sm">
-											{[photo.brand, photo.series, photo.name].filter(Boolean).join(' ')}
+			{/* ── Gyms added ── */}
+			{contributions.recent.gyms.length > 0 && (
+				<div>
+					<h2 className="text-sub mb-2 text-xs uppercase tracking-wide">
+						Gyms added · {contributions.summary.gyms_added}
+					</h2>
+					<div>
+						{contributions.recent.gyms.map((gym, i) => (
+							<Link
+								key={gym.id}
+								href={`/gyms/${gym.id}`}
+								className={`border-border hover:bg-sub-alt/50 flex items-center justify-between border-t py-3 transition ${
+									i === contributions.recent.gyms.length - 1 ? 'border-b' : ''
+								}`}
+							>
+								<div>
+									<p className="text-main text-sm">{gym.name}</p>
+									{(gym.city || gym.country) && (
+										<p className="text-sub text-xs">
+											{[gym.city, gym.country].filter(Boolean).join(', ')}
 										</p>
-									</div>
-									<span className="text-sub shrink-0 text-xs">
-										{new Date(photo.uploaded_at).toLocaleDateString('en-GB', {
-											day: 'numeric',
-											month: 'short'
-										})}
-									</span>
-								</Link>
-							))}
-						</div>
-					</div>
-				)}
-
-				{/* Equipment linked */}
-				{contributions.recent.links.length > 0 && (
-					<div className="bg-sub-alt rounded-2xl p-4">
-						<div className="mb-3 flex items-center gap-2">
-							<LinkIcon className="text-sub h-3.5 w-3.5" />
-							<h2 className="text-main text-sm font-semibold">Equipment linked to gyms</h2>
-							<span className="bg-main/10 text-sub rounded-full px-2 py-0.5 text-xs">
-								{contributions.summary.equipment_linked}
-							</span>
-						</div>
-						<div className="space-y-0.5">
-							{contributions.recent.links.map((link) => (
-								<div
-									key={link.id}
-									className="hover:bg-main/5 flex items-center justify-between rounded-lg px-3 py-2 transition"
-								>
-									<div>
-										<p className="text-main text-sm">{link.equipment_name}</p>
-										<p className="text-sub text-xs">{link.gym_name}</p>
-									</div>
-									<span className="text-sub text-xs">
-										{new Date(link.created_at).toLocaleDateString('en-GB', {
-											day: 'numeric',
-											month: 'short'
-										})}
-									</span>
+									)}
 								</div>
-							))}
-						</div>
+								<span className="text-sub text-xs">
+									{new Date(gym.created_at).toLocaleDateString('en-GB', {
+										day: 'numeric',
+										month: 'short'
+									})}
+								</span>
+							</Link>
+						))}
 					</div>
-				)}
+				</div>
+			)}
 
-				{/* Empty state */}
-				{contributions.recent.gyms.length === 0 &&
-					contributions.recent.equipment.length === 0 &&
-					contributions.recent.links.length === 0 &&
-					contributions.recent.photos.length === 0 && (
-						<div className="bg-sub-alt rounded-2xl p-10 text-center">
-							<Trophy className="text-sub mx-auto mb-3 h-10 w-10 opacity-20" />
-							<p className="text-main mb-1 text-sm font-medium">No contributions yet</p>
-							<p className="text-sub text-xs">
-								{isOwn
-									? 'Start adding gyms and equipment to the atlas'
-									: "This user hasn't added any content yet"}
-							</p>
-						</div>
-					)}
-			</div>
+			{/* ── Equipment added ── */}
+			{contributions.recent.equipment.length > 0 && (
+				<div>
+					<h2 className="text-sub mb-2 text-xs uppercase tracking-wide">
+						Equipment added · {contributions.summary.equipment_added}
+					</h2>
+					<div>
+						{contributions.recent.equipment.map((eq, i) => (
+							<Link
+								key={eq.id}
+								href={`/equipment/${eq.id}`}
+								className={`border-border hover:bg-sub-alt/50 flex items-center justify-between border-t py-3 transition ${
+									i === contributions.recent.equipment.length - 1 ? 'border-b' : ''
+								}`}
+							>
+								<p className="text-main text-sm">
+									{[eq.brand, eq.series, eq.name].filter(Boolean).join(' ')}
+								</p>
+								<span className="text-sub text-xs">
+									{new Date(eq.created_at).toLocaleDateString('en-GB', {
+										day: 'numeric',
+										month: 'short'
+									})}
+								</span>
+							</Link>
+						))}
+					</div>
+				</div>
+			)}
+
+			{/* ── Photos added ── */}
+			{contributions.recent.photos.length > 0 && (
+				<div>
+					<h2 className="text-sub mb-2 text-xs uppercase tracking-wide">
+						Photos added · {contributions.summary.photos_added}
+					</h2>
+					<div>
+						{contributions.recent.photos.map((photo, i) => (
+							<Link
+								key={photo.id}
+								href={`/equipment/${photo.id}`}
+								className={`border-border hover:bg-sub-alt/50 flex items-center justify-between gap-3 border-t py-3 transition ${
+									i === contributions.recent.photos.length - 1 ? 'border-b' : ''
+								}`}
+							>
+								<div className="flex min-w-0 items-center gap-3">
+									{photo.image_url && (
+										<Image
+											src={photo.image_url}
+											alt={photo.name}
+											width={32}
+											height={32}
+											className="h-8 w-8 shrink-0 rounded object-cover"
+										/>
+									)}
+									<p className="text-main truncate text-sm">
+										{[photo.brand, photo.series, photo.name].filter(Boolean).join(' ')}
+									</p>
+								</div>
+								<span className="text-sub shrink-0 text-xs">
+									{new Date(photo.uploaded_at).toLocaleDateString('en-GB', {
+										day: 'numeric',
+										month: 'short'
+									})}
+								</span>
+							</Link>
+						))}
+					</div>
+				</div>
+			)}
+
+			{/* ── Equipment linked ── */}
+			{contributions.recent.links.length > 0 && (
+				<div>
+					<h2 className="text-sub mb-2 text-xs uppercase tracking-wide">
+						Equipment linked to gyms · {contributions.summary.equipment_linked}
+					</h2>
+					<div>
+						{contributions.recent.links.map((link, i) => (
+							<div
+								key={link.id}
+								className={`border-border flex items-center justify-between border-t py-3 ${
+									i === contributions.recent.links.length - 1 ? 'border-b' : ''
+								}`}
+							>
+								<div>
+									<p className="text-main text-sm">{link.equipment_name}</p>
+									<p className="text-sub text-xs">{link.gym_name}</p>
+								</div>
+								<span className="text-sub text-xs">
+									{new Date(link.created_at).toLocaleDateString('en-GB', {
+										day: 'numeric',
+										month: 'short'
+									})}
+								</span>
+							</div>
+						))}
+					</div>
+				</div>
+			)}
+
+			{/* Empty state */}
+			{noContributions && (
+				<div className="p-10 text-center">
+					<Trophy className="text-sub mx-auto mb-3 h-10 w-10 opacity-20" />
+					<p className="text-main mb-1 text-sm font-medium">No contributions yet</p>
+					<p className="text-sub text-xs">
+						{isOwn
+							? 'Start adding gyms and equipment to the atlas'
+							: "This user hasn't added any content yet"}
+					</p>
+				</div>
+			)}
 		</div>
 	);
 }

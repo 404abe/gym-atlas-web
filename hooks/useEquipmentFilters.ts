@@ -46,14 +46,16 @@ export function useEquipmentFilters(
 					if (selectedCategory === 'all') return true;
 					const cat = categories.find((c) => c.slug === selectedCategory);
 					if (!cat) return true;
+					if (cat.type === 'exercise') {
+						return cat.id === e.exercise?.category_id || cat.id === e.secondary_exercise?.category_id;
+					}
+					// muscle_group matching still relies on the name-based heuristic — there's
+					// no DB link from exercises to muscle groups yet.
 					const catName = cat.name.toLowerCase();
 					const eqName = e.name?.toLowerCase() ?? '';
 					if (eqName.includes(catName) || catName.includes(eqName)) return true;
 					const suggested = getEquipmentCategorySuggestions(e.name ?? '');
-					if (suggested) {
-						if (cat.type === 'muscle_group') return suggested.muscles.includes(cat.name);
-						if (cat.type === 'exercise') return suggested.exercises.includes(cat.name);
-					}
+					if (suggested) return suggested.muscles.includes(cat.name);
 					return false;
 				})();
 				return (

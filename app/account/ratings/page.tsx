@@ -78,7 +78,7 @@ export default function RatingsPage() {
 							<Link
 								key={g.id}
 								href={`/gyms/${g.id}`}
-								className="bg-sub-alt hover:bg-main/5 flex items-center justify-between rounded-xl px-4 py-3 transition"
+								className="hover:bg-main/5 flex items-center justify-between rounded-xl px-4 py-3 transition"
 							>
 								<div className="flex items-center gap-3">
 									<div className="bg-main/10 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg">
@@ -105,7 +105,7 @@ export default function RatingsPage() {
 							<Link
 								key={e.id}
 								href={`/equipment/${e.id}`}
-								className="bg-sub-alt hover:bg-main/5 flex items-center justify-between rounded-xl px-4 py-3 transition"
+								className="hover:bg-main/5 flex items-center justify-between rounded-xl px-4 py-3 transition"
 							>
 								<div className="flex items-center gap-3">
 									{e.image_url ? (

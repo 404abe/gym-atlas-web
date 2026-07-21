@@ -68,7 +68,7 @@ export default function FavouritesPage() {
 							id='cardImage'
 								key={g.id}
 								href={`/gyms/${g.id}`}
-								className="bg-sub-alt hover:bg-main/5 flex items-center gap-3 rounded-xl px-4 py-3 transition"
+								className="hover:bg-main/5 flex items-center gap-3 rounded-xl px-4 py-3 transition"
 							>
 								{g.image_url ? (
 									<Image
@@ -102,7 +102,7 @@ export default function FavouritesPage() {
 							<Link
 								key={e.id}
 								href={`/equipment/${e.id}`}
-								className="bg-sub-alt hover:bg-main/5 flex items-center gap-3 rounded-xl px-4 py-3 transition"
+								className="hover:bg-main/5 flex items-center gap-3 rounded-xl px-4 py-3 transition"
 							>
 								{e.image_url ? (
 									<Image

@@ -65,7 +65,7 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
 			<div className="grid grid-cols-12 gap-6">
 				{/* Sidebar */}
 				<div className="col-span-12 md:col-span-3">
-					<div className="bg-sub-alt rounded-2xl p-2">
+					<div className="flex flex-col gap-1">
 						{navItems.map(({ label, href, icon: Icon, count }) => (
 							<Link
 								key={href}
