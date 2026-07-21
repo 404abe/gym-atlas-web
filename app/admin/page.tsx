@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { Check, X, Building2, Dumbbell, Clock, Users, ShieldCheck, ImageIcon, Layers, Weight } from 'lucide-react';
@@ -50,7 +51,7 @@ export default function AdminPage() {
 			return;
 		}
 		if (user.role !== 'admin' && user.role !== 'super_admin') {
-			router.push('/');
+			router.push('/map');
 			return;
 		}
 
@@ -260,12 +261,14 @@ export default function AdminPage() {
 											state === 'done' ? 'opacity-0' : 'opacity-100'
 										}`}
 									>
-										<div className="bg-sub-alt flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl">
+										<div className="bg-sub-alt relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl">
 											{e.image_url ? (
-												<img
+												<Image
 													src={e.image_url}
 													alt={e.name}
-													className="h-full w-full object-cover"
+													fill
+													sizes="40px"
+													className="object-cover"
 												/>
 											) : (
 												<Dumbbell className="text-sub h-4 w-4" />
@@ -276,13 +279,7 @@ export default function AdminPage() {
 												{[e.brand, e.series, e.name].filter(Boolean).join(' ')}
 											</p>
 											<div className="text-sub mt-0.5 flex items-center gap-2 text-xs">
-												<span
-													className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${
-														e.type === 'pin_loaded'
-															? 'bg-blue-900/30 text-blue-400'
-															: 'bg-orange-900/30 text-orange-400'
-													}`}
-												>
+												<span className="bg-main/10 text-sub rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase">
 													{e.type === 'pin_loaded' ? 'Pin loaded' : 'Plate loaded'}
 												</span>
 												<span className="flex items-center gap-1">
@@ -365,12 +362,14 @@ export default function AdminPage() {
 											state === 'done' ? 'opacity-0' : 'opacity-100'
 										}`}
 									>
-										<div className="bg-sub-alt flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl">
+										<div className="bg-sub-alt relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl">
 											{s.equipment_image_url ? (
-												<img
+												<Image
 													src={s.equipment_image_url}
 													alt={s.equipment_name}
-													className="h-full w-full object-cover"
+													fill
+													sizes="40px"
+													className="object-cover"
 												/>
 											) : (
 												<Dumbbell className="text-sub h-4 w-4" />
@@ -419,9 +418,11 @@ export default function AdminPage() {
 										}`}
 									>
 										{p.image_url ? (
-											<img
+											<Image
 												src={p.image_url}
 												alt={p.name}
+												width={56}
+												height={56}
 												className="h-14 w-14 shrink-0 rounded-xl object-cover"
 											/>
 										) : (
@@ -469,12 +470,14 @@ export default function AdminPage() {
 											state === 'done' ? 'opacity-0' : 'opacity-100'
 										}`}
 									>
-										<div className="bg-sub-alt flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl">
+										<div className="bg-sub-alt relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl">
 											{v.equipment_image_url ? (
-												<img
+												<Image
 													src={v.equipment_image_url}
 													alt={v.equipment_name}
-													className="h-full w-full object-cover"
+													fill
+													sizes="40px"
+													className="object-cover"
 												/>
 											) : (
 												<Layers className="text-sub h-4 w-4" />
@@ -522,12 +525,14 @@ export default function AdminPage() {
 											state === 'done' ? 'opacity-0' : 'opacity-100'
 										}`}
 									>
-										<div className="bg-sub-alt flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl">
+										<div className="bg-sub-alt relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl">
 											{w.image_url ? (
-												<img
+												<Image
 													src={w.image_url}
 													alt={w.name}
-													className="h-full w-full object-cover"
+													fill
+													sizes="40px"
+													className="object-cover"
 												/>
 											) : (
 												<Weight className="text-sub h-4 w-4" />
@@ -577,12 +582,14 @@ export default function AdminPage() {
 										}`}
 									>
 										<div className="flex items-start gap-4">
-											<div className="bg-sub-alt flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl">
+											<div className="bg-sub-alt relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl">
 												{fw.image_url ? (
-													<img
+													<Image
 														src={fw.image_url}
 														alt={fw.gym_name}
-														className="h-full w-full object-cover"
+														fill
+														sizes="40px"
+														className="object-cover"
 													/>
 												) : (
 													<Weight className="text-sub h-4 w-4" />
@@ -639,12 +646,14 @@ export default function AdminPage() {
 											state === 'done' ? 'opacity-0' : 'opacity-100'
 										}`}
 									>
-										<div className="bg-sub-alt flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl">
+										<div className="bg-sub-alt relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl">
 											{gi.image_url ? (
-												<img
+												<Image
 													src={gi.image_url}
 													alt={gi.name}
-													className="h-full w-full object-cover"
+													fill
+													sizes="40px"
+													className="object-cover"
 												/>
 											) : (
 												<FaInstagram className="text-sub h-4 w-4" />
@@ -728,13 +737,13 @@ export default function AdminPage() {
 function RoleBadge({ role }: { role: string }) {
 	if (role === 'super_admin')
 		return (
-			<span className="rounded bg-purple-900/30 px-1.5 py-0.5 text-[10px] text-xs font-semibold uppercase tracking-wide text-purple-400">
+			<span className="bg-main text-bg rounded px-1.5 py-0.5 text-[10px] text-xs font-semibold uppercase tracking-wide">
 				super admin
 			</span>
 		);
 	if (role === 'admin')
 		return (
-			<span className="rounded bg-blue-900/30 px-1.5 py-0.5 text-[10px] text-xs font-semibold uppercase tracking-wide text-blue-400">
+			<span className="bg-main/10 text-sub rounded px-1.5 py-0.5 text-[10px] text-xs font-semibold uppercase tracking-wide">
 				admin
 			</span>
 		);

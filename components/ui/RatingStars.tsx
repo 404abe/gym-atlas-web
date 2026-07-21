@@ -54,12 +54,12 @@ export default function RatingStars({
 							<Star
 								className={`h-5 w-5 transition-colors ${
 									isHovered
-										? 'fill-yellow-400 text-yellow-400'
+										? 'fill-amber-400 text-amber-400'
 										: isUserRated
-											? 'fill-yellow-400 text-yellow-400'
+											? 'fill-amber-400 text-amber-400'
 											: isFilled
-												? 'fill-gray-300 text-gray-300'
-												: 'text-gray-200'
+												? 'fill-sub text-sub'
+												: 'text-sub'
 								}`}
 							/>
 						</button>

@@ -1,382 +1,228 @@
-'use client';
-import { useEffect, useRef, useState } from 'react';
-import { Dumbbell, Eye, EyeOff, PanelLeftOpen, X } from 'lucide-react';
-import MapView from '@/components/map/MapView';
-import GymSidebar from '@/components/sidebar/GymSidebar';
-import GymStoriesRow from '@/components/sidebar/GymStoriesRow';
-import GymPeekCard from '@/components/sidebar/GymPeekCard';
-import KeyboardShortcutsModal from '@/components/ui/KeyboardShortcutsModal';
-import CommandPalette, { type PaletteAnchor } from '@/components/ui/CommandPalette';
-import SearchTrigger from '@/components/ui/SearchTrigger';
-import { fetchGyms } from '@/lib/api';
-import { Gym } from '@/types/gym';
-import { useGymFilter } from '@/app/contexts/GymFilterContext';
-import { useUserLocation } from '@/hooks/useUserLocation';
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { DM_Sans, JetBrains_Mono } from 'next/font/google';
+import { ArrowRight, Check, Search } from 'lucide-react';
+import { FaGithub } from 'react-icons/fa';
+import { createClient } from '@/lib/supabaseServer';
+import MarketingHeader from '@/components/layout/MarketingHeader';
+import CoordinateTicker from '@/components/landing/CoordinateTicker';
+import HeroMap from '@/components/landing/HeroMap';
+import SectionNav from '@/components/landing/SectionNav';
+import CommunityPanel from '@/components/landing/CommunityPanel';
+import DatabasePanel from '@/components/landing/DatabasePanel';
+import { PANEL_CLS, PANEL_LABEL_CLS } from '@/components/landing/panelStyles';
 
-/**
- * Bottom count badge + an eye toggle for how non-matching gyms display:
- * eye on = keep them on the map (dimmed) as before; eye off = hide them.
- */
-function FilterCountBadge({
-	total,
-	showUnmatched,
-	onToggle
-}: {
-	total: number;
-	showUnmatched: boolean;
-	onToggle: () => void;
-}) {
-	const { activeFilters, matchedGymIds, loading } = useGymFilter();
-	if (activeFilters.length === 0) return null;
+const dmSans = DM_Sans({ subsets: ['latin'] });
+const jetbrainsMono = JetBrains_Mono({ subsets: ['latin'], weight: ['400', '500'] });
+const mono = jetbrainsMono.className;
 
-	const count = matchedGymIds?.size ?? 0;
-	const only = activeFilters.length === 1 ? activeFilters[0] : null;
+const REPO_URL = 'https://github.com/404abe/gym-atlas-web';
 
-	return (
-		<div className="border-border bg-bg/92 pointer-events-auto absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1 rounded-full border py-1 pl-1 pr-3 shadow-lg backdrop-blur-sm">
-			<button
-				type="button"
-				onClick={onToggle}
-				aria-pressed={showUnmatched}
-				title={showUnmatched ? 'Hide gyms without a match' : 'Show all gyms (dim non-matching)'}
-				className="text-sub hover:bg-text/5 hover:text-main flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition"
-			>
-				{showUnmatched ? <Eye size={14} /> : <EyeOff size={14} />}
-			</button>
-			<span className="text-sub text-[11px]">
-				{loading && matchedGymIds === null ? (
-					<>Finding gyms…</>
-				) : (
-					<>
-						<span className="text-main font-semibold">{count}</span> of {total} gyms{' '}
-						{only ? (
-							<>
-								have <span className="text-main">{only.name}</span>
-							</>
-						) : (
-							<>
-								match all <span className="text-main">{activeFilters.length}</span> filters
-							</>
-						)}
-					</>
-				)}
-			</span>
-		</div>
-	);
-}
+export const metadata = {
+	title: 'Gym Atlas — find a gym with the equipment you actually want',
+	description:
+		'Search gyms by the exact machines and brands they carry, browse the full equipment database, and help build the map.'
+};
 
-/** Stacked top-right cards, one per active filter, each dismissible. */
-function ActiveFilterCards() {
-	const { activeFilters, removeFilter } = useGymFilter();
-	if (activeFilters.length === 0) return null;
+// ── Schematic visual panels ─────────────────────────────
+// FilterPanel below is a static mock — generic placeholder content standing
+// in for the real product screen. DatabasePanel and CommunityPanel instead
+// live in their own files (components/landing/DatabasePanel.tsx and
+// CommunityPanel.tsx) and read real gyms/leaderboard data.
+
+function FilterPanel() {
+	const rows = [
+		{ label: 'Leg Press', brand: 'Hammer Strength', count: 128, on: true },
+		{ label: 'Lat Pulldown', brand: 'Life Fitness', count: 112, on: true },
+		{ label: 'Chest Press', brand: 'Technogym', count: 96, on: true },
+		{ label: 'Cable Crossover', brand: 'Matrix', count: 74, on: false },
+		{ label: 'Smith Machine', brand: 'Atlantis', count: 68, on: false },
+		{ label: 'Hack Squat', brand: 'Cybex', count: 61, on: false },
+		{ label: 'Leg Extension', brand: 'Nautilus', count: 54, on: false },
+		{ label: 'Seated Row', brand: 'Prime', count: 43, on: false }
+	];
+	const chips = ['Category', 'Brand', 'Exercise'];
 
 	return (
-		<div className="absolute right-3 top-3 z-10 flex w-64 max-w-[calc(100%-24px)] flex-col gap-2">
-			{activeFilters.map((filter) => (
-				<div
-					key={`${filter.kind}:${filter.key}`}
-					className="border-border bg-bg/92 flex items-center gap-3 rounded-2xl border p-3 shadow-lg backdrop-blur-sm"
-				>
-					<div className="bg-sub-alt flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl">
-						{filter.imageUrl ? (
-							// eslint-disable-next-line @next/next/no-img-element
-							<img src={filter.imageUrl} alt="" className="h-full w-full object-cover" />
-						) : (
-							<Dumbbell size={16} className="text-sub" />
-						)}
-					</div>
-					<div className="min-w-0 flex-1">
-						<p className="text-text m-0 truncate text-[12px] font-medium">{filter.name}</p>
-						{filter.subtitle && (
-							<p className="text-sub m-0 mt-0.5 truncate text-[11px]">{filter.subtitle}</p>
-						)}
-					</div>
-					<button
-						onClick={() => removeFilter(filter)}
-						aria-label={`Remove ${filter.name} filter`}
-						className="text-sub hover:text-main ml-1 shrink-0 transition"
-					>
-						<X size={13} />
-					</button>
-				</div>
-			))}
-		</div>
-	);
-}
+		<div className={PANEL_CLS}>
+			<div className="flex items-center justify-between">
+				<span className={`${mono} ${PANEL_LABEL_CLS}`}>Equipment</span>
+				<span className={`${mono} text-sub text-[10px]`}>3 / 312</span>
+			</div>
 
-export default function Page() {
-	const [gyms, setGyms] = useState<Gym[]>([]);
-	const [selectedGym, setSelectedGym] = useState<Gym | null>(null);
-	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-	const [sidebarWidth, setSidebarWidth] = useState(320);
-	const [isResizingSidebar, setIsResizingSidebar] = useState(false);
-	const [shortcutsOpen, setShortcutsOpen] = useState(false);
-	const [paletteOpen, setPaletteOpen] = useState(false);
-	const [paletteInitialQuery, setPaletteInitialQuery] = useState('');
-	const [paletteAnchor, setPaletteAnchor] = useState<PaletteAnchor | undefined>(undefined);
-	// The desktop search trigger, so ⌘K (no click) can still anchor the palette to it.
-	const desktopTriggerRef = useRef<HTMLDivElement>(null);
-	const { matchedGymIds } = useGymFilter();
-	const userLocation = useUserLocation();
+			<div className="border-border bg-bg mt-5 flex h-10 shrink-0 items-center gap-2.5 rounded-lg border px-3">
+				<Search size={14} className="text-sub shrink-0" />
+				<div className="bg-border h-1.5 w-28 rounded-full" />
+			</div>
 
-	// Mobile: tapping the already-selected gym again (pin or story) closes the card.
-	const toggleSelectGym = (gym: Gym) =>
-		setSelectedGym((prev) => (prev?.id === gym.id ? null : gym));
-
-	const openPalette = (initialQuery = '', anchor?: PaletteAnchor) => {
-		setPaletteInitialQuery(initialQuery);
-		setPaletteAnchor(anchor);
-		setPaletteOpen(true);
-	};
-
-	useEffect(() => {
-		fetchGyms().then(setGyms);
-	}, []);
-
-	// Cmd+. (Mac) / Ctrl+. toggles the gym list sidebar.
-	// Cmd+K (Mac) / Ctrl+K opens the search palette anchored to the search pill.
-	// Cmd+Shift+U (Mac) / Ctrl+Shift+U — test-only backup: same palette, centered.
-	// ? opens the keyboard shortcuts popup (ignored while typing in a field).
-	useEffect(() => {
-		const onKeyDown = (event: KeyboardEvent) => {
-			if (event.metaKey || event.ctrlKey) {
-				if (event.key === '.') {
-					event.preventDefault();
-					setSidebarCollapsed((collapsed) => !collapsed);
-				} else if (event.key.toLowerCase() === 'k') {
-					event.preventDefault();
-					if (paletteOpen) {
-						setPaletteOpen(false);
-					} else {
-						const rect = desktopTriggerRef.current?.getBoundingClientRect();
-						openPalette('', rect ? { left: rect.left, top: rect.top, width: rect.width } : undefined);
-					}
-				} else if (event.shiftKey && event.key.toLowerCase() === 'u') {
-					event.preventDefault();
-					if (paletteOpen) {
-						setPaletteOpen(false);
-					} else {
-						openPalette(); // no anchor → CommandPalette falls back to centered
-					}
-				}
-				return;
-			}
-			const target = event.target as HTMLElement;
-			const isTyping =
-				target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
-			if (isTyping) return;
-			if (event.key === '?') {
-				event.preventDefault();
-				setShortcutsOpen((open) => !open);
-			}
-		};
-		document.addEventListener('keydown', onKeyDown);
-		return () => document.removeEventListener('keydown', onKeyDown);
-	}, [paletteOpen]);
-
-	const [gymSearch, setGymSearch] = useState('');
-	// Eye toggle: when on, every gym stays on the map (matches highlighted, the rest
-	// dimmed) and the list shows all gyms; when off, non-matching gyms are dropped
-	// from both the map and the list. Off by default.
-	const [showUnmatched, setShowUnmatched] = useState(false);
-
-	// Gyms whose equipment includes ALL selected filters.
-	const filteredGyms = matchedGymIds ? gyms.filter((g) => matchedGymIds.has(g.id)) : gyms;
-	// What the map and list actually render, per the eye toggle.
-	const mapGyms = showUnmatched ? gyms : filteredGyms;
-	const mapMatched = showUnmatched ? matchedGymIds : null;
-	const listGyms = showUnmatched ? gyms : filteredGyms;
-	const searchFilteredGyms = gymSearch
-		? listGyms.filter(
-				(g) =>
-					g.name.toLowerCase().includes(gymSearch.toLowerCase()) ||
-					g.city?.toLowerCase().includes(gymSearch.toLowerCase())
-			)
-		: listGyms;
-
-	const startSidebarResize = (startX: number) => {
-		const startWidth = sidebarCollapsed ? 48 : sidebarWidth;
-		let hasMoved = false;
-		setIsResizingSidebar(true);
-
-		const onPointerMove = (event: PointerEvent) => {
-			const delta = event.clientX - startX;
-			if (Math.abs(delta) < 6) return;
-			hasMoved = true;
-			const nextWidth = startWidth + event.clientX - startX;
-			if (nextWidth < 170) {
-				setSidebarCollapsed(true);
-				return;
-			}
-			setSidebarCollapsed(false);
-			setSidebarWidth(Math.min(460, Math.max(280, nextWidth)));
-		};
-
-		const onPointerUp = () => {
-			setIsResizingSidebar(false);
-			if (!hasMoved) {
-				setSidebarCollapsed((collapsed) => !collapsed);
-			}
-			document.removeEventListener('pointermove', onPointerMove);
-			document.removeEventListener('pointerup', onPointerUp);
-		};
-
-		document.addEventListener('pointermove', onPointerMove);
-		document.addEventListener('pointerup', onPointerUp);
-	};
-
-	return (
-		<>
-			<div className="bg-bg flex h-full flex-col overflow-hidden md:fixed md:inset-0 md:z-10">
-				{/* ── MOBILE LAYOUT ── */}
-				<div className="flex h-full flex-col md:hidden">
-					{/* search trigger — opens the command palette overlay */}
-					<div className="shrink-0 px-3 pt-2">
-						<SearchTrigger open={paletteOpen} onOpen={openPalette} />
-					</div>
-
-					{/* map — grows to fill the space above the gym search + stories row */}
-					<div className="relative z-0 min-h-0 flex-1 px-3 pt-2">
-						<div className="border-border relative h-full overflow-hidden rounded-2xl border">
-							<FilterCountBadge
-								total={gyms.length}
-								showUnmatched={showUnmatched}
-								onToggle={() => setShowUnmatched((v) => !v)}
-							/>
-							<ActiveFilterCards />
-							<MapView
-								gyms={mapGyms}
-								selectedGym={selectedGym}
-								onSelectGym={toggleSelectGym}
-								userLocation={userLocation}
-								matchedGymIds={mapMatched}
-							/>
-						</div>
-					</div>
-
-					{/* selected-gym peek card — sits above the stories row (mobile only) */}
-					{selectedGym && (
-						<div className="shrink-0 px-3 pb-1">
-							<GymPeekCard
-								key={selectedGym.id}
-								gym={selectedGym}
-								userLocation={userLocation}
-								onDismiss={() => setSelectedGym(null)}
-							/>
-						</div>
-					)}
-
-					{/* gym stories row — circular avatars at the bottom (mobile only) */}
-					<GymStoriesRow
-						gyms={searchFilteredGyms}
-						selectedGym={selectedGym}
-						onSelectGym={toggleSelectGym}
-						userLocation={userLocation}
-					/>
-				</div>
-
-				{/* ── DESKTOP LAYOUT ── */}
-				<div className="relative hidden h-full md:flex md:gap-3 md:p-3 md:pt-[56px]">
-					{/* Sidebar — left, fixed width w-80 (320px) with pt-3 to clear header */}
-					<div
-						className={`relative flex h-full shrink-0 flex-col pt-3 ${
-							isResizingSidebar ? '' : 'transition-[width] duration-200 ease-out'
+			<div className="mt-4 flex shrink-0 gap-2">
+				{chips.map((chip, index) => (
+					<span
+						key={chip}
+						className={`${mono} rounded-full border px-3 py-1 text-[10px] uppercase tracking-[0.12em] ${
+							index === 0 ? 'border-accent text-accent' : 'border-border text-sub'
 						}`}
-						style={{ width: sidebarCollapsed ? 44 : sidebarWidth }}
 					>
-						{sidebarCollapsed ? (
-							<div className="border-border bg-surface/70 flex h-full flex-col items-center rounded-2xl border py-3">
-								<button
-									onClick={() => setSidebarCollapsed(false)}
-									title="Expand gym list"
-									className="text-sub hover:text-main hover:bg-sub-alt flex h-9 w-9 items-center justify-center rounded-xl transition"
-								>
-									<PanelLeftOpen size={16} />
-								</button>
-								<div className="bg-border mt-3 h-px w-5" />
-								<div className="text-sub mt-3 text-[10px] uppercase tracking-[0.18em] [writing-mode:vertical-rl]">
-									{searchFilteredGyms.length} gyms
-								</div>
-							</div>
-						) : (
-							<GymSidebar
-								gyms={searchFilteredGyms}
-								selectedGym={selectedGym}
-								onSelectGym={setSelectedGym}
-								gymSearch={gymSearch}
-								onGymSearchChange={setGymSearch}
-								onCollapse={() => setSidebarCollapsed(true)}
-							/>
-						)}
-						<div
-							role="button"
-							tabIndex={0}
-							aria-label={
-								sidebarCollapsed
-									? 'Click or drag right to expand gym list'
-									: 'Click or drag left to collapse gym list'
-							}
-							title={
-								sidebarCollapsed
-									? 'Click or drag right to expand'
-									: 'Click or drag left to collapse'
-							}
-							onPointerDown={(event) => {
-								event.preventDefault();
-								startSidebarResize(event.clientX);
-							}}
-							onKeyDown={(event) => {
-								if (event.key === 'Enter' || event.key === ' ') {
-									event.preventDefault();
-									setSidebarCollapsed((collapsed) => !collapsed);
-								}
-							}}
-							className={`group absolute bottom-0 right-[-10px] top-3 z-20 flex w-5 cursor-ew-resize items-center justify-center ${
-								isResizingSidebar ? 'select-none' : ''
+						{chip}
+					</span>
+				))}
+			</div>
+
+			<ul className="mt-5 flex flex-1 flex-col justify-between gap-3">
+				{rows.map((row) => (
+					<li key={row.label} className="flex items-center gap-3">
+						<span
+							className={`grid h-4 w-4 shrink-0 place-items-center rounded ${
+								row.on ? 'bg-accent' : 'border-border border'
 							}`}
 						>
-							<span
-								className={`bg-border group-hover:bg-main/50 h-full w-px rounded-full transition ${
-									isResizingSidebar ? 'bg-main/60' : ''
-								}`}
-							/>
-							<span className="border-border bg-bg/90 absolute top-1/2 flex h-14 w-4 -translate-y-1/2 items-center justify-center rounded-full border opacity-70 shadow-lg backdrop-blur transition group-hover:opacity-100">
-								<span className="border-sub group-hover:border-main h-5 w-0.5 rounded-full border-x border-dotted" />
-							</span>
+							{row.on && <Check size={11} className="text-bg" />}
+						</span>
+						<span className="text-main shrink-0 text-sm">{row.label}</span>
+						<span className={`${mono} text-sub truncate text-[11px]`}>{row.brand}</span>
+						<span className={`${mono} text-sub ml-auto shrink-0 text-xs`}>{row.count}</span>
+					</li>
+				))}
+			</ul>
+		</div>
+	);
+}
+
+// ── Feature section ─────────────────────────────────────
+
+function FeatureSection({
+	id,
+	index,
+	title,
+	body,
+	ctaText,
+	ctaHref,
+	visual,
+	reverse = false
+}: {
+	id: string;
+	index: string;
+	title: string;
+	body: string;
+	ctaText: string;
+	ctaHref: string;
+	visual: React.ReactNode;
+	reverse?: boolean;
+}) {
+	return (
+		<section
+			id={id}
+			className="flex scroll-mt-24 flex-col items-center gap-8 py-16 lg:flex-row lg:gap-14 lg:py-24"
+		>
+			<div className={`w-full max-w-120 lg:w-120 ${reverse ? 'lg:order-2' : 'lg:order-1'}`}>
+				<span className={`${mono} text-accent text-xs tracking-[0.25em]`}>{index}</span>
+				<h2 className="text-main mt-4 text-2xl font-semibold tracking-tight md:text-3xl">
+					{title}
+				</h2>
+				<p className="text-sub mt-3 text-base leading-relaxed">{body}</p>
+				<Link
+					href={ctaHref}
+					className="text-main hover:text-accent border-accent mt-6 inline-flex items-center gap-1.5 border-b pb-0.5 text-sm font-medium no-underline transition-colors"
+				>
+					{ctaText}
+					<ArrowRight size={15} />
+				</Link>
+			</div>
+			<div className={`w-full max-w-182.5 lg:w-182.5 ${reverse ? 'lg:order-1' : 'lg:order-2'}`}>
+				{visual}
+			</div>
+		</section>
+	);
+}
+
+export default async function LandingPage() {
+	const supabase = await createClient();
+	const {
+		data: { user }
+	} = await supabase.auth.getUser();
+	if (user) redirect('/map');
+
+	return (
+		<div className={`${dmSans.className} flex min-h-full flex-col`}>
+			<MarketingHeader bordered={false} />
+
+			<div className="overflow-x-hidden pb-28">
+				{/* 1314px = 730px panel + 480px text column + 56px gap (lg:gap-14) +
+				    48px padding (px-6) — the exact width where both columns sit at
+				    their full size with no shrinking needed. Below that (but still
+				    ≥lg), flex-shrink compresses both columns together, keeping
+				    their 730:480 ratio, instead of overflowing. */}
+				<div className="mx-auto w-full max-w-328.5 px-6">
+					{/* ── Hero ── */}
+					<section className="mx-auto flex max-w-2xl flex-col items-center pt-14 text-center md:pt-20">
+						<h1 className="text-main mt-5 text-4xl font-semibold tracking-tight md:text-5xl">
+							Find a gym with the right equipment.
+						</h1>
+						<p className="text-sub mt-5 max-w-xl text-balance text-lg">
+							Not just a pin on a map. Search gyms by the exact machines and brands they carry.
+						</p>
+
+						<div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+							<Link
+								href="/map"
+								className="bg-main text-bg flex items-center gap-2 rounded-full px-6 py-3 text-sm font-medium no-underline transition-opacity hover:opacity-90"
+							>
+								Open the map
+								<ArrowRight size={16} />
+							</Link>
+							<Link
+								href={REPO_URL}
+								target="_blank"
+								rel="noopener noreferrer"
+								className="border-border text-main hover:bg-sub-alt flex items-center gap-2 rounded-full border px-6 py-3 text-sm font-medium no-underline transition-colors"
+							>
+								<FaGithub size={16} />
+								View on GitHub
+							</Link>
 						</div>
+
+						<CoordinateTicker />
+					</section>
+
+					{/* ── Hero map ── */}
+					<HeroMap />
+
+					{/* ── Anchor strip ── */}
+					<div className="mt-16 md:mt-20">
+						<SectionNav />
 					</div>
-					{/* Map — right, fills remaining space with proper rounded corners */}
-					<div className="border-border relative min-h-0 flex-1 overflow-hidden rounded-2xl border">
-						{/* search trigger — top left */}
-						<div ref={desktopTriggerRef} className="absolute left-3 top-3 z-10">
-							<SearchTrigger open={paletteOpen} onOpen={openPalette} />
-						</div>
-						<FilterCountBadge
-							total={gyms.length}
-							showUnmatched={showUnmatched}
-							onToggle={() => setShowUnmatched((v) => !v)}
-						/>
-						<ActiveFilterCards />
-						<MapView
-							gyms={mapGyms}
-							selectedGym={selectedGym}
-							onSelectGym={setSelectedGym}
-							userLocation={userLocation}
-							matchedGymIds={mapMatched}
-						/>
-					</div>
+
+					{/* ── Feature sections ── */}
+					<FeatureSection
+						id="filter"
+						index="01"
+						title="Filter by equipment"
+						body="Don't just find a gym nearby — find one with the specific machines and brands you train on. Search by category, brand, or exercise."
+						ctaText="Try it on the map"
+						ctaHref="/map"
+						visual={<FilterPanel />}
+					/>
+					<FeatureSection
+						id="database"
+						index="02"
+						title="Browse the database"
+						body="Every gym's full equipment list, searchable by category, brand, and exercise — so you always know what you're walking into."
+						ctaText="Browse gyms"
+						ctaHref="/map"
+						visual={<DatabasePanel />}
+						reverse
+					/>
+					<FeatureSection
+						id="community"
+						index="03"
+						title="Built by the community"
+						body="Gyms and machines are added by the people who train there. Contribute a find and climb the leaderboard."
+						ctaText="View the leaderboard"
+						ctaHref="/leaderboard"
+						visual={<CommunityPanel />}
+					/>
 				</div>
 			</div>
-			{shortcutsOpen && <KeyboardShortcutsModal onClose={() => setShortcutsOpen(false)} />}
-			{paletteOpen && (
-				<CommandPalette
-					gyms={gyms}
-					onSelectGym={setSelectedGym}
-					onClose={() => setPaletteOpen(false)}
-					initialQuery={paletteInitialQuery}
-					anchor={paletteAnchor}
-				/>
-			)}
-		</>
+		</div>
 	);
 }

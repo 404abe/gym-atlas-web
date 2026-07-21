@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import RatingStars from '@/components/ui/RatingStars';
 import FavoriteButton from '@/components/ui/FavoriteButton';
@@ -22,7 +23,7 @@ import {
 } from '@/lib/api';
 import ResistanceButtons from '@/app/add/_components/ResistanceButtons';
 import { DEFAULT_CURVE } from '@/components/ui/CustomCurveEditor';
-import { Star, Dumbbell, Plus, Trophy, X, ChevronDown, Pencil } from 'lucide-react';
+import { Star, Dumbbell, Plus, Trophy, X, Check, ChevronDown, Pencil } from 'lucide-react';
 import { Equipment, EquipmentVariant } from '@/types/equipment';
 import { GymWithQuantity } from '@/types/gym';
 import type { BestInClassCategory } from '@/types/bestInClass';
@@ -165,10 +166,13 @@ export default function EquipmentProfileClient() {
 	const renderHero = () => (
 		<div className="bg-sub-alt relative aspect-[4/3] w-full overflow-hidden rounded-2xl sm:aspect-[16/9]">
 			{imageUrl ? (
-				<img
+				<Image
 					src={imageUrl}
 					alt={item.name}
-					className="h-full w-full object-contain object-center p-3 sm:p-4"
+					fill
+					priority
+					sizes="(max-width: 768px) 100vw, 896px"
+					className="object-contain object-center p-3 sm:p-4"
 				/>
 			) : (
 				<div className="flex h-full w-full items-center justify-center">
@@ -317,15 +321,17 @@ export default function EquipmentProfileClient() {
 										/>
 										<button
 											onClick={handleSaveWeightStack}
-											className="text-sub hover:text-main text-xs transition"
+											aria-label="Save weight stack"
+											className="text-sub hover:text-main transition"
 										>
-											✓
+											<Check className="h-3.5 w-3.5" />
 										</button>
 										<button
 											onClick={() => setEditingWeightStack(false)}
-											className="text-sub hover:text-main text-xs transition"
+											aria-label="Cancel"
+											className="text-sub hover:text-main transition"
 										>
-											✕
+											<X className="h-3.5 w-3.5" />
 										</button>
 									</div>
 								) : (
@@ -570,7 +576,7 @@ export default function EquipmentProfileClient() {
 						<button
 							onClick={handleSetBestInClass}
 							disabled={!canConfirm || saving}
-							className={`w-full rounded-xl py-2.5 text-xs font-medium transition ${
+							className={`flex w-full items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-medium transition ${
 								justSaved
 									? 'border border-green-500/50 text-green-400'
 									: canConfirm
@@ -578,7 +584,15 @@ export default function EquipmentProfileClient() {
 										: 'border-border text-sub cursor-not-allowed border opacity-40'
 							}`}
 						>
-							{justSaved ? '✓ Saved!' : saving ? '...' : 'Confirm'}
+							{justSaved ? (
+								<>
+									<Check className="h-3.5 w-3.5" /> Saved!
+								</>
+							) : saving ? (
+								'...'
+							) : (
+								'Confirm'
+							)}
 						</button>
 					</div>
 				</div>

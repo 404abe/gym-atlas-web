@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import Image from 'next/image';
 import { ArrowLeft, Loader2, Plus, Search, X } from 'lucide-react';
 import { fetchBrands, createBrand, uploadBrandLogo } from '@/lib/api';
 import type { Brand } from '@/lib/api';
@@ -40,15 +41,17 @@ function BrandTile({
 		>
 			{/* Logo / abbrev area */}
 			<div
-				className={`flex aspect-square w-full items-center justify-center overflow-hidden ${
+				className={`relative flex aspect-square w-full items-center justify-center overflow-hidden ${
 					brand.logo_url ? 'bg-white' : isSelected ? 'bg-main' : 'bg-sub-alt'
 				}`}
 			>
 				{brand.logo_url ? (
-					<img
+					<Image
 						src={brand.logo_url}
 						alt={brand.name}
-						className="h-full w-full object-contain p-2"
+						fill
+						sizes="(max-width: 640px) 30vw, 120px"
+						className="object-contain p-2"
 					/>
 				) : (
 					<span

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { MapPin, Star, Dumbbell, Minus, LayoutGrid, List, Plus, Navigation, Check, X, Loader2, Clock } from 'lucide-react';
 import {
@@ -216,7 +217,14 @@ export default function GymProfileClient() {
 	const Hero = () => (
 		<div className="bg-sub-alt relative aspect-[4/3] w-full overflow-hidden rounded-2xl sm:aspect-auto sm:h-90">
 			{imageUrl ? (
-				<img src={imageUrl} alt={gym.name} className="h-full w-full object-cover" />
+				<Image
+					src={imageUrl}
+					alt={gym.name}
+					fill
+					priority
+					sizes="(max-width: 768px) 100vw, 896px"
+					className="object-cover"
+				/>
 			) : (
 				<div className="flex h-full w-full items-center justify-center">
 					<Dumbbell className="text-sub h-12 w-12 opacity-30" />
@@ -390,11 +398,15 @@ export default function GymProfileClient() {
 								}`}
 							>
 								{item.image_url ? (
-									<img
-										src={item.image_url}
-										alt={item.full_name}
-										className="bg-main/5 mb-1 aspect-video w-full rounded-lg object-contain"
-									/>
+									<div className="bg-main/5 relative mb-1 aspect-video w-full rounded-lg">
+										<Image
+											src={item.image_url}
+											alt={item.full_name}
+											fill
+											sizes="(max-width: 640px) 45vw, 280px"
+											className="rounded-lg object-contain"
+										/>
+									</div>
 								) : (
 									<div className="bg-main/5 mb-1 flex aspect-video w-full items-center justify-center rounded-lg">
 										<Dumbbell className="text-sub h-5 w-5 opacity-30" />
@@ -449,12 +461,14 @@ export default function GymProfileClient() {
 									isPending ? 'opacity-50' : 'hover:bg-main/5'
 								}`}
 							>
-								<div className="bg-main/5 h-9 w-9 shrink-0 overflow-hidden rounded-lg">
+								<div className="bg-main/5 relative h-9 w-9 shrink-0 overflow-hidden rounded-lg">
 									{item.image_url ? (
-										<img
+										<Image
 											src={item.image_url}
 											alt={item.full_name}
-											className="h-full w-full object-cover"
+											fill
+											sizes="36px"
+											className="object-cover"
 										/>
 									) : (
 										<div className="flex h-full w-full items-center justify-center">
@@ -594,7 +608,7 @@ export default function GymProfileClient() {
 										{freeWeightsOpen ? 'Cancel edit' : gym.free_weights ? 'Suggest correction' : 'Add free weights'}
 									</button>
 									{freeWeightsSubmitted && (
-										<span className="text-xs text-[#3ee7a6]">Submitted for review</span>
+										<span className="text-xs text-green-400">Submitted for review</span>
 									)}
 								</div>
 								{freeWeightsOpen && (

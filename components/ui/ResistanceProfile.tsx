@@ -1,6 +1,7 @@
 'use client';
 
 import { catmullRomPath, valToSVGY, xAt, CURVE_POINTS } from './CustomCurveEditor';
+import { RESISTANCE_COLORS } from '@/lib/resistanceColors';
 
 type Props = {
 	profile?: 'constant' | 'ascending' | 'descending' | 'adjustable' | 'custom';
@@ -15,22 +16,22 @@ const C = { x0: 4, x1: 52, y0: 4, y1: 24 };
 const PRESET_CONFIGS = {
 	constant: {
 		label: 'Constant',
-		color: '#6b7280',
+		color: RESISTANCE_COLORS.constant,
 		d: 'M4,14 L52,14',
 	},
 	ascending: {
 		label: 'Ascending',
-		color: '#22c55e',
+		color: RESISTANCE_COLORS.ascending,
 		d: 'M4,22 C20,22 32,6 52,6',
 	},
 	descending: {
 		label: 'Descending',
-		color: '#ef4444',
+		color: RESISTANCE_COLORS.descending,
 		d: 'M4,6 C20,6 32,22 52,22',
 	},
 	adjustable: {
 		label: 'Adjustable',
-		color: '#3b82f6',
+		color: RESISTANCE_COLORS.adjustable,
 		d: 'M4,20 C12,20 16,6 28,6 C40,6 44,20 52,20',
 	},
 } as const;
@@ -62,12 +63,12 @@ export default function ResistanceProfile({ profile, curve }: Props) {
 					<line x1={C.x0} y1={C.y0} x2={C.x0} y2={C.y1} stroke="var(--border-color)" strokeWidth="0.75" />
 					<line x1={C.x0} y1={C.y1} x2={C.x1} y2={C.y1} stroke="var(--border-color)" strokeWidth="0.75" />
 					{path ? (
-						<path d={path} stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+						<path d={path} stroke={RESISTANCE_COLORS.custom} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
 					) : (
-						<line x1={C.x0} y1="14" x2={C.x1} y2="14" stroke="#6b7280" strokeWidth="1.5" strokeDasharray="3 2" />
+						<line x1={C.x0} y1="14" x2={C.x1} y2="14" stroke={RESISTANCE_COLORS.constant} strokeWidth="1.5" strokeDasharray="3 2" />
 					)}
 				</svg>
-				<span className="text-[11px] font-medium" style={{ color: '#3b82f6' }}>
+				<span className="text-[11px] font-medium" style={{ color: RESISTANCE_COLORS.custom }}>
 					Custom
 				</span>
 			</div>

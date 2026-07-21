@@ -4,7 +4,7 @@ import { Search } from 'lucide-react';
 import { useState } from 'react';
 import { useCyclingPlaceholder } from '@/hooks/useCyclingPlaceholder';
 import { cn } from '@/lib/utils';
-import type { PaletteAnchor } from '@/components/ui/CommandPalette';
+import type { PaletteAnchor } from './CommandPalette';
 
 // One example per searchable category (gym / machine / exercise) plus a resting
 // prompt. Module constant so the hook's reference stays stable across renders.

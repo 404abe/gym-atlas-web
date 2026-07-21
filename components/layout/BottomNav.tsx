@@ -16,10 +16,10 @@ export default function BottomNav() {
 		<nav className="flex shrink-0 items-end  border-border bg-bg md:hidden">
 			{/* Map */}
 			<Link
-				href="/"
+				href="/map"
 				className={cn(
 					'flex flex-1 flex-col items-center justify-center gap-1 py-3',
-					active('/') ? 'text-text' : 'text-sub'
+					active('/map') ? 'text-text' : 'text-sub'
 				)}
 			>
 				<FaMap size={20} />

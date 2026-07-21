@@ -3,6 +3,7 @@
 
 import { ChevronUp, ChevronDown, Search, Building2, MapPin, Heart, Plus } from 'lucide-react';
 import { FaExpandAlt } from 'react-icons/fa';
+import Image from 'next/image';
 import RatingStars from '@/components/ui/RatingStars';
 import FavoriteButton from '@/components/ui/FavoriteButton';
 import { useRouter } from 'next/navigation';
@@ -134,12 +135,14 @@ export default function GymTable({
 										className={`flex items-center gap-3 rounded-xl px-4 py-3 ${index % 2 === 0 ? 'bg-sub-alt' : ''}`}
 									>
 										{/* Gym image */}
-										<div className="bg-main/5 h-14 w-14 shrink-0 overflow-hidden rounded-xl">
+										<div className="bg-main/5 relative h-14 w-14 shrink-0 overflow-hidden rounded-xl">
 											{gym.image_url ? (
-												<img
+												<Image
 													src={gym.image_url}
 													alt={gym.name}
-													className="h-full w-full object-cover"
+													fill
+													sizes="56px"
+													className="object-cover"
 												/>
 											) : (
 												<div className="flex h-full w-full items-center justify-center">
@@ -153,12 +156,12 @@ export default function GymTable({
 											<div className="flex flex-wrap items-center gap-2">
 												<p className="text-main text-sm font-semibold">{gym.name}</p>
 												{gym.total_equipment != null && (
-													<span className="inline-flex rounded bg-blue-900/30 px-2 py-0.5 text-xs font-medium text-blue-400">
+													<span className="bg-main/10 text-sub inline-flex rounded-full px-2 py-0.5 text-xs font-medium">
 														{gym.total_equipment} items
 													</span>
 												)}
 												{gym.unique_machines != null && (
-													<span className="hidden rounded bg-green-900/30 px-2 py-0.5 text-xs font-medium text-green-400 sm:inline-flex">
+													<span className="bg-main/10 text-sub hidden rounded-full px-2 py-0.5 text-xs font-medium sm:inline-flex">
 														{gym.unique_machines} unique
 													</span>
 												)}
@@ -232,12 +235,12 @@ export default function GymTable({
 									</div>
 								</td>
 								<td className="hidden px-2 py-3 sm:table-cell sm:px-4">
-									<span className="inline-flex rounded bg-blue-900/30 px-2 py-0.5 text-xs font-medium text-blue-400">
+									<span className="bg-main/10 text-sub inline-flex rounded-full px-2 py-0.5 text-xs font-medium">
 										{gym.total_equipment || 0} items
 									</span>
 								</td>
 								<td className="hidden px-2 py-3 lg:table-cell lg:px-4">
-									<span className="inline-flex rounded bg-green-900/30 px-2 py-0.5 text-xs font-medium text-green-400">
+									<span className="bg-main/10 text-sub inline-flex rounded-full px-2 py-0.5 text-xs font-medium">
 										{gym.unique_machines || 0} unique
 									</span>
 								</td>

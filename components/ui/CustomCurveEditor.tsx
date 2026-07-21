@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useCallback } from 'react';
+import { RESISTANCE_COLORS } from '@/lib/resistanceColors';
 
 export const CURVE_POINTS = 5;
 export const DEFAULT_CURVE: number[] = Array(CURVE_POINTS).fill(50);
@@ -112,7 +113,7 @@ export default function CustomCurveEditor({ value, onChange }: Props) {
 			{curvePath && (
 				<path
 					d={`${curvePath} L${CHART.x1},${CHART.y1} L${CHART.x0},${CHART.y1} Z`}
-					fill="#3b82f6" fillOpacity="0.1"
+					fill={RESISTANCE_COLORS.custom} fillOpacity="0.1"
 				/>
 			)}
 
@@ -120,7 +121,7 @@ export default function CustomCurveEditor({ value, onChange }: Props) {
 			{curvePath && (
 				<path
 					d={curvePath}
-					fill="none" stroke="#3b82f6" strokeWidth="2"
+					fill="none" stroke={RESISTANCE_COLORS.custom} strokeWidth="2"
 					strokeLinecap="round" strokeLinejoin="round"
 				/>
 			)}
@@ -151,7 +152,7 @@ export default function CustomCurveEditor({ value, onChange }: Props) {
 					{/* Visual dot — no pointer events so it doesn't interfere */}
 					<circle
 						cx={x} cy={y} r={5}
-						fill="#3b82f6"
+						fill={RESISTANCE_COLORS.custom}
 						stroke="var(--surface-color)"
 						strokeWidth="1.5"
 						style={{ pointerEvents: 'none' }}

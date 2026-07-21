@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useMemo } from 'react';
+import Image from 'next/image';
 import { matchesSearch } from '@/lib/utils';
 import { Loader2, X, Search, Dumbbell, Check } from 'lucide-react';
 import { GymEquipment } from '@/types/gym';
@@ -134,10 +135,12 @@ export default function AddEquipmentPanel({
 										{/* Thumbnail */}
 										<div className="bg-sub-alt h-14 w-14 shrink-0 overflow-hidden rounded-lg">
 											{item.image_url ? (
-												<img
+												<Image
 													src={item.image_url}
 													alt={item.name}
-													className="h-full w-full object-cover"
+													fill
+													sizes="56px"
+													className="object-cover"
 												/>
 											) : (
 												<div className="flex h-full w-full items-center justify-center">

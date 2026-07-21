@@ -12,7 +12,7 @@
 	--text-color: #16161a;
 	--main-color: #16161a;
 	--caret-color: #16161a;
-	--accent: #16161a;
+	--accent-color: #0f8878;
 	--success-color: #4a7200;
 	--roundness: 6px;
 	--pill-bg: rgba(255, 255, 255, 0.92);
@@ -40,7 +40,7 @@
 	--text-color: #e7e7e7;
 	--main-color: #e7e7e7;
 	--caret-color: #e7e7e7;
-	--accent: #e7e7e7;
+	--accent-color: #2dd4bf;
 	--success-color: #5c8f00;
 	--pill-bg: rgba(20, 20, 20, 0.92);
 }
@@ -58,7 +58,7 @@
 	--text-color: #111111;
 	--main-color: #111111;
 	--caret-color: #111111;
-	--accent: #111111;
+	--accent-color: #0f8878;
 	--success-color: #4a7200;
 	--pill-bg: rgba(235, 235, 235, 0.92);
 }
@@ -111,7 +111,7 @@
 	--color-sub: var(--sub-color);
 	--color-text: var(--text-color);
 	--color-main: var(--main-color);
-	--accent: var(--accent);
+	--color-accent: var(--accent-color);
 	--color-success: var(--success-color);
 	--color-sub-alt: var(--sub-alt-color);
 	/* typography */

@@ -7,13 +7,18 @@ import { cn } from '@/lib/utils';
 
 const navLinkCls = 'text-sub hover:text-text text-sm no-underline transition-colors duration-[0.22s]';
 
-export default function MarketingHeader() {
+export default function MarketingHeader({ bordered = true }: { bordered?: boolean }) {
 	const pathname = usePathname();
 
 	return (
-		<header className="border-border bg-bg/90 sticky top-0 z-40 flex items-center justify-between border-b px-6 py-4 backdrop-blur md:px-10">
+		<header
+			className={cn(
+				'bg-bg/90 sticky top-0 z-40 flex items-center justify-between px-6 py-4 backdrop-blur md:px-10',
+				bordered && 'border-border border-b'
+			)}
+		>
 			<div className="flex items-center gap-8">
-				<Link href="/landing" className="flex items-center gap-2 no-underline">
+				<Link href="/" className="flex items-center gap-2 no-underline">
 					<GymAtlasLogo size={26} />
 					<span className="text-main text-base font-semibold uppercase tracking-[0.14em]">
 						Gym<span className="text-sub font-normal">Atlas</span>
@@ -41,7 +46,7 @@ export default function MarketingHeader() {
 				</nav>
 			</div>
 			<Link
-				href="/"
+				href="/map"
 				className="bg-main text-bg rounded-full px-5 py-2 text-sm font-medium no-underline transition-opacity hover:opacity-90"
 			>
 				Try Gym Atlas
