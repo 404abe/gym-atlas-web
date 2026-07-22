@@ -35,6 +35,7 @@ export default function ProfileView({
 	isOwn = false
 }: ProfileViewProps) {
 	const [bicTab, setBicTab] = useState<'exercise' | 'muscle_group'>('exercise');
+	const [bicExpanded, setBicExpanded] = useState(false);
 	const { logout, updateUsername } = useAuth();
 	const [updatedUsername, setUpdatedUsername] = useState<string | null>(null);
 	const [usernameDraft, setUsernameDraft] = useState(profile.username);
@@ -113,6 +114,97 @@ export default function ProfileView({
 		{ label: 'equipment rated', value: profile.equipment_rated ?? '—' },
 		{ label: 'total contributions', value: contributions.summary.total_contributions }
 	];
+
+	const visibleBic = bicExpanded ? filteredBic : filteredBic.slice(0, 6);
+
+	const bestInClassSection = bestInClass.length > 0 && (
+		<div className="bg-sub-alt rounded-2xl p-5">
+			<div className="mb-4 flex items-center justify-between">
+				<div className="flex items-center gap-2">
+					<Trophy className="h-4 w-4 text-amber-400" />
+					<h2 className="text-main text-sm font-semibold">Best in Class</h2>
+					<span className="bg-main/10 text-sub rounded-full px-2 py-0.5 text-xs">
+						{bestInClass.length}
+					</span>
+				</div>
+
+				{/* Toggle */}
+				<div className="bg-main/5 flex items-center rounded-lg p-0.5">
+					<button
+						onClick={() => {
+							setBicTab('exercise');
+							setBicExpanded(false);
+						}}
+						className={`rounded-md px-3 py-1 text-xs font-medium transition ${
+							bicTab === 'exercise' ? 'bg-main text-bg' : 'text-sub hover:text-main'
+						}`}
+					>
+						Movement
+					</button>
+					<button
+						onClick={() => {
+							setBicTab('muscle_group');
+							setBicExpanded(false);
+						}}
+						className={`rounded-md px-3 py-1 text-xs font-medium transition ${
+							bicTab === 'muscle_group' ? 'bg-main text-bg' : 'text-sub hover:text-main'
+						}`}
+					>
+						Muscle group
+					</button>
+				</div>
+			</div>
+
+			{filteredBic.length > 0 ? (
+				<>
+					<div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+						{visibleBic.map((b) => (
+							<Link
+								key={b.id}
+								href={`/equipment/${b.equipment_id}`}
+								className="bg-sub-alt group flex flex-col gap-1.5 rounded-xl p-3 transition"
+							>
+								{b.image_url ? (
+									<div className="relative mb-1 aspect-square w-full">
+										<Image
+											src={b.image_url}
+											alt={b.equipment_name}
+											fill
+											sizes="(max-width: 640px) 45vw, 200px"
+											className="rounded-lg object-cover"
+										/>
+									</div>
+								) : (
+									<div className="bg-main/5 mb-1 flex aspect-square w-full items-center justify-center rounded-lg">
+										<Dumbbell className="text-sub h-6 w-6 opacity-30" />
+									</div>
+								)}
+								<p className="text-sub text-[10px] uppercase tracking-wide">{b.category_name}</p>
+								<div className="flex items-center justify-between">
+									<p className="text-main text-xs font-medium leading-tight">
+										{b.brand} {b.equipment_name}
+									</p>
+									<ChevronRight className="text-sub h-3 w-3 opacity-0 transition group-hover:opacity-100" />
+								</div>
+							</Link>
+						))}
+					</div>
+					{filteredBic.length > 6 && (
+						<button
+							onClick={() => setBicExpanded((prev) => !prev)}
+							className="text-sub hover:text-main mt-3 w-full text-center text-xs transition"
+						>
+							{bicExpanded ? 'Show less' : `Show all ${filteredBic.length}`}
+						</button>
+					)}
+				</>
+			) : (
+				<p className="text-sub text-sm">
+					No {bicTab === 'exercise' ? 'movement' : 'muscle group'} selections yet.
+				</p>
+			)}
+		</div>
+	);
 
 	return (
 		<div className="space-y-4">
@@ -207,6 +299,8 @@ export default function ProfileView({
 				</div>
 			</div>
 
+			{!isOwn && bestInClassSection}
+
 			{/* ── Contribution counts ── */}
 			<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
 				{contributionStats.map(({ label, value, icon: Icon }) => (
@@ -220,79 +314,7 @@ export default function ProfileView({
 				))}
 			</div>
 
-			{/* ── Best in Class ── */}
-			{bestInClass.length > 0 && (
-				<div className="bg-sub-alt rounded-2xl p-5">
-					<div className="mb-4 flex items-center justify-between">
-						<div className="flex items-center gap-2">
-							<Trophy className="h-4 w-4 text-amber-400" />
-							<h2 className="text-main text-sm font-semibold">Best in Class</h2>
-							<span className="bg-main/10 text-sub rounded-full px-2 py-0.5 text-xs">
-								{bestInClass.length}
-							</span>
-						</div>
-
-						{/* Toggle */}
-						<div className="bg-main/5 flex items-center rounded-lg p-0.5">
-							<button
-								onClick={() => setBicTab('exercise')}
-								className={`rounded-md px-3 py-1 text-xs font-medium transition ${
-									bicTab === 'exercise' ? 'bg-main text-bg' : 'text-sub hover:text-main'
-								}`}
-							>
-								Movement
-							</button>
-							<button
-								onClick={() => setBicTab('muscle_group')}
-								className={`rounded-md px-3 py-1 text-xs font-medium transition ${
-									bicTab === 'muscle_group' ? 'bg-main text-bg' : 'text-sub hover:text-main'
-								}`}
-							>
-								Muscle group
-							</button>
-						</div>
-					</div>
-
-					{filteredBic.length > 0 ? (
-						<div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-							{filteredBic.map((b) => (
-								<Link
-									key={b.id}
-									href={`/equipment/${b.equipment_id}`}
-									className="bg-sub-alt group flex flex-col gap-1.5 rounded-xl p-3 transition"
-								>
-									{b.image_url ? (
-										<div className="relative mb-1 aspect-square w-full">
-											<Image
-												src={b.image_url}
-												alt={b.equipment_name}
-												fill
-												sizes="(max-width: 640px) 45vw, 200px"
-												className="rounded-lg object-cover"
-											/>
-										</div>
-									) : (
-										<div className="bg-main/5 mb-1 flex aspect-square w-full items-center justify-center rounded-lg">
-											<Dumbbell className="text-sub h-6 w-6 opacity-30" />
-										</div>
-									)}
-									<p className="text-sub text-[10px] uppercase tracking-wide">{b.category_name}</p>
-									<div className="flex items-center justify-between">
-										<p className="text-main text-xs font-medium leading-tight">
-											{b.brand} {b.equipment_name}
-										</p>
-										<ChevronRight className="text-sub h-3 w-3 opacity-0 transition group-hover:opacity-100" />
-									</div>
-								</Link>
-							))}
-						</div>
-					) : (
-						<p className="text-sub text-sm">
-							No {bicTab === 'exercise' ? 'movement' : 'muscle group'} selections yet.
-						</p>
-					)}
-				</div>
-			)}
+			{isOwn && bestInClassSection}
 
 			{/* ── Recent contributions ── */}
 			<div className="space-y-3">
