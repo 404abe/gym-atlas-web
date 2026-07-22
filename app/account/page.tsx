@@ -26,14 +26,14 @@ export default function AccountPage() {
 
 	if (loading || (!profileData && !fetchError))
 		return (
-			<div className="flex items-center justify-center p-10">
+			<div className="bg-sub-alt flex items-center justify-center rounded-2xl p-10">
 				<p className="text-sub text-sm">Loading profile...</p>
 			</div>
 		);
 
 	if (fetchError)
 		return (
-			<div className="flex items-center justify-center p-10">
+			<div className="bg-sub-alt flex items-center justify-center rounded-2xl p-10">
 				<p className="text-red-400 text-sm">{fetchError}</p>
 			</div>
 		);

@@ -9,7 +9,7 @@ import {
 	setBestInClass,
 	removeBestInClass
 } from '@/lib/api';
-import { Plus, X, Search, Dumbbell } from 'lucide-react';
+import { Trophy, Plus, X, Search, Dumbbell } from 'lucide-react';
 import Link from 'next/link';
 import { BestInClassCategory as Category } from '@/types/bestInClass';
 
@@ -85,73 +85,82 @@ export default function BestInClassPage() {
 	if (loading) return <p className="text-sub text-sm">Loading...</p>;
 
 	return (
-		<div className="space-y-8">
+		<div className="space-y-4">
 			{/* Header */}
-			<div className="flex items-center justify-between">
-				<p className="text-sub text-xs uppercase tracking-wide">Best in Class · {selections.length}</p>
+			<div className="flex items-center gap-2">
+				<Trophy className="h-4 w-4 text-amber-400" />
+				<h2 className="text-main text-sm font-semibold">Best in Class</h2>
+				<span className="bg-main/10 text-sub rounded-full px-2 py-0.5 text-xs">
+					{selections.length}
+				</span>
+			</div>
 
-				{/* Tabs */}
-				<div className="bg-main/5 flex w-fit items-center rounded-lg p-0.5">
-					<button
-						onClick={() => setTab('exercise')}
-						className={`rounded-md px-3 py-1 text-xs font-medium transition ${
-							tab === 'exercise' ? 'bg-main text-bg' : 'text-sub hover:text-main'
-						}`}
-					>
-						Movement
-					</button>
-					<button
-						onClick={() => setTab('muscle_group')}
-						className={`rounded-md px-3 py-1 text-xs font-medium transition ${
-							tab === 'muscle_group' ? 'bg-main text-bg' : 'text-sub hover:text-main'
-						}`}
-					>
-						Muscle Group
-					</button>
-				</div>
+			{/* Tabs */}
+			<div className="bg-main/5 flex w-fit items-center rounded-xl p-1">
+				<button
+					onClick={() => setTab('exercise')}
+					className={`rounded-lg px-4 py-1.5 text-sm font-medium transition ${
+						tab === 'exercise' ? 'bg-main text-bg' : 'text-sub hover:text-main'
+					}`}
+				>
+					Movement
+				</button>
+				<button
+					onClick={() => setTab('muscle_group')}
+					className={`rounded-lg px-4 py-1.5 text-sm font-medium transition ${
+						tab === 'muscle_group' ? 'bg-main text-bg' : 'text-sub hover:text-main'
+					}`}
+				>
+					Muscle Group
+				</button>
 			</div>
 
 			{/* Grid */}
-			<div className="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
+			<div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
 				{filtered.map((cat) => {
 					const sel = selections.find((s) => s.category_slug === cat.slug);
 					return sel ? (
 						// Filled slot
-						<div key={cat.id} className="group">
-							<div className="bg-sub-alt relative aspect-square overflow-hidden rounded-lg">
-								{sel.image_url ? (
+						<div key={cat.id} className="bg-sub-alt group relative rounded-xl p-3">
+							<button
+								onClick={() => handleRemove(cat.id)}
+								aria-label="Remove"
+								className="bg-bg/80 absolute right-2 top-2 hidden rounded-full p-0.5 group-hover:flex"
+							>
+								<X className="text-sub h-3 w-3" />
+							</button>
+							{sel.image_url ? (
+								<div className="relative mb-2 h-16 w-full">
 									<Image
 										src={sel.image_url}
 										alt={sel.equipment_name}
 										fill
 										sizes="(max-width: 640px) 45vw, 200px"
-										className="h-full w-full object-cover"
+										className="rounded-lg object-cover"
 									/>
-								) : (
-									<div className="flex h-full w-full items-center justify-center">
-										<Dumbbell className="text-sub h-6 w-6 opacity-30" />
-									</div>
-								)}
-								<button
-									onClick={() => handleRemove(cat.id)}
-									aria-label="Remove"
-									className="bg-bg/80 absolute right-2 top-2 hidden rounded-full p-1 group-hover:flex"
-								>
-									<X className="text-sub h-3 w-3" />
-								</button>
-							</div>
-							<p className="text-sub mt-2 text-[10px] uppercase tracking-wide">{cat.name}</p>
+								</div>
+							) : (
+								<div className="bg-main/5 mb-2 flex h-16 w-full items-center justify-center rounded-lg">
+									<Dumbbell className="text-sub h-5 w-5 opacity-30" />
+								</div>
+							)}
+							<p className="text-sub text-[10px] uppercase tracking-wide">{cat.name}</p>
 							<p className="text-main mt-0.5 text-xs font-medium leading-tight">
 								{sel.brand} {sel.equipment_name}
 							</p>
 						</div>
 					) : (
 						// Empty slot
-						<Link key={cat.id} href={`/data?bic=${cat.slug}`} className="group flex flex-col">
-							<div className="border-border group-hover:border-main/40 flex aspect-square items-center justify-center rounded-lg border border-dashed transition">
-								<Plus className="text-sub group-hover:text-main h-5 w-5 transition" />
+						<Link
+							key={cat.id}
+							href={`/data?bic=${cat.slug}`}
+							className="bg-sub-alt hover:bg-main/5 group flex flex-col items-center justify-center gap-2 rounded-xl p-3 transition"
+							style={{ minHeight: '120px' }}
+						>
+							<div className="bg-main/10 group-hover:bg-main/20 flex h-8 w-8 items-center justify-center rounded-full transition">
+								<Plus className="text-sub h-4 w-4" />
 							</div>
-							<p className="text-sub mt-2 text-[10px] uppercase tracking-wide">{cat.name}</p>
+							<p className="text-sub text-[10px] uppercase tracking-wide">{cat.name}</p>
 						</Link>
 					);
 				})}
@@ -212,7 +221,7 @@ export default function BestInClassPage() {
 								<button
 									key={eq.id}
 									onClick={() => handleSelect(eq.id)}
-									className="hover:bg-sub-alt/50 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition"
+									className="hover:bg-sub-alt flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition"
 								>
 									<div>
 										<p className="text-main text-sm font-medium">{eq.name}</p>
