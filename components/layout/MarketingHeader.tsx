@@ -5,7 +5,8 @@ import { FaGithub } from 'react-icons/fa';
 import GymAtlasLogo from '@/components/ui/GymAtlasLogo';
 import { cn } from '@/lib/utils';
 
-const navLinkCls = 'text-sub hover:text-text text-sm no-underline transition-colors duration-[0.22s]';
+const navLinkCls =
+	'text-sub hover:text-text text-sm no-underline transition-colors duration-[0.22s]';
 
 export default function MarketingHeader({ bordered = true }: { bordered?: boolean }) {
 	const pathname = usePathname();
@@ -25,14 +26,8 @@ export default function MarketingHeader({ bordered = true }: { bordered?: boolea
 					</span>
 				</Link>
 				<nav className="hidden items-center gap-6 sm:flex">
-					<Link
-						href="/about"
-						className={cn(navLinkCls, pathname === '/about' ? 'text-text' : '')}
-					>
+					<Link href="/about" className={cn(navLinkCls, pathname === '/about' ? 'text-text' : '')}>
 						About
-					</Link>
-					<Link href="/leaderboard" className={navLinkCls}>
-						Leaderboard
 					</Link>
 					<Link
 						href="https://github.com/404abe"

@@ -10,6 +10,11 @@ export interface EquipmentVariant {
 export interface ExerciseRef {
 	id: string;
 	name: string;
+	// Populated when the exercise is linked to equipment_categories. Not all
+	// exercises have a category yet (see migrations/009_backfill_exercise_categories.sql
+	// in gym-atlas-api), so both are optional/nullable.
+	category_id?: number | null;
+	category_name?: string | null;
 }
 
 export interface Equipment {

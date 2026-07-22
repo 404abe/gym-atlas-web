@@ -1,9 +1,7 @@
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 import { DM_Sans, JetBrains_Mono } from 'next/font/google';
 import { ArrowRight, Check, Search } from 'lucide-react';
 import { FaGithub } from 'react-icons/fa';
-import { createClient } from '@/lib/supabaseServer';
 import MarketingHeader from '@/components/layout/MarketingHeader';
 import CoordinateTicker from '@/components/landing/CoordinateTicker';
 import HeroMap from '@/components/landing/HeroMap';
@@ -135,13 +133,7 @@ function FeatureSection({
 	);
 }
 
-export default async function LandingPage() {
-	const supabase = await createClient();
-	const {
-		data: { user }
-	} = await supabase.auth.getUser();
-	if (user) redirect('/map');
-
+export default function LandingPage() {
 	return (
 		<div className={`${dmSans.className} flex min-h-full flex-col`}>
 			<MarketingHeader bordered={false} />
@@ -198,8 +190,8 @@ export default async function LandingPage() {
 						index="01"
 						title="Filter by equipment"
 						body="Don't just find a gym nearby — find one with the specific machines and brands you train on. Search by category, brand, or exercise."
-						ctaText="Try it on the map"
-						ctaHref="/map"
+						ctaText="Filter the database"
+						ctaHref="/data"
 						visual={<FilterPanel />}
 					/>
 					<FeatureSection
@@ -208,7 +200,7 @@ export default async function LandingPage() {
 						title="Browse the database"
 						body="Every gym's full equipment list, searchable by category, brand, and exercise — so you always know what you're walking into."
 						ctaText="Browse gyms"
-						ctaHref="/map"
+						ctaHref="/data?view=gyms"
 						visual={<DatabasePanel />}
 						reverse
 					/>
