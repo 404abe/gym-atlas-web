@@ -121,16 +121,24 @@ export default function BestInClassPage() {
 					const sel = selections.find((s) => s.category_slug === cat.slug);
 					return sel ? (
 						// Filled slot
-						<div key={cat.id} className="bg-sub-alt group relative rounded-xl p-3">
+						<Link
+							key={cat.id}
+							href={`/equipment/${sel.equipment_id}`}
+							className="bg-sub-alt hover:bg-main/5 group relative block rounded-xl p-3 transition"
+						>
 							<button
-								onClick={() => handleRemove(cat.id)}
+								onClick={(e) => {
+									e.preventDefault();
+									e.stopPropagation();
+									handleRemove(cat.id);
+								}}
 								aria-label="Remove"
-								className="bg-bg/80 absolute right-2 top-2 hidden rounded-full p-0.5 group-hover:flex"
+								className="bg-bg/80 absolute right-2 top-2 z-10 hidden rounded-full p-0.5 group-hover:flex"
 							>
 								<X className="text-sub h-3 w-3" />
 							</button>
 							{sel.image_url ? (
-								<div className="relative mb-2 h-16 w-full">
+								<div className="relative mb-2 aspect-square w-full">
 									<Image
 										src={sel.image_url}
 										alt={sel.equipment_name}
@@ -140,7 +148,7 @@ export default function BestInClassPage() {
 									/>
 								</div>
 							) : (
-								<div className="bg-main/5 mb-2 flex h-16 w-full items-center justify-center rounded-lg">
+								<div className="bg-main/5 mb-2 flex aspect-square w-full items-center justify-center rounded-lg">
 									<Dumbbell className="text-sub h-5 w-5 opacity-30" />
 								</div>
 							)}
@@ -148,7 +156,7 @@ export default function BestInClassPage() {
 							<p className="text-main mt-0.5 text-xs font-medium leading-tight">
 								{sel.brand} {sel.equipment_name}
 							</p>
-						</div>
+						</Link>
 					) : (
 						// Empty slot
 						<Link

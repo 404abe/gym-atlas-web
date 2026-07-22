@@ -27,7 +27,9 @@ import { Star, Dumbbell, Plus, Trophy, X, Check, ChevronDown, Pencil } from 'luc
 import { Equipment, EquipmentVariant } from '@/types/equipment';
 import { GymWithQuantity } from '@/types/gym';
 import type { BestInClassCategory } from '@/types/bestInClass';
-import { getEquipmentCategorySuggestions, EQUIPMENT_CATEGORY_DEFAULT } from '@/lib/equipment-categories';
+import { getMusclesForExercise } from '@/lib/equipment-categories';
+import { predictExercise } from '@/lib/exercise-match';
+import { machineFullName } from '@/lib/gym-filter';
 
 export default function EquipmentProfileClient() {
 	const { id } = useParams();
@@ -57,9 +59,29 @@ export default function EquipmentProfileClient() {
 	const canConfirm = selectedMuscle || selectedExercise;
 	const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
 
-	const getSuggested = () =>
-		getEquipmentCategorySuggestions(item?.name ?? '', { fallback: true }) ??
-		EQUIPMENT_CATEGORY_DEFAULT;
+	const getSuggested = () => {
+		if (!item) return { muscles: [], exercises: [] };
+
+		// Prefer the machine's curator-assigned exercise link — it's ground truth.
+		// Only guess from the name for legacy machines that predate exercise_id.
+		const linkedCategory = item.exercise?.category_name;
+		if (linkedCategory) {
+			return {
+				exercises: [linkedCategory],
+				muscles: getMusclesForExercise(linkedCategory)
+			};
+		}
+
+		const exerciseCategories = categories
+			.filter((c) => c.type === 'exercise')
+			.map((c) => ({ id: String(c.id), name: c.name }));
+		const predicted = predictExercise(machineFullName(item), exerciseCategories);
+		if (!predicted) return { muscles: [], exercises: [] };
+		return {
+			exercises: [predicted.name],
+			muscles: getMusclesForExercise(predicted.name)
+		};
+	};
 
 	useEffect(() => {
 		const load = async () => {
@@ -207,7 +229,13 @@ export default function EquipmentProfileClient() {
 			<div className="absolute right-3 top-3 flex items-center gap-2">
 				{user && (
 					<button
-						onClick={() => setShowBestInClass(true)}
+						onClick={() => {
+							setShowBestInClass(true);
+							const suggested = getSuggested();
+							if (suggested.exercises.length === 0 && suggested.muscles.length === 0) {
+								setShowAllCategories(true);
+							}
+						}}
 						className="flex h-9 items-center gap-1.5 rounded-full border border-white/25 bg-white/15 px-3.5 text-sm text-white backdrop-blur-sm transition hover:bg-white/25"
 					>
 						<Trophy className="h-3.5 w-3.5" />
@@ -451,53 +479,65 @@ export default function EquipmentProfileClient() {
 							as your best — choose one or both
 						</p>
 
-						{/* Suggested muscle group */}
-						<div className="mb-4">
-							<p className="text-sub mb-2 text-[11px] uppercase tracking-wide">
-								Suggested muscle group
+						{getSuggested().exercises.length === 0 && getSuggested().muscles.length === 0 ? (
+							<p className="text-sub mb-4 text-xs">
+								No suggestion for this machine yet — pick from all categories below.
 							</p>
-							<div className="flex flex-wrap gap-2">
-								{categories
-									.filter(
-										(c) => c.type === 'muscle_group' && getSuggested().muscles.includes(c.name)
-									)
-									.map((cat) => (
-										<button
-											key={cat.id}
-											onClick={() =>
-												setSelectedMuscle(
-													selectedMuscle?.id === cat.id ? null : { id: cat.id, name: cat.name }
-												)
-											}
-											className={chipClass(selectedMuscle?.id === cat.id)}
-										>
-											{cat.name}
-										</button>
-									))}
-							</div>
-						</div>
+						) : (
+							<>
+								{/* Suggested muscle group */}
+								<div className="mb-4">
+									<p className="text-sub mb-2 text-[11px] uppercase tracking-wide">
+										Suggested muscle group
+									</p>
+									<div className="flex flex-wrap gap-2">
+										{categories
+											.filter(
+												(c) => c.type === 'muscle_group' && getSuggested().muscles.includes(c.name)
+											)
+											.map((cat) => (
+												<button
+													key={cat.id}
+													onClick={() =>
+														setSelectedMuscle(
+															selectedMuscle?.id === cat.id ? null : { id: cat.id, name: cat.name }
+														)
+													}
+													className={chipClass(selectedMuscle?.id === cat.id)}
+												>
+													{cat.name}
+												</button>
+											))}
+									</div>
+								</div>
 
-						{/* Suggested exercise */}
-						<div className="mb-4">
-							<p className="text-sub mb-2 text-[11px] uppercase tracking-wide">Suggested exercise</p>
-							<div className="flex flex-wrap gap-2">
-								{categories
-									.filter((c) => c.type === 'exercise' && getSuggested().exercises.includes(c.name))
-									.map((cat) => (
-										<button
-											key={cat.id}
-											onClick={() =>
-												setSelectedExercise(
-													selectedExercise?.id === cat.id ? null : { id: cat.id, name: cat.name }
-												)
-											}
-											className={chipClass(selectedExercise?.id === cat.id)}
-										>
-											{cat.name}
-										</button>
-									))}
-							</div>
-						</div>
+								{/* Suggested exercise */}
+								<div className="mb-4">
+									<p className="text-sub mb-2 text-[11px] uppercase tracking-wide">
+										Suggested exercise
+									</p>
+									<div className="flex flex-wrap gap-2">
+										{categories
+											.filter(
+												(c) => c.type === 'exercise' && getSuggested().exercises.includes(c.name)
+											)
+											.map((cat) => (
+												<button
+													key={cat.id}
+													onClick={() =>
+														setSelectedExercise(
+															selectedExercise?.id === cat.id ? null : { id: cat.id, name: cat.name }
+														)
+													}
+													className={chipClass(selectedExercise?.id === cat.id)}
+												>
+													{cat.name}
+												</button>
+											))}
+									</div>
+								</div>
+							</>
+						)}
 
 						{/* Show all toggle */}
 						<button

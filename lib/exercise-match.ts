@@ -33,10 +33,17 @@ export function predictExercise(
 			// Longer matches win (e.g. "Incline Chest Press" over "Chest Press").
 			score = 1000 + exName.length;
 		} else {
-			// Otherwise score on meaningful shared words.
-			const overlap = words(exName).filter(
-				(w) => !STOPWORDS.has(w) && queryWords.has(w)
-			).length;
+			// Otherwise score on meaningful shared words, including compound-name
+			// substring matches (e.g. "hacklift" contains "hack" from "Hack Squat").
+			const overlap = words(exName).filter((w) => {
+				if (STOPWORDS.has(w)) return false;
+				if (queryWords.has(w)) return true;
+				if (w.length < 4) return false;
+				for (const qw of queryWords) {
+					if (qw.length >= 4 && (qw.includes(w) || w.includes(qw))) return true;
+				}
+				return false;
+			}).length;
 			if (overlap > 0) score = overlap;
 		}
 
