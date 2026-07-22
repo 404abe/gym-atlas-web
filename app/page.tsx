@@ -190,8 +190,8 @@ export default function LandingPage() {
 						index="01"
 						title="Filter by equipment"
 						body="Don't just find a gym nearby — find one with the specific machines and brands you train on. Search by category, brand, or exercise."
-						ctaText="Try it on the map"
-						ctaHref="/map"
+						ctaText="Filter the database"
+						ctaHref="/data"
 						visual={<FilterPanel />}
 					/>
 					<FeatureSection
@@ -200,7 +200,7 @@ export default function LandingPage() {
 						title="Browse the database"
 						body="Every gym's full equipment list, searchable by category, brand, and exercise — so you always know what you're walking into."
 						ctaText="Browse gyms"
-						ctaHref="/map"
+						ctaHref="/data?view=gyms"
 						visual={<DatabasePanel />}
 						reverse
 					/>

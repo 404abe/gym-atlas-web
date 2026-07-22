@@ -14,7 +14,9 @@ import { useGymFilters } from '@/hooks/useGymFilters';
 
 function DataPageInner() {
 	const searchParams = useSearchParams();
-	const [activeView, setActiveView] = useState<'equipment' | 'gyms'>('equipment');
+	const [activeView, setActiveView] = useState<'equipment' | 'gyms'>(
+		searchParams.get('view') === 'gyms' ? 'gyms' : 'equipment'
+	);
 	const [sidebarOpen, setSidebarOpen] = useState(false);
 
 	const { equipment, gyms, categories, toggleFavorite, toggleGymFavorite, updateRating, updateGymRating } =
