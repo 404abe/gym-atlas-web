@@ -9,6 +9,7 @@ import {
 	machineFullName,
 	machineLabel,
 	machinesForExercise,
+	matchesExercise,
 	popularBrands,
 	popularExercises,
 	popularMachines
@@ -73,7 +74,7 @@ export default function CommandPalette({
 	const exerciseResults = useMemo(
 		() =>
 			trimmed
-				? exercises.filter((e) => matchesSearch(query, e.name)).slice(0, PER_GROUP)
+				? exercises.filter((e) => matchesExercise(query, e)).slice(0, PER_GROUP)
 				: popularExercises(equipment, exercises, SUGGEST_COUNT),
 		[trimmed, query, exercises, equipment]
 	);

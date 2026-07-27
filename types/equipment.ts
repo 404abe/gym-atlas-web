@@ -15,6 +15,12 @@ export interface ExerciseRef {
 	// in gym-atlas-api), so both are optional/nullable.
 	category_id?: number | null;
 	category_name?: string | null;
+	/**
+	 * Alternate names from exercise_name_aliases, including names merged into
+	 * this exercise. Only populated by `/exercises`; search matches against them
+	 * so a merged-away name still finds its survivor.
+	 */
+	aliases?: string[];
 }
 
 export interface Equipment {

@@ -12,6 +12,7 @@
 import type { Equipment, ExerciseRef } from '@/types/equipment';
 import type { Brand } from './api';
 import { predictExercise } from './exercise-match';
+import { matchesSearch } from './utils';
 
 export type FilterKind = 'exercises' | 'machines' | 'brands';
 
@@ -41,25 +42,51 @@ export function machineLabel(machine: Equipment): string {
 }
 
 /**
- * The exercise a machine trains. Uses machine.exercise when set; falls back to
- * a name-based guess for legacy machines that predate the exercise_id field.
+ * The exercises a machine trains — primary first, then the secondary when set.
+ * Both count for filtering: a chest-supported row still trains a row even when
+ * that's only its secondary mapping. Falls back to a single name-based guess
+ * for legacy machines that predate the exercise_id field.
  */
-export function exerciseForMachine(
+export function exercisesForMachine(
 	machine: Equipment,
 	allExercises: ExerciseRef[]
-): ExerciseRef | null {
-	if (machine.exercise) return machine.exercise;
-	return predictExercise(machineFullName(machine), allExercises);
+): ExerciseRef[] {
+	const assigned = [machine.exercise, machine.secondary_exercise].filter(
+		(exercise): exercise is ExerciseRef => Boolean(exercise)
+	);
+	if (assigned.length > 0) {
+		// Both slots can hold the same exercise once two exercises have been
+		// merged into one, so de-dupe rather than counting the machine twice.
+		return [...new Map(assigned.map((exercise) => [exercise.id, exercise])).values()];
+	}
+
+	const predicted = predictExercise(machineFullName(machine), allExercises);
+	return predicted ? [predicted] : [];
 }
 
-/** Every machine that maps to the given exercise. */
+/**
+ * Search predicate for an exercise: matches its display name or any alias, so a
+ * name that was merged away still finds the exercise that absorbed it —
+ * "chest supported" reaches T Bar Row.
+ *
+ * Each alias is tested on its own. Joining them into one string would let a
+ * query match words spread across two unrelated aliases.
+ */
+export function matchesExercise(query: string, exercise: ExerciseRef): boolean {
+	return (
+		matchesSearch(query, exercise.name) ||
+		(exercise.aliases ?? []).some((alias) => matchesSearch(query, alias))
+	);
+}
+
+/** Every machine that trains the given exercise, primary or secondary. */
 export function machinesForExercise(
 	exercise: ExerciseRef,
 	allEquipment: Equipment[],
 	allExercises: ExerciseRef[]
 ): Equipment[] {
-	return allEquipment.filter(
-		(machine) => exerciseForMachine(machine, allExercises)?.id === exercise.id
+	return allEquipment.filter((machine) =>
+		exercisesForMachine(machine, allExercises).some((e) => e.id === exercise.id)
 	);
 }
 
@@ -75,8 +102,9 @@ export function deriveGymExercises(
 ): ExerciseRef[] {
 	const seen = new Map<string, ExerciseRef>();
 	for (const machine of machines) {
-		const exercise = exerciseForMachine(machine, allExercises);
-		if (exercise && !seen.has(exercise.id)) seen.set(exercise.id, exercise);
+		for (const exercise of exercisesForMachine(machine, allExercises)) {
+			if (!seen.has(exercise.id)) seen.set(exercise.id, exercise);
+		}
 	}
 	return [...seen.values()];
 }
@@ -87,10 +115,12 @@ export function popularExercises(
 	allExercises: ExerciseRef[],
 	limit = 6
 ): ExerciseRef[] {
+	// Counts both slots, so a combo machine counts towards each exercise it trains.
 	const counts = new Map<string, number>();
 	for (const machine of allEquipment) {
-		const exercise = exerciseForMachine(machine, allExercises);
-		if (exercise) counts.set(exercise.id, (counts.get(exercise.id) ?? 0) + 1);
+		for (const exercise of exercisesForMachine(machine, allExercises)) {
+			counts.set(exercise.id, (counts.get(exercise.id) ?? 0) + 1);
+		}
 	}
 	return allExercises
 		.filter((exercise) => counts.has(exercise.id))

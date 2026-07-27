@@ -225,7 +225,9 @@ export const checkEquipmentDuplicate = (
 export const searchEquipment = (query: string): Promise<unknown[]> =>
 	apiFetch(`/equipment/search?q=${encodeURIComponent(query)}`);
 
-export const fetchMachineExercises = (): Promise<{ id: string; name: string }[]> =>
+export const fetchMachineExercises = (): Promise<
+	{ id: string; name: string; aliases?: string[] }[]
+> =>
 	apiFetch('/exercises?category=machine');
 
 export const createEquipment = (body: {
