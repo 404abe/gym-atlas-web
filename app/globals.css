@@ -242,15 +242,6 @@ html {
 	border-radius: 2px;
 }
 
-/* 
-One caveat — React icon size prop only takes a number, not a CSS string. For icons specifically you'd need a small hook:
-tsxconst iconSize = typeof window !== 'undefined' && 
-  window.matchMedia('(pointer: fine)').matches ? 18 : 22; */
-
-.example::-webkit-scrollbar {
-	display: none;
-}
-
 @layer components {
 	.select-toolbar {
 		@apply bg-sub-alt text-main h-8 rounded-lg px-2 text-sm outline-none;

@@ -4,15 +4,19 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/contexts/AuthContext';
-import { Check, X, Building2, Dumbbell, Clock, Users, ShieldCheck, ImageIcon, Layers, Weight } from 'lucide-react';
+import { Check, X, Building2, Dumbbell, Clock, Users, ShieldCheck, ImageIcon, Layers, Weight, Activity } from 'lucide-react';
 import { FaInstagram } from 'react-icons/fa';
 import { fetchAdminPending, fetchAdminUsers, adminAction, adminPhotoAction, makeAdmin } from '@/lib/api';
-import { PendingGym, PendingEquipment, PendingSuggestion, PendingPhoto, PendingVariant, PendingWeightStack, PendingGymInstagram, PendingFreeWeights, AdminUser } from '@/types/admin';
+import { PendingGym, PendingEquipment, PendingSuggestion, PendingPhoto, PendingVariant, PendingWeightStack, PendingGymInstagram, PendingFreeWeights, PendingExerciseChange, AdminUser } from '@/types/admin';
 
 type ActionState = Record<string, 'approving' | 'rejecting' | 'done'>;
 
-const TABS = ['equipment', 'gyms', 'suggestions', 'photos', 'variants', 'weights', 'free-weights', 'instagram', 'users'] as const;
+const TABS = ['equipment', 'gyms', 'suggestions', 'photos', 'variants', 'weights', 'free-weights', 'instagram', 'exercises', 'users'] as const;
 type Tab = (typeof TABS)[number];
+
+// Exercise mapping changes are confirmed by super admins only, so the tab is
+// hidden from plain admins alongside user management.
+const ADMIN_TABS = ['equipment', 'gyms', 'suggestions', 'photos', 'variants', 'weights', 'free-weights', 'instagram'] as const;
 
 const TAB_LABELS: Record<Tab, string> = {
 	equipment: 'equipment',
@@ -23,6 +27,7 @@ const TAB_LABELS: Record<Tab, string> = {
 	weights: 'weight stacks',
 	'free-weights': 'free weights',
 	instagram: 'instagram',
+	exercises: 'exercise changes',
 	users: 'users'
 };
 
@@ -42,6 +47,7 @@ export default function AdminPage() {
 	const [weightStacks, setWeightStacks] = useState<PendingWeightStack[]>([]);
 	const [gymInstagrams, setGymInstagrams] = useState<PendingGymInstagram[]>([]);
 	const [freeWeights, setFreeWeights] = useState<PendingFreeWeights[]>([]);
+	const [exerciseChanges, setExerciseChanges] = useState<PendingExerciseChange[]>([]);
 
 	const isSuperAdmin = user?.role === 'super_admin';
 
@@ -74,6 +80,7 @@ export default function AdminPage() {
 			setWeightStacks(data.weightStacks || []);
 			setGymInstagrams(data.gymInstagrams || []);
 			setFreeWeights(data.freeWeights || []);
+			setExerciseChanges(data.exerciseChanges || []);
 		} catch (err) {
 			console.error('Failed to fetch pending:', err);
 		} finally {
@@ -91,7 +98,15 @@ export default function AdminPage() {
 	};
 
 	const handleAction = async (
-		type: 'gym' | 'equipment' | 'suggestion' | 'variant' | 'weight-stack' | 'gym-instagram' | 'free-weights',
+		type:
+			| 'gym'
+			| 'equipment'
+			| 'suggestion'
+			| 'variant'
+			| 'weight-stack'
+			| 'gym-instagram'
+			| 'free-weights'
+			| 'exercise-change',
 		id: number,
 		action: 'approve' | 'reject'
 	) => {
@@ -107,6 +122,7 @@ export default function AdminPage() {
 				else if (type === 'weight-stack') setWeightStacks((prev) => prev.filter((w) => w.id !== id));
 				else if (type === 'gym-instagram') setGymInstagrams((prev) => prev.filter((gi) => gi.id !== id));
 				else if (type === 'free-weights') setFreeWeights((prev) => prev.filter((fw) => fw.id !== id));
+				else if (type === 'exercise-change') setExerciseChanges((prev) => prev.filter((ec) => ec.id !== id));
 				else setSuggestions((prev) => prev.filter((s) => s.id !== id));
 			}, 600);
 		} catch (err) {
@@ -153,8 +169,12 @@ export default function AdminPage() {
 
 	if (loading) return <div className="text-sub p-8 text-sm">Loading admin dashboard...</div>;
 
-	const totalPending = gyms.length + equipment.length + suggestions.length + photos.length + variants.length + weightStacks.length + gymInstagrams.length + freeWeights.length;
-	const visibleTabs = isSuperAdmin ? TABS : (['equipment', 'gyms', 'suggestions', 'photos', 'variants', 'weights', 'free-weights', 'instagram'] as const);
+	// Exercise changes only count towards the badge for the people who can action them.
+	const totalPending =
+		gyms.length + equipment.length + suggestions.length + photos.length + variants.length +
+		weightStacks.length + gymInstagrams.length + freeWeights.length +
+		(isSuperAdmin ? exerciseChanges.length : 0);
+	const visibleTabs = isSuperAdmin ? TABS : ADMIN_TABS;
 
 	return (
 		<div id="pageAdmin" className="content-grid py-8">
@@ -197,6 +217,7 @@ export default function AdminPage() {
 							{tab === 'weights' && <Weight className="h-3.5 w-3.5" />}
 							{tab === 'free-weights' && <Weight className="h-3.5 w-3.5" />}
 							{tab === 'instagram' && <FaInstagram className="h-3.5 w-3.5" />}
+							{tab === 'exercises' && <Activity className="h-3.5 w-3.5" />}
 							{tab === 'users' && <Users className="h-3.5 w-3.5" />}
 
 							<span className="capitalize">{TAB_LABELS[tab]}</span>
@@ -239,6 +260,11 @@ export default function AdminPage() {
 							{tab === 'instagram' && gymInstagrams.length > 0 && (
 								<span className="bg-sub-alt text-sub rounded-full px-1.5 py-0.5 text-xs">
 									{gymInstagrams.length}
+								</span>
+							)}
+							{tab === 'exercises' && exerciseChanges.length > 0 && (
+								<span className="bg-sub-alt text-sub rounded-full px-1.5 py-0.5 text-xs">
+									{exerciseChanges.length}
 								</span>
 							)}
 						</button>
@@ -680,6 +706,65 @@ export default function AdminPage() {
 											state={state}
 											onApprove={() => handleAction('gym-instagram', gi.id, 'approve')}
 											onReject={() => handleAction('gym-instagram', gi.id, 'reject')}
+										/>
+									</div>
+								);
+							})
+						)}
+					</div>
+				)}
+
+				{/* Exercise Changes Tab Content (super_admin only) */}
+				{activeTab === 'exercises' && isSuperAdmin && (
+					<div className="space-y-2">
+						{exerciseChanges.length === 0 ? (
+							<EmptyState label="No pending exercise mapping changes" />
+						) : (
+							exerciseChanges.map((ec) => {
+								const key = `exercise-change-${ec.id}`;
+								const state = actions[key];
+								return (
+									<div
+										key={ec.id}
+										className={`bg-surface flex items-center gap-4 rounded-2xl p-4 transition-opacity duration-300 ${
+											state === 'done' ? 'opacity-0' : 'opacity-100'
+										}`}
+									>
+										<div className="bg-sub-alt relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl">
+											{ec.image_url ? (
+												<Image
+													src={ec.image_url}
+													alt={ec.name}
+													fill
+													sizes="40px"
+													className="object-cover"
+												/>
+											) : (
+												<Activity className="text-sub h-4 w-4" />
+											)}
+										</div>
+										<div className="min-w-0 flex-1">
+											<p className="text-main text-sm font-medium">
+												{[ec.brand, ec.series, ec.name].filter(Boolean).join(' ')}
+											</p>
+											<div className="text-sub mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
+												<span className="text-main font-medium">
+													{ec.current_exercise_name || 'none'} → {ec.pending_exercise_name || 'none'}
+												</span>
+												{(ec.current_secondary_exercise_name ||
+													ec.pending_secondary_exercise_name) && (
+													<span>
+														secondary: {ec.current_secondary_exercise_name || 'none'} →{' '}
+														{ec.pending_secondary_exercise_name || 'none'}
+													</span>
+												)}
+												{ec.submitted_by && <span>by {ec.submitted_by}</span>}
+											</div>
+										</div>
+										<ActionButtons
+											state={state}
+											onApprove={() => handleAction('exercise-change', ec.id, 'approve')}
+											onReject={() => handleAction('exercise-change', ec.id, 'reject')}
 										/>
 									</div>
 								);

@@ -16,12 +16,6 @@ function initialsFor(name: string) {
 		.join('');
 }
 
-// function formatRating(gym: Gym) {
-// 	const rating = gym.avg_rating ?? gym.rating;
-// 	if (!rating) return null;
-// 	return Number(rating).toFixed(1).replace(/\.0$/, '');
-// }
-
 export default function GymMarker({
 	gym,
 	selected,
@@ -37,7 +31,6 @@ export default function GymMarker({
 	const matched = state === 'matched';
 	const dimmed = state === 'dimmed' && !selected;
 	const router = useRouter();
-	// const rating = formatRating(gym);
 	const machineCount = gym.total_equipment ?? 0;
 	const [equipment, setEquipment] = useState<GymEquipment[]>([]);
 	const openGymDetail = () => router.push(`/gyms/${gym.id}`);

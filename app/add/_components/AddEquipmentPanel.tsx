@@ -133,7 +133,7 @@ export default function AddEquipmentPanel({
 								<div key={item.id} className="flex flex-col gap-0 overflow-hidden rounded-xl">
 									<div className="bg-surface flex items-center gap-3 p-2.5">
 										{/* Thumbnail */}
-										<div className="bg-sub-alt h-14 w-14 shrink-0 overflow-hidden rounded-lg">
+										<div className="bg-sub-alt relative h-14 w-14 shrink-0 overflow-hidden rounded-lg">
 											{item.image_url ? (
 												<Image
 													src={item.image_url}

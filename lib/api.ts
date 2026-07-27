@@ -1,7 +1,7 @@
 import { API_URL } from './config';
 import type { Gym, GymEquipment, GymFreeWeightsInput, GymWithQuantity } from '@/types/gym';
 import type { Equipment, EquipmentVariant } from '@/types/equipment';
-import type { PendingGym, PendingEquipment, PendingSuggestion, PendingPhoto, PendingVariant, PendingWeightStack, PendingGymInstagram, PendingFreeWeights, AdminUser } from '@/types/admin';
+import type { PendingGym, PendingEquipment, PendingSuggestion, PendingPhoto, PendingVariant, PendingWeightStack, PendingGymInstagram, PendingFreeWeights, PendingExerciseChange, AdminUser } from '@/types/admin';
 import type { LeaderboardEntry } from '@/types/leaderboard';
 import { BestInClassCategory, BestInClassEntry } from '@/types/bestInClass';
 
@@ -303,6 +303,7 @@ export const fetchAdminPending = (): Promise<{
 	weightStacks: PendingWeightStack[];
 	gymInstagrams: PendingGymInstagram[];
 	freeWeights: PendingFreeWeights[];
+	exerciseChanges: PendingExerciseChange[];
 }> => apiFetch('/admin/pending', { headers: authHeaders() });
 
 export const adminPhotoAction = (action: 'approve' | 'reject', id: number): Promise<void> =>
@@ -316,12 +317,36 @@ export const fetchAdminUsers = (): Promise<{ users: AdminUser[] }> =>
 
 export const adminAction = (
 	action: 'approve' | 'reject',
-	type: 'gym' | 'equipment' | 'suggestion' | 'variant' | 'weight-stack' | 'gym-instagram' | 'free-weights',
+	type:
+		| 'gym'
+		| 'equipment'
+		| 'suggestion'
+		| 'variant'
+		| 'weight-stack'
+		| 'gym-instagram'
+		| 'free-weights'
+		| 'exercise-change',
 	id: number
 ): Promise<void> =>
 	apiFetch(`/admin/${action}/${type}/${id}`, {
 		method: 'POST',
 		headers: authHeaders()
+	});
+
+// Admins may retarget a machine's exercise mapping; the response reports whether
+// it landed live (super admin) or was staged for confirmation.
+export const updateEquipmentExercise = (
+	equipmentId: string | number,
+	exerciseId: string | null,
+	secondaryExerciseId: string | null
+): Promise<{ id: number; review: 'approved' | 'pending' }> =>
+	apiFetch(`/equipment/${equipmentId}/exercise`, {
+		method: 'PATCH',
+		headers: { 'Content-Type': 'application/json', ...authHeaders() },
+		body: JSON.stringify({
+			exercise_id: exerciseId,
+			secondary_exercise_id: secondaryExerciseId
+		})
 	});
 
 export const makeAdmin = (userId: string): Promise<void> =>

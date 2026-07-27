@@ -20,7 +20,6 @@ import MobileHeader from '@/components/layout/MobileHeader';
 import Footer from '@/components/layout/Footer';
 import AppMain from '@/components/layout/AppMain';
 import Providers from '@/app/contexts/Providers';
-// import Header from '@/components/layout/Header';
 import ApiWakeUp from '@/components/ApiWakeUp';
 import { SITE_URL } from '@/lib/config';
 
@@ -54,7 +53,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 					<div className="flex h-full flex-col">
 						<Topbar />
 						<MobileHeader />
-						{/* <Header/> */}
 						<AppMain>{children}</AppMain>
 						<Footer />
 					</div>

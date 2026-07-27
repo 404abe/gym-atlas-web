@@ -63,6 +63,19 @@ export interface PendingWeightStack {
 	submitted_by?: string;
 }
 
+export interface PendingExerciseChange {
+	id: number;
+	brand: string;
+	series: string | null;
+	name: string;
+	image_url?: string;
+	current_exercise_name: string | null;
+	current_secondary_exercise_name: string | null;
+	pending_exercise_name: string | null;
+	pending_secondary_exercise_name: string | null;
+	submitted_by?: string;
+}
+
 export interface PendingGymInstagram {
 	id: number;
 	name: string;
