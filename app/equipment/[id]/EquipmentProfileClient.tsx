@@ -18,10 +18,13 @@ import {
 	unfavouriteEquipment,
 	updateWeightStack,
 	updateAdminEquipment,
+	updateEquipmentExercise,
+	fetchMachineExercises,
 	createVariant,
 	deleteVariant
 } from '@/lib/api';
 import ResistanceButtons from '@/app/add/_components/ResistanceButtons';
+import ExercisePickerModal from '@/app/add/_components/ExercisePickerModal';
 import { DEFAULT_CURVE } from '@/components/ui/CustomCurveEditor';
 import { Star, Dumbbell, Plus, Trophy, X, Check, ChevronDown, Pencil } from 'lucide-react';
 import { Equipment, EquipmentVariant } from '@/types/equipment';
@@ -53,6 +56,7 @@ export default function EquipmentProfileClient() {
 	const [weightStackInput, setWeightStackInput] = useState('');
 	const [weightStackPending, setWeightStackPending] = useState(false);
 	const [showAdminEdit, setShowAdminEdit] = useState(false);
+	const [exercisePending, setExercisePending] = useState(false);
 
 	const canConfirm = selectedMuscle || selectedExercise;
 	const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
@@ -231,9 +235,21 @@ export default function EquipmentProfileClient() {
 
 			{/* Title overlay — bottom */}
 			<div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 to-transparent p-5">
-				<span className="mb-2 inline-flex items-center rounded-full border border-white/25 bg-white/15 px-2.5 py-1 text-[11px] text-white backdrop-blur-sm">
-					{item.type === 'pin_loaded' ? 'Pin loaded' : 'Plate loaded'}
-				</span>
+				<div className="mb-2 flex flex-wrap items-center gap-1.5">
+					<span className="inline-flex items-center rounded-full border border-white/25 bg-white/15 px-2.5 py-1 text-[11px] text-white backdrop-blur-sm">
+						{item.type === 'pin_loaded' ? 'Pin loaded' : 'Plate loaded'}
+					</span>
+					{item.exercise && (
+						<span className="inline-flex items-center rounded-full border border-white/25 bg-white/15 px-2.5 py-1 text-[11px] text-white backdrop-blur-sm">
+							{item.exercise.name}
+						</span>
+					)}
+					{isAdmin && exercisePending && (
+						<span className="inline-flex items-center rounded-full border border-white/25 bg-white/15 px-2.5 py-1 text-[11px] italic text-white/80 backdrop-blur-sm">
+							Exercise change pending review
+						</span>
+					)}
+				</div>
 				<h1 className="text-2xl font-semibold leading-tight text-white">{item.name || item.slug}</h1>
 				<p className="text-sm text-white/70">
 					{item.brand} · {item.series}
@@ -416,12 +432,19 @@ export default function EquipmentProfileClient() {
 			{showAdminEdit && (
 				<AdminEquipmentEditModal
 					item={item}
+					isSuperAdmin={user?.role === 'super_admin'}
 					onClose={() => setShowAdminEdit(false)}
-					onSaved={async (updated) => {
+					onSaved={async (updated, exerciseReview) => {
 						setItem((prev) => (prev ? { ...prev, ...updated } : updated));
 						if (updated.slug && updated.slug !== item.slug) {
 							const gymsData = await fetchEquipmentGyms(updated.slug);
 							setGyms(gymsData.gyms || []);
+						}
+						// A super admin's mapping edit is already live; anyone else's is queued.
+						if (exerciseReview === 'pending') setExercisePending(true);
+						else if (exerciseReview === 'approved') {
+							const refreshed = await fetchEquipmentById(String(id));
+							setItem(refreshed);
 						}
 						setShowAdminEdit(false);
 					}}
@@ -603,12 +626,14 @@ export default function EquipmentProfileClient() {
 
 function AdminEquipmentEditModal({
 	item,
+	isSuperAdmin,
 	onClose,
 	onSaved
 }: {
 	item: Equipment;
+	isSuperAdmin: boolean;
 	onClose: () => void;
-	onSaved: (item: Equipment) => void | Promise<void>;
+	onSaved: (item: Equipment, exerciseReview?: 'approved' | 'pending') => void | Promise<void>;
 }) {
 	const [brand, setBrand] = useState(item.brand || '');
 	const [series, setSeries] = useState(item.series || '');
@@ -620,6 +645,30 @@ function AdminEquipmentEditModal({
 	const [curve, setCurve] = useState<number[]>(item.resistance_curve || DEFAULT_CURVE);
 	const [saving, setSaving] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+
+	// Exercise mapping is reviewed separately from the plain field edits above:
+	// only a super admin's change lands live.
+	const [exercises, setExercises] = useState<{ id: string; name: string }[]>([]);
+	const [exercise, setExercise] = useState<{ id: string; name: string } | null>(
+		item.exercise ? { id: item.exercise.id, name: item.exercise.name } : null
+	);
+	const [secondary, setSecondary] = useState<{ id: string; name: string } | null>(
+		item.secondary_exercise
+			? { id: item.secondary_exercise.id, name: item.secondary_exercise.name }
+			: null
+	);
+	const [picking, setPicking] = useState<'primary' | 'secondary' | null>(null);
+
+	useEffect(() => {
+		fetchMachineExercises()
+			.then(setExercises)
+			.catch((err) => console.error('Failed to fetch exercises:', err));
+	}, []);
+
+	const initialExerciseId = item.exercise?.id ?? null;
+	const initialSecondaryId = item.secondary_exercise?.id ?? null;
+	const mappingChanged =
+		(exercise?.id ?? null) !== initialExerciseId || (secondary?.id ?? null) !== initialSecondaryId;
 
 	const canSave = Boolean(brand.trim() && name.trim() && type && resistance);
 
@@ -636,7 +685,18 @@ function AdminEquipmentEditModal({
 				resistance_profile: resistance || 'constant',
 				resistance_curve: resistance === 'custom' ? curve : null
 			});
-			await onSaved(updated);
+
+			let exerciseReview: 'approved' | 'pending' | undefined;
+			if (mappingChanged) {
+				const result = await updateEquipmentExercise(
+					item.id,
+					exercise?.id ?? null,
+					secondary?.id ?? null
+				);
+				exerciseReview = result.review;
+			}
+
+			await onSaved(updated, exerciseReview);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : 'Failed to update equipment');
 		} finally {
@@ -710,6 +770,78 @@ function AdminEquipmentEditModal({
 					/>
 				</div>
 
+				<div className="border-border mt-4 border-t pt-4">
+					<div className="mb-1.5 flex items-center justify-between">
+						<span className={labelClass + ' mb-0'}>exercise mapping</span>
+						{mappingChanged && !isSuperAdmin && (
+							<span className="text-sub text-[11px] italic">needs super admin approval</span>
+						)}
+					</div>
+					<div className="grid gap-2 sm:grid-cols-2">
+						<button
+							type="button"
+							onClick={() => setPicking('primary')}
+							className="border-border text-main hover:border-main/40 flex items-center justify-between rounded-lg border px-3 py-2 text-sm transition"
+						>
+							<span className={exercise ? 'text-main' : 'text-sub'}>
+								{exercise?.name || 'Set primary…'}
+							</span>
+							{exercise && (
+								<span
+									role="button"
+									tabIndex={0}
+									aria-label="Clear primary exercise"
+									onClick={(e) => {
+										e.stopPropagation();
+										setExercise(null);
+										setSecondary(null);
+									}}
+									onKeyDown={(e) => {
+										if (e.key === 'Enter' || e.key === ' ') {
+											e.stopPropagation();
+											setExercise(null);
+											setSecondary(null);
+										}
+									}}
+									className="text-sub hover:text-main ml-2"
+								>
+									<X className="h-3 w-3" />
+								</span>
+							)}
+						</button>
+						<button
+							type="button"
+							onClick={() => setPicking('secondary')}
+							disabled={!exercise}
+							className="border-border text-main hover:border-main/40 flex items-center justify-between rounded-lg border px-3 py-2 text-sm transition disabled:opacity-40"
+						>
+							<span className={secondary ? 'text-main' : 'text-sub'}>
+								{secondary?.name || 'Set secondary…'}
+							</span>
+							{secondary && (
+								<span
+									role="button"
+									tabIndex={0}
+									aria-label="Clear secondary exercise"
+									onClick={(e) => {
+										e.stopPropagation();
+										setSecondary(null);
+									}}
+									onKeyDown={(e) => {
+										if (e.key === 'Enter' || e.key === ' ') {
+											e.stopPropagation();
+											setSecondary(null);
+										}
+									}}
+									className="text-sub hover:text-main ml-2"
+								>
+									<X className="h-3 w-3" />
+								</span>
+							)}
+						</button>
+					</div>
+				</div>
+
 				{error && <p className="mt-3 text-xs text-red-400">{error}</p>}
 
 				<div className="mt-5 flex justify-end gap-2">
@@ -725,6 +857,21 @@ function AdminEquipmentEditModal({
 					</button>
 				</div>
 			</div>
+
+			{picking && (
+				<ExercisePickerModal
+					title={picking === 'primary' ? 'Primary exercise' : 'Secondary exercise'}
+					exercises={exercises}
+					selectedId={picking === 'primary' ? exercise?.id ?? null : secondary?.id ?? null}
+					excludeId={picking === 'secondary' ? exercise?.id ?? null : null}
+					onConfirm={(id, name) => {
+						if (picking === 'primary') setExercise({ id, name });
+						else setSecondary({ id, name });
+						setPicking(null);
+					}}
+					onClose={() => setPicking(null)}
+				/>
+			)}
 		</div>
 	);
 }
