@@ -259,3 +259,56 @@ html {
 		@apply bg-sub-alt text-main h-8 rounded-lg px-2 text-sm outline-none;
 	}
 }
+
+/* ── Landing hero carousel ───────────────────────
+   Tracks render their cards twice and slide by -50%, so the loop is
+   seamless. See components/landing/HeroCarousel.tsx. */
+.hero-stage {
+	perspective: 1600px;
+}
+
+.hero-tilt {
+	transform: rotateX(10deg) rotateY(-22deg) rotateZ(-7deg);
+	transform-style: preserve-3d;
+}
+
+.hero-mask-y {
+	-webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14%, #000 82%, transparent 100%);
+	mask-image: linear-gradient(to bottom, transparent 0, #000 14%, #000 82%, transparent 100%);
+}
+
+.hero-mask-x {
+	-webkit-mask-image: linear-gradient(to right, transparent 0, #000 8%, #000 92%, transparent 100%);
+	mask-image: linear-gradient(to right, transparent 0, #000 8%, #000 92%, transparent 100%);
+}
+
+.hero-track-y {
+	animation: hero-scroll-y 60s linear infinite;
+}
+
+.hero-track-x {
+	animation: hero-scroll-x 45s linear infinite;
+}
+
+.hero-stage:hover .hero-track-y {
+	animation-play-state: paused;
+}
+
+@keyframes hero-scroll-y {
+	to {
+		transform: translateY(-50%);
+	}
+}
+
+@keyframes hero-scroll-x {
+	to {
+		transform: translateX(-50%);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.hero-track-y,
+	.hero-track-x {
+		animation: none;
+	}
+}
