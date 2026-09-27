@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { fetchAllEquipment, fetchGyms } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
@@ -325,24 +325,118 @@ function Card({ card, mono }: { card: CarouselCard; mono: string }) {
 	);
 }
 
-// ── Carousel ────────────────────────────────────────────
+// ── Desktop: radial arc ─────────────────────────────────
+// Every card sits on ONE circle whose centre is off the right edge of the
+// hero, so the stack reads as a single object sweeping past rather than
+// separate floating cards. Cards drift along the arc, tilt with it, overlap
+// their neighbours, and grow slightly (and come to the front) near the middle.
 
-// Horizontal nudges for the desktop column, so the stack reads as scattered
-// cards rather than a straight list (machines are narrower than gyms).
-const OFFSETS_Y = ['120px', '20px', '150px', '40px', '110px', '10px', '140px', '50px'];
+const CARD_SIZE = {
+	machine: { w: 380, h: 390 },
+	gym: { w: 460, h: 300 }
+} as const;
+
+const ARC_BASE_SCALE = 0.72; // cards are drawn smaller so more fit on the arc
+const ARC_STEP_DEG = 19; // angular gap between neighbouring cards (smaller = more overlap)
+const ARC_SPEED_DEG_PER_S = 3.2; // drift speed along the arc
+const ARC_TILT = 0.45; // card rotation per degree of arc
+const ARC_SCALE_BOOST = 0.07; // extra scale at the middle of the arc
+
+function ArcStack({ cards, mono }: { cards: CarouselCard[]; mono: string }) {
+	const stageRef = useRef<HTMLDivElement>(null);
+	const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+	const pausedRef = useRef(false);
+
+	useEffect(() => {
+		const stage = stageRef.current;
+		if (!stage) return;
+
+		const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		const span = cards.length * ARC_STEP_DEG; // total angle the loop covers
+		let offset = 0;
+		let last = performance.now();
+		let raf = 0;
+
+		const place = () => {
+			const w = stage.clientWidth;
+			const h = stage.clientHeight;
+			const r = Math.max(500, h * 0.66);
+			// Centre far enough right that the leftmost card never crosses into the
+			// hero copy, and the outer cards run off the edge.
+			const cx = Math.max(w + r * 0.25, r + 190);
+			const cy = h / 2;
+
+			cards.forEach((card, i) => {
+				const el = itemRefs.current[i];
+				if (!el) return;
+				// Angle from the leftmost point of the circle: negative = above, positive = below.
+				const a = (((i * ARC_STEP_DEG + offset) % span) + span) % span - span / 2;
+				const rad = (a * Math.PI) / 180;
+				const x = cx - r * Math.cos(rad);
+				const y = cy + r * Math.sin(rad);
+				const { w: cw, h: ch } = CARD_SIZE[card.kind];
+				const scale = ARC_BASE_SCALE + ARC_SCALE_BOOST * Math.max(0, Math.cos(rad * 1.6));
+				el.style.transform = `translate(${x - cw / 2}px, ${y - ch / 2}px) rotate(${-a * ARC_TILT}deg) scale(${scale})`;
+				el.style.zIndex = String(Math.round(200 - Math.abs(a)));
+				el.style.visibility = Math.abs(a) > 88 ? 'hidden' : 'visible';
+			});
+		};
+
+		const tick = (now: number) => {
+			const dt = Math.min(0.1, (now - last) / 1000);
+			last = now;
+			if (!pausedRef.current) offset += dt * ARC_SPEED_DEG_PER_S;
+			place();
+			raf = requestAnimationFrame(tick);
+		};
+
+		place();
+		if (!reduceMotion) raf = requestAnimationFrame(tick);
+		const ro = new ResizeObserver(place);
+		ro.observe(stage);
+		return () => {
+			cancelAnimationFrame(raf);
+			ro.disconnect();
+		};
+	}, [cards]);
+
+	return (
+		<div
+			ref={stageRef}
+			aria-hidden="true"
+			onMouseEnter={() => (pausedRef.current = true)}
+			onMouseLeave={() => (pausedRef.current = false)}
+			className="hero-mask-y absolute inset-y-0 right-0 hidden w-1/2 overflow-hidden lg:block"
+		>
+			{cards.map((card, i) => (
+				<div
+					key={card.key}
+					ref={(el) => {
+						itemRefs.current[i] = el;
+					}}
+					className="absolute left-0 top-0 origin-center will-change-transform"
+					style={{ visibility: 'hidden' }}
+				>
+					<Card card={card} mono={mono} />
+				</div>
+			))}
+		</div>
+	);
+}
+
+// ── Mobile: horizontal strip ────────────────────────────
+
 const OFFSETS_X = ['0px', '44px', '8px', '52px', '4px', '40px', '12px', '48px'];
-// Small alternating tilt per card so the overlapping stack looks hand-placed.
 const ROTATIONS = ['-3deg', '2deg', '-1.5deg', '3deg', '-2.5deg', '1.5deg', '-2deg', '2.5deg'];
-// Negative spacing makes each card tuck under the one after it. Every item gets
-// the same margin, so the -50% loop still lands exactly on the seam.
-const OVERLAP_Y = '-70px';
+// Negative spacing makes each card tuck under the next. Every item gets the
+// same margin, so the -50% loop still lands exactly on the seam.
 const OVERLAP_X = '-44px';
 
 /**
- * Decorative, auto-scrolling stack of machine and gym cards for the landing
- * hero. Desktop (lg+): a tilted vertical column bleeding off the right edge.
- * Below lg: a tilted horizontal strip under the hero copy. Each track renders
- * the list twice and animates by -50% for a seamless loop (see globals.css).
+ * Decorative stack of machine and gym cards for the landing hero.
+ * Desktop (lg+): cards orbit along a single arc bleeding off the right edge.
+ * Below lg: a tilted horizontal strip under the hero copy, rendered twice and
+ * slid by -50% for a seamless CSS loop (see globals.css).
  */
 export default function HeroCarousel({ mono }: { mono: string }) {
 	const loop = fillLoop(useCarouselCards());
@@ -350,35 +444,8 @@ export default function HeroCarousel({ mono }: { mono: string }) {
 
 	return (
 		<>
-			{/* Desktop: vertical tilted column */}
-			<div
-				aria-hidden="true"
-				className="hero-stage hero-mask-y pointer-events-auto absolute -right-10 -top-10 bottom-0 hidden w-[46%] max-w-[640px] lg:block"
-			>
-				<div className="hero-tilt h-full w-full pt-10">
-					{/* Spacing is a per-item margin, not gap, so -50% lands exactly on the seam. */}
-					<div className="hero-track-y flex flex-col">
-						{doubled.map((card, i) => (
-							<div
-								key={card.key}
-								className="relative shrink-0"
-								style={{
-									// Earlier cards sit on top, so the overlap hides the top of
-									// the next card's photo rather than this card's name.
-									zIndex: doubled.length - i,
-									marginLeft: OFFSETS_Y[i % OFFSETS_Y.length],
-									marginBottom: OVERLAP_Y,
-									transform: `rotate(${ROTATIONS[i % ROTATIONS.length]})`
-								}}
-							>
-								<Card card={card} mono={mono} />
-							</div>
-						))}
-					</div>
-				</div>
-			</div>
+			<ArcStack cards={loop} mono={mono} />
 
-			{/* Mobile / tablet: horizontal tilted strip */}
 			<div aria-hidden="true" className="hero-mask-x mt-10 h-[330px] overflow-hidden lg:hidden">
 				<div className="h-full w-full -rotate-6 pl-6 pt-10">
 					<div className="hero-track-x flex w-max items-start">
