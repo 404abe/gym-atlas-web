@@ -403,7 +403,7 @@ function ArcStack({ cards, mono }: { cards: CarouselCard[]; mono: string }) {
 			aria-hidden="true"
 			onMouseEnter={() => (pausedRef.current = true)}
 			onMouseLeave={() => (pausedRef.current = false)}
-			className="hero-mask-y absolute inset-y-0 right-0 hidden w-1/2 overflow-hidden lg:block"
+			className="hero-mask-y pointer-events-none absolute inset-y-0 right-0 hidden w-1/2 overflow-hidden lg:block"
 		>
 			{cards.map((card, i) => (
 				<div
@@ -411,7 +411,7 @@ function ArcStack({ cards, mono }: { cards: CarouselCard[]; mono: string }) {
 					ref={(el) => {
 						itemRefs.current[i] = el;
 					}}
-					className="absolute left-0 top-0 origin-center will-change-transform"
+					className="pointer-events-auto absolute left-0 top-0 origin-center will-change-transform"
 					style={{ visibility: 'hidden' }}
 				>
 					<Card card={card} mono={mono} />
