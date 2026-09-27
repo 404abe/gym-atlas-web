@@ -1,10 +1,8 @@
 import Link from 'next/link';
 import { DM_Sans, JetBrains_Mono } from 'next/font/google';
 import { ArrowRight, Check, Search } from 'lucide-react';
-import { FaGithub } from 'react-icons/fa';
 import MarketingHeader from '@/components/layout/MarketingHeader';
-import CoordinateTicker from '@/components/landing/CoordinateTicker';
-import HeroMap from '@/components/landing/HeroMap';
+import HeroCarousel from '@/components/landing/HeroCarousel';
 import SectionNav from '@/components/landing/SectionNav';
 import CommunityPanel from '@/components/landing/CommunityPanel';
 import DatabasePanel from '@/components/landing/DatabasePanel';
@@ -13,8 +11,6 @@ import { PANEL_CLS, PANEL_LABEL_CLS } from '@/components/landing/panelStyles';
 const dmSans = DM_Sans({ subsets: ['latin'] });
 const jetbrainsMono = JetBrains_Mono({ subsets: ['latin'], weight: ['400', '500'] });
 const mono = jetbrainsMono.className;
-
-const REPO_URL = 'https://github.com/404abe/gym-atlas-web';
 
 export const metadata = {
 	title: 'Gym Atlas — find a gym with the equipment you actually want',
@@ -139,46 +135,51 @@ export default function LandingPage() {
 			<MarketingHeader bordered={false} />
 
 			<div className="overflow-x-hidden pb-28">
+				{/* ── Hero ── copy on the left, tilted card carousel bleeding off
+				    the right edge (lg+) or sliding underneath (below lg). */}
+				<section className="relative lg:min-h-[760px]">
+					<div className="mx-auto flex w-full max-w-328.5 px-6 lg:min-h-[760px] lg:items-center">
+						<div className="relative z-10 flex max-w-2xl flex-col pt-12 md:pt-16 lg:w-[54%] lg:py-24">
+							<span
+								className={`${mono} border-border bg-bg text-sub flex h-9 items-center gap-2.5 self-start rounded-full border px-4 text-xs tracking-wide`}
+							>
+								<span className="bg-accent h-2 w-2 rounded-full" />
+								Community-mapped gym equipment
+							</span>
+							<h1 className="mt-8 text-5xl font-semibold leading-[0.98] tracking-[-0.045em] sm:text-6xl lg:text-7xl xl:text-[5.5rem]">
+								<span className="text-main block">Every machine,</span>
+								<span className="text-main/50 block">in every gym.</span>
+							</h1>
+							<p className="text-sub mt-7 max-w-xl text-lg leading-relaxed md:text-xl">
+								Find gyms by the exact equipment they stock, down to brand and model. Search for a
+								pendulum squat, not a postcode.
+							</p>
+							<div className="mt-9 flex flex-col gap-3 xs:flex-row">
+								<Link
+									href="/map"
+									className="bg-main text-bg flex h-14 items-center justify-center gap-2 rounded-full px-8 text-base font-medium no-underline transition-opacity hover:opacity-90"
+								>
+									Open the map
+									<ArrowRight size={16} />
+								</Link>
+								<Link
+									href="/add"
+									className="border-border text-main hover:bg-sub-alt flex h-14 items-center justify-center rounded-full border px-8 text-base font-medium no-underline transition-colors"
+								>
+									Add your gym
+								</Link>
+							</div>
+						</div>
+					</div>
+					<HeroCarousel mono={mono} />
+				</section>
+
 				{/* 1314px = 730px panel + 480px text column + 56px gap (lg:gap-14) +
 				    48px padding (px-6) — the exact width where both columns sit at
 				    their full size with no shrinking needed. Below that (but still
 				    ≥lg), flex-shrink compresses both columns together, keeping
 				    their 730:480 ratio, instead of overflowing. */}
 				<div className="mx-auto w-full max-w-328.5 px-6">
-					{/* ── Hero ── */}
-					<section className="mx-auto flex max-w-2xl flex-col items-center pt-14 text-center md:pt-20">
-						<h1 className="text-main mt-5 text-4xl font-semibold tracking-tight md:text-5xl">
-							Find a gym with the right equipment.
-						</h1>
-						<p className="text-sub mt-5 max-w-xl text-balance text-lg">
-							Not just a pin on a map. Search gyms by the exact machines and brands they carry.
-						</p>
-
-						<div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-							<Link
-								href="/map"
-								className="bg-main text-bg flex items-center gap-2 rounded-full px-6 py-3 text-sm font-medium no-underline transition-opacity hover:opacity-90"
-							>
-								Open the map
-								<ArrowRight size={16} />
-							</Link>
-							<Link
-								href={REPO_URL}
-								target="_blank"
-								rel="noopener noreferrer"
-								className="border-border text-main hover:bg-sub-alt flex items-center gap-2 rounded-full border px-6 py-3 text-sm font-medium no-underline transition-colors"
-							>
-								<FaGithub size={16} />
-								View on GitHub
-							</Link>
-						</div>
-
-						<CoordinateTicker />
-					</section>
-
-					{/* ── Hero map ── */}
-					<HeroMap />
-
 					{/* ── Anchor strip ── */}
 					<div className="mt-16 md:mt-20">
 						<SectionNav />
