@@ -2,14 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { matchesSearch } from '@/lib/utils';
+import { formatDistance, getDistanceKm, matchesSearch } from '@/lib/utils';
+import { useUserLocation } from '@/hooks/useUserLocation';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { Building2, Dumbbell, MapPin, Minus, Plus, Check, Loader2, ArrowLeftRight } from 'lucide-react';
 import { useToastContext } from '@/app/contexts/ToastContext';
 import { useAuthGate } from '@/app/contexts/AuthGateContext';
-import { addGymEquipment } from '@/lib/api';
-import BottomSheet from '@/components/ui/BottomSheet';
-import type { Gym } from '@/types/gym';
+import { addGymEquipment, fetchGymEquipment } from '@/lib/api';
+import FullScreenSearch from './FullScreenSearch';
+import type { Gym, GymEquipment } from '@/types/gym';
 import type { Equipment } from '@/types/equipment';
 
 type Props = {
@@ -45,7 +46,38 @@ export default function AssignEquipmentCard({ gyms, equipment, preselectedEquipm
 
 	const selectedGym = gyms.find((g) => g.id === selectedGymId) ?? null;
 
-	const filteredGyms = gyms.filter((g) => matchesSearch(gymQuery, g.name, g.city, g.country));
+	// Equipment already at the selected gym, keyed by gym so a stale list never shows for another gym.
+	const [gymStock, setGymStock] = useState<{ gymId: number; items: GymEquipment[] } | null>(null);
+	useEffect(() => {
+		if (!selectedGymId) return;
+		let cancelled = false;
+		fetchGymEquipment(selectedGymId)
+			.then((items) => {
+				if (!cancelled) setGymStock({ gymId: selectedGymId, items });
+			})
+			.catch(console.error);
+		return () => {
+			cancelled = true;
+		};
+	}, [selectedGymId]);
+	const inGymMap = new Map(
+		gymStock && gymStock.gymId === selectedGymId
+			? gymStock.items.map((e) => [e.equipment_id, e] as const)
+			: []
+	);
+
+	// Only ask for location once the gym picker has been opened.
+	const [locationWanted, setLocationWanted] = useState(false);
+	const userLocation = useUserLocation(locationWanted);
+
+	const gymDistance = (g: Gym) =>
+		userLocation && g.lat && g.lng ? getDistanceKm(userLocation.lat, userLocation.lng, g.lat, g.lng) : null;
+
+	// Nearest first when we know where the user is; gyms without coordinates go last.
+	const filteredGyms = gyms
+		.filter((g) => matchesSearch(gymQuery, g.name, g.city, g.country))
+		.map((g) => ({ gym: g, distance: gymDistance(g) }))
+		.sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity));
 	const filteredEquipment = equipment.filter((e) => matchesSearch(machineQuery, e.brand, e.series, e.name));
 
 	const selectedMachines = machines
@@ -116,12 +148,81 @@ export default function AssignEquipmentCard({ gyms, equipment, preselectedEquipm
 			? 'Add at least one machine'
 			: '';
 
+	const closeMachinePicker = () => {
+		setSheet('none');
+		setMachineQuery('');
+	};
+
+	const machineResults = (
+		<div className="grid grid-cols-[repeat(auto-fill,minmax(min(150px,calc(50%-0.25rem)),1fr))] gap-2">
+			{filteredEquipment.map((item) => {
+				const selected = machines.some((m) => m.id === item.id);
+				const existing = inGymMap.get(item.id);
+				return (
+					<button
+						key={item.id}
+						type="button"
+						onClick={() => toggleMachine(item.id)}
+						aria-pressed={selected}
+						className={`bg-sub-alt relative flex flex-col gap-2 rounded-2xl border p-2 text-left transition hover:opacity-90 ${
+							selected ? 'border-accent' : 'border-border'
+						}`}
+					>
+						{existing && (
+							<div className="bg-main/60 text-bg absolute left-3 top-3 z-10 rounded-md px-1.5 py-0.5 text-[11px] font-bold backdrop-blur-sm">
+								{existing.status === 'pending'
+									? 'Pending'
+									: existing.quantity > 1
+										? `${existing.quantity} in gym`
+										: 'In gym'}
+							</div>
+						)}
+						<div className="bg-main/5 relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl">
+							{item.image_url ? (
+								<Image
+									src={item.image_url}
+									alt={item.name}
+									fill
+									sizes="(max-width: 640px) 50vw, 200px"
+									className="object-contain p-1.5"
+								/>
+							) : (
+								<Dumbbell className="text-sub h-8 w-8 opacity-30" />
+							)}
+						</div>
+						<div className="min-w-0 px-0.5">
+							<div className="text-main line-clamp-2 text-[13px] font-semibold leading-snug">
+								{equipLabel(item)}
+							</div>
+							<div className="text-sub mt-0.5 text-xs">
+								{item.type === 'pin_loaded' ? 'Pin loaded' : 'Plate loaded'}
+							</div>
+						</div>
+						<div
+							className={`absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full transition ${
+								selected ? 'bg-accent' : 'border-border bg-surface border-2'
+							}`}
+						>
+							{selected && <Check className="text-bg h-3.5 w-3.5" strokeWidth={3} />}
+						</div>
+					</button>
+				);
+			})}
+			{filteredEquipment.length === 0 && (
+				<p className="text-sub col-span-full py-8 text-center text-sm">No equipment found</p>
+			)}
+		</div>
+	);
+
 	return (
 		<div className="flex flex-col gap-3">
 			{/* Gym box */}
 			<button
 				type="button"
-				onClick={() => setSheet('gym')}
+				onClick={() => {
+					setLocationWanted(true);
+					setSheet('gym');
+				}}
 				className="bg-surface flex w-full items-center rounded-[22px] p-[18px] text-left shadow-sm transition hover:opacity-90"
 			>
 				{selectedGym ? (
@@ -284,16 +385,19 @@ export default function AssignEquipmentCard({ gyms, equipment, preselectedEquipm
 			</button>
 			{ctaHint && <p className="text-sub text-center text-xs">{ctaHint}</p>}
 
-			{/* Gym picker sheet */}
-			<BottomSheet
+			{/* Gym picker (full-screen search) */}
+			<FullScreenSearch
 				open={sheet === 'gym'}
-				onClose={() => setSheet('none')}
+				onClose={() => {
+					setSheet('none');
+					setGymQuery('');
+				}}
 				title="Select gym"
 				search={gymQuery}
 				onSearchChange={setGymQuery}
 				searchPlaceholder="Search gyms..."
 			>
-				{filteredGyms.map((g) => {
+				{filteredGyms.map(({ gym: g, distance }) => {
 					const selected = g.id === selectedGymId;
 					return (
 						<button
@@ -315,7 +419,11 @@ export default function AssignEquipmentCard({ gyms, equipment, preselectedEquipm
 							</div>
 							<div className="min-w-0 flex-1">
 								<div className="text-main truncate text-[15px] font-semibold">{g.name}</div>
-								<div className="text-sub text-xs">{[g.city, g.country].filter(Boolean).join(', ') || '—'}</div>
+								<div className="text-sub text-xs">
+									{[[g.city, g.country].filter(Boolean).join(', '), distance !== null && formatDistance(distance)]
+										.filter(Boolean)
+										.join(' · ') || '—'}
+								</div>
 							</div>
 							{selected && (
 								<div className="bg-accent flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
@@ -328,62 +436,20 @@ export default function AssignEquipmentCard({ gyms, equipment, preselectedEquipm
 				{filteredGyms.length === 0 && (
 					<p className="text-sub py-8 text-center text-sm">No gyms found</p>
 				)}
-			</BottomSheet>
+			</FullScreenSearch>
 
-			{/* Machine picker sheet */}
-			<BottomSheet
+			{/* Machine picker (full-screen search) */}
+			<FullScreenSearch
 				open={sheet === 'machine'}
-				onClose={() => setSheet('none')}
+				onClose={closeMachinePicker}
 				title="Add equipment"
 				search={machineQuery}
 				onSearchChange={setMachineQuery}
 				searchPlaceholder="Search machines..."
-				footer={
-					<button
-						type="button"
-						onClick={() => setSheet('none')}
-						className={`flex h-12.5 w-full items-center justify-center rounded-xl text-[15px] font-semibold transition ${
-							machines.length > 0 ? 'bg-main text-bg' : 'bg-sub-alt text-sub'
-						}`}
-					>
-						{machines.length > 0 ? `Done · ${machines.length} selected` : 'Done'}
-					</button>
-				}
+				closeLabel={machines.length > 0 ? `Done · ${machines.length}` : 'Done'}
 			>
-				{filteredEquipment.map((item) => {
-					const selected = machines.some((m) => m.id === item.id);
-					return (
-						<button
-							key={item.id}
-							type="button"
-							onClick={() => toggleMachine(item.id)}
-							className="hover:bg-main/5 flex w-full items-center gap-3.5 rounded-2xl p-2.5 text-left transition"
-						>
-							<div className="bg-sub-alt relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl">
-								{item.image_url ? (
-									<Image src={item.image_url} alt={item.name} fill sizes="40px" className="object-cover" />
-								) : (
-									<Dumbbell className="text-sub h-4.5 w-4.5" />
-								)}
-							</div>
-							<div className="min-w-0 flex-1">
-								<div className="text-main truncate text-[15px] font-semibold">{equipLabel(item)}</div>
-								<div className="text-sub text-xs">{item.type === 'pin_loaded' ? 'Pin loaded' : 'Plate loaded'}</div>
-							</div>
-							<div
-								className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition ${
-									selected ? 'bg-accent' : 'border-border border-2'
-								}`}
-							>
-								{selected && <Check className="text-bg h-3.5 w-3.5" strokeWidth={3} />}
-							</div>
-						</button>
-					);
-				})}
-				{filteredEquipment.length === 0 && (
-					<p className="text-sub py-8 text-center text-sm">No equipment found</p>
-				)}
-			</BottomSheet>
+				{machineResults}
+			</FullScreenSearch>
 		</div>
 	);
 }

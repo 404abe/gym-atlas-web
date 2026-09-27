@@ -118,9 +118,9 @@ export default function AddEquipmentPanel({
 
 			{/* Results */}
 			{query && (
-				<div className="flex flex-col gap-2">
+				<div className="grid grid-cols-[repeat(auto-fill,minmax(min(150px,calc(50%-0.25rem)),1fr))] gap-2">
 					{filtered.length === 0 ? (
-						<p className="text-sub py-4 text-center text-xs">No equipment found</p>
+						<p className="text-sub col-span-full py-4 text-center text-xs">No equipment found</p>
 					) : (
 						filtered.map((item) => {
 							const isAdding = adding === item.id;
@@ -130,75 +130,83 @@ export default function AddEquipmentPanel({
 							const isConfirming = confirmItem?.id === item.id;
 
 							return (
-								<div key={item.id} className="flex flex-col gap-0 overflow-hidden rounded-xl">
-									<div className="bg-surface flex items-center gap-3 p-2.5">
+								<div key={item.id} className={`relative ${isConfirming ? 'z-10' : ''}`}>
+									<div className="bg-surface flex h-full flex-col gap-2 rounded-xl p-2">
 										{/* Thumbnail */}
-										<div className="bg-sub-alt relative h-14 w-14 shrink-0 overflow-hidden rounded-lg">
+										<div className="bg-sub-alt relative aspect-square w-full overflow-hidden rounded-lg">
 											{item.image_url ? (
 												<Image
 													src={item.image_url}
 													alt={item.name}
 													fill
-													sizes="56px"
+													sizes="(max-width: 640px) 50vw, 200px"
 													className="object-cover"
 												/>
 											) : (
 												<div className="flex h-full w-full items-center justify-center">
-													<Dumbbell className="text-sub h-5 w-5 opacity-30" />
+													<Dumbbell className="text-sub h-6 w-6 opacity-30" />
 												</div>
 											)}
 										</div>
 
 										{/* Info */}
-										<div className="min-w-0 flex-1">
-											<p className="text-main truncate text-sm font-medium">
+										<div className="min-w-0">
+											<p className="text-main line-clamp-2 text-xs font-medium leading-snug">
 												{item.brand} {item.name}
 											</p>
-											<p className="text-sub mt-0.5 text-xs">{item.series}</p>
-											<div className="mt-1 flex flex-wrap gap-1">
-												<span className="text-sub bg-main/8 inline-block rounded px-1.5 py-0.5 text-[10px]">
-													{item.type === 'pin_loaded' ? 'pin loaded' : 'plate loaded'}
-												</span>
-												{inGym && (
-													<span className="inline-block rounded bg-accent/15 px-1.5 py-0.5 text-[10px] text-accent">
-														in gym
+											{item.series && (
+												<p className="text-sub mt-0.5 truncate text-[11px]">{item.series}</p>
+											)}
+											<span className="text-sub bg-main/8 mt-1.5 inline-block rounded px-1.5 py-0.5 text-[10px] leading-none">
+												{item.type === 'pin_loaded' ? 'pin loaded' : 'plate loaded'}
+											</span>
+										</div>
+									</div>
+
+									{/* Add button */}
+									<button
+										onClick={() => handleAddClick(item)}
+										disabled={!!adding || isDone || isConfirming}
+										className={`absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full shadow-sm transition ${
+											isDone
+												? 'bg-surface border border-green-500/30 text-green-500'
+												: inGym
+													? 'bg-surface border border-main/20 text-sub hover:border-main/40 hover:text-main disabled:opacity-40'
+													: 'bg-main text-bg hover:opacity-80 disabled:opacity-40'
+										}`}
+										aria-label={
+											inGym
+												? `Add another ${item.name} (${existingQty} in gym)`
+												: `Add ${item.name}`
+										}
+									>
+										{isAdding ? (
+											<Loader2 className="h-3.5 w-3.5 animate-spin" />
+										) : isDone ? (
+											<Check className="h-3.5 w-3.5" />
+										) : inGym ? (
+											<>
+												<Check className="h-3 w-3" />
+												{existingQty > 1 && (
+													<span className="bg-sub-alt text-main absolute -bottom-1 -right-1 rounded-full px-1 text-[9px] font-medium leading-tight">
+														{existingQty}
 													</span>
 												)}
-											</div>
-										</div>
-
-										{/* Add button */}
-										<button
-											onClick={() => handleAddClick(item)}
-											disabled={!!adding || isDone || isConfirming}
-											className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition ${
-												isDone
-													? 'border border-green-500/30 text-green-500'
-													: inGym
-														? 'border border-main/20 text-sub hover:border-main/40 hover:text-main disabled:opacity-40'
-														: 'bg-main text-bg hover:opacity-80 disabled:opacity-40'
-											}`}
-											aria-label={`Add ${item.name}`}
-										>
-											{isAdding ? (
-												<Loader2 className="h-3.5 w-3.5 animate-spin" />
-											) : isDone ? (
-												<Check className="h-3.5 w-3.5" />
-											) : (
-												<span className="text-xs font-medium">+</span>
-											)}
-										</button>
-									</div>
+											</>
+										) : (
+											<span className="text-xs font-medium">+</span>
+										)}
+									</button>
 
 									{/* Duplicate confirmation */}
 									{isConfirming && (
-										<div className="border-border bg-surface flex items-center justify-between gap-3 border-t px-3 py-2.5">
+										<div className="border-border bg-surface absolute inset-x-0 top-full z-10 mt-1 flex flex-col gap-2 rounded-xl border p-2.5 shadow-lg">
 											<p className="text-sub text-xs">
 												There{existingQty === 1 ? "'s" : ' are'} already{' '}
 												<span className="text-main font-medium">{existingQty}</span> of this in
 												the gym. Add another?
 											</p>
-											<div className="flex shrink-0 gap-1.5">
+											<div className="flex justify-end gap-1.5">
 												<button
 													onClick={() => setConfirmItem(null)}
 													className="border-border text-sub hover:text-main rounded-lg border px-2.5 py-1 text-xs transition"
