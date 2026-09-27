@@ -2,18 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
-import {
-	Check,
-	ChevronUp,
-	Dumbbell,
-	Loader2,
-	MapPin,
-	Minus,
-	Plus,
-	Search,
-	ShieldCheck,
-	X
-} from 'lucide-react';
+import { Check, ChevronRight, Dumbbell, Loader2, MapPin, Minus, Plus, Search, ShieldCheck, X } from 'lucide-react';
 import { cn, formatDistance, getDistanceKm, matchesSearch } from '@/lib/utils';
 import { logoForGym } from '@/lib/gymLogos';
 import { useUserLocation } from '@/hooks/useUserLocation';
@@ -106,7 +95,13 @@ function QtyStepper({
 	);
 	return (
 		<div className={cn('border-border bg-bg flex shrink-0 items-center rounded-full border', large ? 'h-11' : 'h-8.5')}>
-			<button type="button" onClick={() => onChange(-1)} disabled={qty <= 1} aria-label={`Fewer ${name}`} className={btn}>
+			<button
+				type="button"
+				onClick={() => onChange(-1)}
+				disabled={qty <= 1}
+				aria-label={`Fewer ${name}`}
+				className={btn}
+			>
 				<Minus className="h-3.5 w-3.5" />
 			</button>
 			<span className="text-main min-w-4 text-center text-sm font-medium tabular-nums">{qty}</span>
@@ -115,24 +110,6 @@ function QtyStepper({
 			</button>
 		</div>
 	);
-}
-
-/** Height of the on-screen keyboard (0 when closed), from the visual viewport. */
-function useKeyboardInset() {
-	const [inset, setInset] = useState(0);
-	useEffect(() => {
-		const vv = window.visualViewport;
-		if (!vv) return;
-		const update = () => setInset(Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)));
-		vv.addEventListener('resize', update);
-		vv.addEventListener('scroll', update);
-		update();
-		return () => {
-			vv.removeEventListener('resize', update);
-			vv.removeEventListener('scroll', update);
-		};
-	}, []);
-	return inset;
 }
 
 // ── Main ────────────────────────────────────────────────
@@ -155,20 +132,18 @@ export default function AssignEquipmentCard({
 	const [machineQuery, setMachineQuery] = useState('');
 	const [category, setCategory] = useState<string | null>(null);
 	const [brand, setBrand] = useState<string>('');
-	const [reviewOpen, setReviewOpen] = useState(false);
+	// Below lg, machine search lives in an Apple Maps-style near-full-height sheet.
+	const [sheetOpen, setSheetOpen] = useState(false);
+	const [sheetAutoFocus, setSheetAutoFocus] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [justAdded, setJustAdded] = useState(false);
 	const [preselectApplied, setPreselectApplied] = useState(false);
 
 	const gymInputRef = useRef<HTMLInputElement>(null);
-	const machineInputRef = useRef<HTMLInputElement>(null);
-	const keyboardInset = useKeyboardInset();
-	const keyboardOpen = keyboardInset > 80;
 
 	// Deep links: /add?equipmentId=… and /add?gymId=…, applied once the data they
 	// point at has loaded (state adjusted during render rather than in an effect).
-	const preselectReady =
-		(!preselectedEquipmentId || equipment.length > 0) && (!preselectedGymId || gyms.length > 0);
+	const preselectReady = (!preselectedEquipmentId || equipment.length > 0) && (!preselectedGymId || gyms.length > 0);
 	if (!preselectApplied && preselectReady) {
 		setPreselectApplied(true);
 		if (preselectedEquipmentId && equipment.some((e) => e.id === preselectedEquipmentId)) {
@@ -182,7 +157,10 @@ export default function AssignEquipmentCard({
 	const selectedGym = gyms.find((g) => g.id === selectedGymId) ?? null;
 
 	// Equipment already at the selected gym, keyed by gym so a stale list never shows for another gym.
-	const [gymStock, setGymStock] = useState<{ gymId: number; items: GymEquipment[] } | null>(null);
+	const [gymStock, setGymStock] = useState<{
+		gymId: number;
+		items: GymEquipment[];
+	} | null>(null);
 	useEffect(() => {
 		if (!selectedGymId) return;
 		let cancelled = false;
@@ -276,7 +254,6 @@ export default function AssignEquipmentCard({
 				'success'
 			);
 			setJustAdded(true);
-			setReviewOpen(false);
 			setTimeout(() => {
 				setJustAdded(false);
 				setMachines([]);
@@ -333,6 +310,200 @@ export default function AssignEquipmentCard({
 				</li>
 			))}
 		</ul>
+	);
+
+	const openSheet = (autoFocus: boolean, presetCategory?: string | null) => {
+		if (presetCategory !== undefined) setCategory(presetCategory);
+		setSheetAutoFocus(autoFocus);
+		setSheetOpen(true);
+	};
+
+	/** Search, filters and results. `where` keeps ids unique between the two copies. */
+	const finder = (where: 'inline' | 'sheet') => (
+		<>
+			{/* In the sheet, search + chips stay pinned while the results scroll */}
+			<div
+				className={
+					where === 'sheet' ? 'bg-bg sticky top-0 z-10 -mx-4 flex flex-col gap-3 px-4 pb-2 pt-3.5' : 'contents'
+				}
+			>
+				<div className="flex gap-2.5">
+					<div className="bg-surface focus-within:ring-accent flex h-12 min-w-0 flex-1 items-center gap-2.5 rounded-xl px-3.5 focus-within:ring-2">
+						<Search className="text-sub h-4 w-4 shrink-0" />
+						<label className="sr-only" htmlFor={`machine-search-${where}`}>
+							Search machines
+						</label>
+						<input
+							id={`machine-search-${where}`}
+							type="search"
+							value={machineQuery}
+							onChange={(e) => setMachineQuery(e.target.value)}
+							placeholder="Search by machine, brand or exercise"
+							autoComplete="off"
+							autoFocus={where === 'sheet' && sheetAutoFocus}
+							disabled={!selectedGym}
+							className="text-main placeholder:text-sub min-w-0 flex-1 bg-transparent text-[15px] outline-none"
+						/>
+						{machineQuery && (
+							<button
+								type="button"
+								onClick={() => setMachineQuery('')}
+								aria-label="Clear search"
+								className="bg-sub/40 text-bg flex h-5.5 w-5.5 items-center justify-center rounded-full"
+							>
+								<X className="h-3 w-3" />
+							</button>
+						)}
+					</div>
+					{where === 'inline' && (
+						<>
+							<label className="sr-only" htmlFor="brand-filter">
+								Brand
+							</label>
+							<select
+								id="brand-filter"
+								value={brand}
+								onChange={(e) => setBrand(e.target.value)}
+								disabled={!selectedGym}
+								className="border-border bg-bg text-main h-12 max-w-44 rounded-xl border px-3 text-sm"
+							>
+								<option value="">Brand: Any</option>
+								{brands.map((b) => (
+									<option key={b} value={b}>
+										{b}
+									</option>
+								))}
+							</select>
+						</>
+					)}
+				</div>
+
+				{categories.length > 0 && (
+					<div className={cn('flex gap-2 overflow-x-auto pb-1', where === 'sheet' ? '-mx-4 px-4' : 'flex-wrap')}>
+						{[null, ...categories].map((c) => {
+							const on = category === c;
+							return (
+								<button
+									key={c ?? 'all'}
+									type="button"
+									aria-pressed={on}
+									onClick={() => setCategory(c)}
+									className={cn(
+										'h-9 shrink-0 rounded-full border px-3.5 text-[13px] transition-colors',
+										on ? 'bg-main text-bg border-main' : 'border-border text-main hover:bg-surface'
+									)}
+								>
+									{c ?? 'All'}
+								</button>
+							);
+						})}
+					</div>
+				)}
+			</div>
+
+			{/* 2-up on phones, 3-up on wide screens. Space-style card: the machine floats
+			    on a soft grey stage, small grey eyebrow (brand + series) over a bigger
+			    headline (machine name). */}
+			<ul className={cn('grid grid-cols-2 gap-3', where === 'inline' && 'xl:grid-cols-3')}>
+				{shownEquipment.map((item) => {
+					const selected = machines.some((m) => m.id === item.id);
+					const existing = inGymMap.get(item.id);
+					const tag = existing
+						? existing.status === 'pending'
+							? 'Pending'
+							: existing.quantity > 1
+								? `${existing.quantity} in gym`
+								: 'In gym'
+						: null;
+					const eyebrow = [item.brand, item.series].filter(Boolean).join(' ');
+					return (
+						<li key={item.id}>
+							<button
+								type="button"
+								onClick={() => toggleMachine(item.id)}
+								aria-pressed={selected}
+								aria-label={`${selected ? 'Remove' : 'Add'} ${equipLabel(item)}${tag ? ` (${tag.toLowerCase()})` : ''}`}
+								className={cn(
+									'group bg-surface relative flex h-full w-full flex-col overflow-hidden rounded-[22px] text-left transition duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_12px_28px_-14px_rgba(0,0,0,0.25)] active:translate-y-0 active:scale-[0.985]',
+									selected ? 'ring-accent ring-2' : 'ring-border/70 ring-1'
+								)}
+							>
+								{/* Stage: soft grey shelf the machine floats on */}
+								<div className="from-surface to-sub-alt relative flex aspect-[5/4] w-full items-center justify-center bg-linear-to-b">
+									{/* Soft spotlight so dark machines still lift off the stage in dark mode */}
+									<div className="bg-main/[0.07] pointer-events-none absolute inset-x-[18%] inset-y-[14%] rounded-full blur-2xl" />
+									{item.image_url ? (
+										<Image
+											src={item.image_url}
+											alt=""
+											fill
+											sizes="(max-width: 720px) 50vw, 260px"
+											className="object-contain p-4 drop-shadow-[0_10px_10px_rgba(0,0,0,0.14)] transition-transform duration-300 ease-out group-hover:scale-[1.04]"
+										/>
+									) : (
+										<Dumbbell className="text-sub h-9 w-9 opacity-30" />
+									)}
+
+									{tag && (
+										<span className="bg-bg/80 text-main ring-border/60 absolute left-2.5 top-2.5 z-10 flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 backdrop-blur-md">
+											<span
+												className={cn(
+													'h-1.5 w-1.5 rounded-full',
+													existing?.status === 'pending' ? 'bg-amber-400' : 'bg-accent'
+												)}
+											/>
+											{tag}
+										</span>
+									)}
+
+									<span
+										aria-hidden="true"
+										className={cn(
+											'absolute right-2.5 top-2.5 z-10 flex h-7 w-7 items-center justify-center rounded-full transition',
+											selected ? 'bg-accent text-bg' : 'bg-bg/80 text-main ring-border ring-1 backdrop-blur-md'
+										)}
+									>
+										{selected ? <Check className="h-3.5 w-3.5" strokeWidth={3} /> : <Plus className="h-3.5 w-3.5" />}
+									</span>
+								</div>
+
+								{/* Caption band: eyebrow, headline, meta */}
+								<div className="bg-bg border-border/60 flex min-w-0 flex-1 flex-col border-t px-3.5 pb-3.5 pt-3">
+									{eyebrow && <div className="text-sub truncate text-[11px] font-medium">{eyebrow}</div>}
+									<div className="text-main mt-0.5 line-clamp-2 text-[15px] font-semibold leading-snug tracking-tight">
+										{item.name || equipLabel(item)}
+									</div>
+									<div className="text-sub mt-auto pt-1.5 text-xs">
+										{item.type === 'pin_loaded' ? 'Pin loaded' : 'Plate loaded'}
+									</div>
+								</div>
+							</button>
+						</li>
+					);
+				})}
+			</ul>
+
+			{filteredEquipment.length > MACHINE_RESULTS && (
+				<p className="text-sub text-xs">
+					Showing {MACHINE_RESULTS} of {filteredEquipment.length}. Search or filter to narrow it down.
+				</p>
+			)}
+			{equipment.length > 0 && filteredEquipment.length === 0 && (
+				<p className="text-sub py-2 text-sm">No machines match{machineQuery ? ` “${machineQuery}”` : ''}.</p>
+			)}
+
+			<button
+				type="button"
+				onClick={() => {
+					setSheetOpen(false);
+					onCreateMachine();
+				}}
+				className="border-border text-sub hover:text-main flex min-h-13 items-center justify-center gap-1.5 rounded-2xl border-[1.5px] border-dashed px-4 text-sm transition-colors"
+			>
+				{machineQuery ? `Can't find “${machineQuery}”?` : "Can't find the one you train on?"}
+				<span className="text-accent font-medium">Create a new machine</span>
+			</button>
+		</>
 	);
 
 	const alreadyAtGym = stock && stock.length > 0 && (
@@ -408,7 +579,10 @@ export default function AssignEquipmentCard({
 								setLocationWanted(true);
 								// On phones, lift the field to the top so results fit above the keyboard.
 								if (window.matchMedia('(max-width: 848px)').matches) {
-									e.currentTarget.parentElement?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+									e.currentTarget.parentElement?.scrollIntoView({
+										block: 'start',
+										behavior: 'smooth'
+									});
 								}
 							}}
 							placeholder="Search gyms by name or city"
@@ -488,187 +662,48 @@ export default function AssignEquipmentCard({
 				<section aria-labelledby="machine-step" className="flex min-w-0 flex-1 flex-col gap-3.5">
 					<div className="flex items-center gap-2.5">
 						<StepBadge n={2} />
-						<label id="machine-step" htmlFor="machine-search" className="text-main text-base font-semibold">
+						<h2 id="machine-step" className="text-main text-base font-semibold">
 							{selectedGym ? 'Find the machines' : 'Then find the machines'}
-						</label>
+						</h2>
 					</div>
 
-					<div className="flex gap-2.5">
-						<div className="bg-surface focus-within:ring-accent flex h-12 min-w-0 flex-1 scroll-mt-4 items-center gap-2.5 rounded-xl px-3.5 focus-within:ring-2">
-							<Search className="text-sub h-4 w-4 shrink-0" />
-							<input
-								ref={machineInputRef}
-								id="machine-search"
-								type="search"
-								value={machineQuery}
-								onChange={(e) => setMachineQuery(e.target.value)}
-								onFocus={(e) => {
-									if (window.matchMedia('(max-width: 848px)').matches) {
-										e.currentTarget.parentElement?.scrollIntoView({ block: 'start', behavior: 'smooth' });
-									}
-								}}
-								placeholder="Search by machine, brand or exercise"
-								autoComplete="off"
-								disabled={!selectedGym}
-								className="text-main placeholder:text-sub min-w-0 flex-1 bg-transparent text-[15px] outline-none"
-							/>
-							{machineQuery && (
-								<button
-									type="button"
-									onClick={() => setMachineQuery('')}
-									aria-label="Clear search"
-									className="bg-sub/40 text-bg flex h-5.5 w-5.5 items-center justify-center rounded-full"
-								>
-									<X className="h-3 w-3" />
-								</button>
-							)}
-						</div>
-						<label className="sr-only" htmlFor="brand-filter">
-							Brand
-						</label>
-						<select
-							id="brand-filter"
-							value={brand}
-							onChange={(e) => setBrand(e.target.value)}
+					{/* lg+: everything inline */}
+					<div className="hidden flex-col gap-3.5 lg:flex">{finder('inline')}</div>
+
+					{/* Below lg: a search-style button and category shortcuts that open the sheet */}
+					<div className="flex flex-col gap-3 lg:hidden">
+						<button
+							type="button"
+							onClick={() => openSheet(true)}
 							disabled={!selectedGym}
-							className="border-border bg-bg text-main hidden h-12 max-w-44 rounded-xl border px-3 text-sm sm:block"
+							className="bg-surface text-sub flex h-12 items-center gap-2.5 rounded-xl px-3.5 text-left text-[15px]"
 						>
-							<option value="">Brand: Any</option>
-							{brands.map((b) => (
-								<option key={b} value={b}>
-									{b}
-								</option>
-							))}
-						</select>
+							<Search className="h-4 w-4 shrink-0" />
+							<span className="flex-1 truncate">Search by machine, brand or exercise</span>
+						</button>
+						{categories.length > 0 && (
+							<div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+								{categories.map((c) => (
+									<button
+										key={c}
+										type="button"
+										onClick={() => openSheet(false, c)}
+										disabled={!selectedGym}
+										className="border-border text-main flex h-9 shrink-0 items-center gap-1 rounded-full border pl-3.5 pr-2.5 text-[13px]"
+									>
+										{c}
+										<ChevronRight className="text-sub h-3.5 w-3.5" />
+									</button>
+								))}
+							</div>
+						)}
 					</div>
-
-					{categories.length > 0 && (
-						<div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
-							{[null, ...categories].map((c) => {
-								const on = category === c;
-								return (
-									<button
-										key={c ?? 'all'}
-										type="button"
-										aria-pressed={on}
-										onClick={() => setCategory(c)}
-										className={cn(
-											'h-9 shrink-0 rounded-full border px-3.5 text-[13px] transition-colors',
-											on ? 'bg-main text-bg border-main' : 'border-border text-main hover:bg-surface'
-										)}
-									>
-										{c ?? 'All'}
-									</button>
-								);
-							})}
-						</div>
-					)}
-
-					{/* Results: 2-up on phones, 3-up on wide screens. Space-style card: the
-					    machine floats on a soft grey stage, with a small grey eyebrow (brand
-					    + series) over a bigger headline (machine name). */}
-					<ul className="grid grid-cols-2 gap-3 xl:grid-cols-3">
-						{shownEquipment.map((item) => {
-							const selected = machines.some((m) => m.id === item.id);
-							const existing = inGymMap.get(item.id);
-							const tag = existing
-								? existing.status === 'pending'
-									? 'Pending'
-									: existing.quantity > 1
-										? `${existing.quantity} in gym`
-										: 'In gym'
-								: null;
-							const eyebrow = [item.brand, item.series].filter(Boolean).join(' ');
-							return (
-								<li key={item.id}>
-									<button
-										type="button"
-										onClick={() => toggleMachine(item.id)}
-										aria-pressed={selected}
-										aria-label={`${selected ? 'Remove' : 'Add'} ${equipLabel(item)}${tag ? ` (${tag.toLowerCase()})` : ''}`}
-										className={cn(
-											'group bg-surface relative flex h-full w-full flex-col overflow-hidden rounded-[22px] text-left transition duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_12px_28px_-14px_rgba(0,0,0,0.25)] active:translate-y-0 active:scale-[0.985]',
-											selected ? 'ring-accent ring-2' : 'ring-border/70 ring-1'
-										)}
-									>
-										{/* Stage: soft grey shelf the machine floats on */}
-										<div className="from-surface to-sub-alt relative flex aspect-[5/4] w-full items-center justify-center bg-linear-to-b">
-											{/* Soft spotlight so dark machines still lift off the stage in dark mode */}
-											<div className="bg-main/[0.07] pointer-events-none absolute inset-x-[18%] inset-y-[14%] rounded-full blur-2xl" />
-											{item.image_url ? (
-												<Image
-													src={item.image_url}
-													alt=""
-													fill
-													sizes="(max-width: 720px) 50vw, 260px"
-													className="object-contain p-4 drop-shadow-[0_10px_10px_rgba(0,0,0,0.14)] transition-transform duration-300 ease-out group-hover:scale-[1.04]"
-												/>
-											) : (
-												<Dumbbell className="text-sub h-9 w-9 opacity-30" />
-											)}
-
-											{tag && (
-												<span className="bg-bg/80 text-main ring-border/60 absolute left-2.5 top-2.5 z-10 flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 backdrop-blur-md">
-													<span
-														className={cn(
-															'h-1.5 w-1.5 rounded-full',
-															existing?.status === 'pending' ? 'bg-amber-400' : 'bg-accent'
-														)}
-													/>
-													{tag}
-												</span>
-											)}
-
-											<span
-												aria-hidden="true"
-												className={cn(
-													'absolute right-2.5 top-2.5 z-10 flex h-7 w-7 items-center justify-center rounded-full transition',
-													selected ? 'bg-accent text-bg' : 'bg-bg/80 text-main ring-border ring-1 backdrop-blur-md'
-												)}
-											>
-												{selected ? <Check className="h-3.5 w-3.5" strokeWidth={3} /> : <Plus className="h-3.5 w-3.5" />}
-											</span>
-										</div>
-
-										{/* Caption band: eyebrow, headline, meta */}
-										<div className="bg-bg border-border/60 flex min-w-0 flex-1 flex-col border-t px-3.5 pb-3.5 pt-3">
-											{eyebrow && <div className="text-sub truncate text-[11px] font-medium">{eyebrow}</div>}
-											<div className="text-main mt-0.5 line-clamp-2 text-[15px] font-semibold leading-snug tracking-tight">
-												{item.name || equipLabel(item)}
-											</div>
-											<div className="text-sub mt-auto pt-1.5 text-xs">
-												{item.type === 'pin_loaded' ? 'Pin loaded' : 'Plate loaded'}
-											</div>
-										</div>
-									</button>
-								</li>
-							);
-						})}
-					</ul>
-
-					{filteredEquipment.length > MACHINE_RESULTS && (
-						<p className="text-sub text-xs">
-							Showing {MACHINE_RESULTS} of {filteredEquipment.length}. Search or filter to narrow it down.
-						</p>
-					)}
-					{equipment.length > 0 && filteredEquipment.length === 0 && (
-						<p className="text-sub py-2 text-sm">No machines match{machineQuery ? ` “${machineQuery}”` : ''}.</p>
-					)}
-
-					<button
-						type="button"
-						onClick={onCreateMachine}
-						className="border-border text-sub hover:text-main flex min-h-13 items-center justify-center gap-1.5 rounded-2xl border-[1.5px] border-dashed px-4 text-sm transition-colors"
-					>
-						{machineQuery ? `Can't find “${machineQuery}”?` : "Can't find the one you train on?"}
-						<span className="text-accent font-medium">Create a new machine</span>
-					</button>
 				</section>
 
-				{/* Additions (desktop sidebar) */}
+				{/* Your additions: sidebar on lg+, a card under step 2 below that */}
 				<aside
 					aria-label="Your additions"
-					className="bg-surface sticky top-4 hidden w-95 shrink-0 flex-col gap-3 rounded-[20px] p-5 lg:flex"
+					className="bg-surface flex w-full shrink-0 flex-col gap-3 rounded-[20px] p-4 lg:sticky lg:top-4 lg:w-95 lg:p-5"
 				>
 					<div className="flex items-center justify-between">
 						<span className="text-main text-base font-semibold">Your additions</span>
@@ -677,142 +712,162 @@ export default function AssignEquipmentCard({
 						</span>
 					</div>
 					{selectedMachines.length > 0 ? (
-						additionsList(false)
+						<>
+							{additionsList(false)}
+							<button
+								type="button"
+								onClick={() => openSheet(false)}
+								className="text-accent flex h-10 items-center gap-1.5 self-start text-sm font-medium lg:hidden"
+							>
+								<Plus className="h-4 w-4" /> Add more
+							</button>
+						</>
 					) : (
-						<p className="text-sub py-3 text-sm">Tap machines on the left to add them here.</p>
+						<p className="text-sub py-2 text-sm">
+							<span className="hidden lg:inline">Tap machines on the left to add them here.</span>
+							<span className="lg:hidden">Search above, or pick a category, to add machines.</span>
+						</p>
 					)}
 					{alreadyAtGym}
 				</aside>
 			</div>
 
 			{/* ── Action bar ──
-			    Phones: fixed to the bottom; while the keyboard is up it becomes a slim
-			    bar riding on top of it. md+: a floating bar above the footer pills. */}
+			    Phones: fixed to the bottom. md+: a floating bar above the footer pills. */}
 			{selectedGym && (
-				<div
-					className="bg-bg/95 border-border fixed inset-x-0 bottom-0 z-40 border-t backdrop-blur md:sticky md:bottom-16 md:rounded-2xl md:border md:shadow-[0_12px_40px_-16px_rgba(0,0,0,0.3)]"
-					style={keyboardOpen ? { transform: `translateY(-${keyboardInset}px)` } : undefined}
-				>
-					{keyboardOpen ? (
-						<div className="flex h-13 items-center justify-between px-4">
-							<button
-								type="button"
-								onClick={() => {
-									(document.activeElement as HTMLElement | null)?.blur();
-									setReviewOpen(true);
-								}}
-								disabled={totalQty === 0}
-								className="text-main flex items-center gap-2 text-sm disabled:opacity-50"
-							>
-								<span className="bg-accent text-bg flex h-5.5 min-w-5.5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold tabular-nums">
-									{totalQty}
-								</span>
-								added · Review
-							</button>
-							<button
-								type="button"
-								onClick={() => (document.activeElement as HTMLElement | null)?.blur()}
-								className="bg-main text-bg h-9 rounded-full px-4 text-sm font-medium"
-							>
-								Done
-							</button>
-						</div>
-					) : (
-						<div className="flex flex-col gap-2.5 px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 md:flex-row md:items-center md:justify-between md:gap-6 md:px-5 md:py-3.5">
-							{/* Phone/tablet: open the review sheet */}
-							<button
-								type="button"
-								onClick={() => setReviewOpen(true)}
-								disabled={totalQty === 0}
-								className="text-main flex h-9 items-center justify-between text-sm disabled:opacity-50 lg:hidden"
-							>
-								<span className="flex items-center gap-2">
-									<span className="bg-main text-bg flex h-5.5 min-w-5.5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold tabular-nums">
-										{totalQty}
-									</span>
-									Your additions
-								</span>
-								<span className="text-sub ml-4 flex items-center gap-1">
-									Review <ChevronUp className="h-3.5 w-3.5" />
-								</span>
-							</button>
-							<p className="text-sub hidden items-center gap-2 text-sm lg:flex">
-								<ShieldCheck className="text-accent h-4.5 w-4.5 shrink-0" />
-								Reviewed by an admin before it goes live.
-							</p>
-							<button
-								type="button"
-								onClick={handleSubmit}
-								disabled={!canSubmit || isSubmitting}
-								className={cn(
-									'flex h-13 items-center justify-center gap-2 rounded-full px-7 text-base font-medium transition disabled:cursor-not-allowed',
-									justAdded ? 'bg-accent text-bg' : canSubmit ? 'bg-main text-bg hover:opacity-90' : 'bg-sub-alt text-sub'
-								)}
-							>
-								{ctaIcon}
-								<span className="md:hidden">{canSubmit || justAdded || isSubmitting ? ctaShort : ctaLabel}</span>
-								<span className="hidden truncate md:inline">{ctaLabel}</span>
-							</button>
-						</div>
-					)}
-				</div>
-			)}
-
-			{/* ── Review sheet (below lg) ── */}
-			{reviewOpen && (
-				<div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-labelledby="review-title">
-					<button
-						type="button"
-						aria-label="Close"
-						onClick={() => setReviewOpen(false)}
-						className="absolute inset-0 bg-black/40"
-					/>
-					<div className="bg-bg absolute inset-x-0 bottom-0 flex max-h-[85dvh] flex-col gap-3.5 rounded-t-3xl px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-2.5">
-						<span className="bg-border h-1.5 w-10 self-center rounded-full" />
-						<div className="flex items-end justify-between">
-							<div>
-								<h2 id="review-title" className="text-main text-xl font-semibold">
-									Your additions
-								</h2>
-								<p className="text-sub text-sm">to {selectedGym?.name}</p>
-							</div>
-							<button
-								type="button"
-								onClick={() => {
-									setReviewOpen(false);
-									requestAnimationFrame(() => machineInputRef.current?.focus());
-								}}
-								className="text-accent h-11 text-sm"
-							>
-								Add more
-							</button>
-						</div>
-						<div className="min-h-0 overflow-y-auto">
-							{selectedMachines.length > 0 ? (
-								additionsList(true)
-							) : (
-								<p className="text-sub py-4 text-sm">Nothing added yet.</p>
-							)}
-						</div>
-						<p className="text-sub flex items-center gap-2 text-[13px]">
+				<div className="bg-bg/95 border-border fixed inset-x-0 bottom-0 z-40 border-t backdrop-blur md:sticky md:bottom-16 md:rounded-2xl md:border md:shadow-[0_12px_40px_-16px_rgba(0,0,0,0.3)]">
+					<div className="flex flex-col gap-2 px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 md:flex-row md:items-center md:justify-between md:gap-6 md:py-3.5">
+						<p className="text-sub flex items-center justify-center gap-2 text-xs md:justify-start md:text-sm">
 							<ShieldCheck className="text-accent h-4 w-4 shrink-0" />
-							Reviewed by an admin before it goes live
+							Reviewed by an admin before it goes live.
 						</p>
 						<button
 							type="button"
 							onClick={handleSubmit}
 							disabled={!canSubmit || isSubmitting}
 							className={cn(
-								'flex h-14 items-center justify-center gap-2 rounded-full text-base font-medium transition disabled:cursor-not-allowed',
-								canSubmit ? 'bg-main text-bg' : 'bg-sub-alt text-sub'
+								'flex h-13 items-center justify-center gap-2 rounded-full px-7 text-base font-medium transition disabled:cursor-not-allowed',
+								justAdded ? 'bg-accent text-bg' : canSubmit ? 'bg-main text-bg hover:opacity-90' : 'bg-sub-alt text-sub'
 							)}
 						>
 							{ctaIcon}
-							{canSubmit || isSubmitting || justAdded ? ctaShort : ctaLabel}
+							<span className="md:hidden">{canSubmit || justAdded || isSubmitting ? ctaShort : ctaLabel}</span>
+							<span className="hidden truncate md:inline">{ctaLabel}</span>
 						</button>
 					</div>
 				</div>
 			)}
+
+			{/* ── Machine sheet (below lg) ── */}
+			{sheetOpen && (
+				<MachineSheet count={totalQty} gymName={selectedGym?.name ?? ''} onClose={() => setSheetOpen(false)}>
+					{finder('sheet')}
+				</MachineSheet>
+			)}
+		</div>
+	);
+}
+
+// ── Apple Maps-style sheet ──────────────────────────────
+// Near full height with a sliver of the page showing above it, grab handle,
+// drag the header down (or tap the backdrop / Done) to close.
+
+function MachineSheet({
+	count,
+	gymName,
+	onClose,
+	children
+}: {
+	count: number;
+	gymName: string;
+	onClose: () => void;
+	children: React.ReactNode;
+}) {
+	const [dragY, setDragY] = useState(0);
+	const [dragging, setDragging] = useState(false);
+	const [entered, setEntered] = useState(false);
+	const startY = useRef<number | null>(null);
+
+	useEffect(() => {
+		const raf = requestAnimationFrame(() => setEntered(true));
+		const onKey = (e: KeyboardEvent) => {
+			if (e.key === 'Escape') onClose();
+		};
+		window.addEventListener('keydown', onKey);
+		return () => {
+			cancelAnimationFrame(raf);
+			window.removeEventListener('keydown', onKey);
+		};
+	}, [onClose]);
+
+	const onPointerDown = (e: React.PointerEvent) => {
+		startY.current = e.clientY;
+		setDragging(true);
+		(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+	};
+	const onPointerMove = (e: React.PointerEvent) => {
+		if (startY.current === null) return;
+		setDragY(Math.max(0, e.clientY - startY.current));
+	};
+	const onPointerUp = () => {
+		if (startY.current === null) return;
+		startY.current = null;
+		setDragging(false);
+		if (dragY > 110) onClose();
+		else setDragY(0);
+	};
+
+	return (
+		<div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-labelledby="machine-sheet-title">
+			<button
+				type="button"
+				aria-label="Close"
+				tabIndex={-1}
+				onClick={onClose}
+				className={cn(
+					'absolute inset-0 bg-black/35 transition-opacity duration-300',
+					entered ? 'opacity-100' : 'opacity-0'
+				)}
+			/>
+			<div
+				className={cn(
+					'bg-bg absolute inset-x-0 bottom-0 top-[max(2.75rem,env(safe-area-inset-top))] flex flex-col rounded-t-[28px] shadow-[0_-10px_40px_-12px_rgba(0,0,0,0.35)]',
+					!dragging && 'transition-transform duration-300 ease-out'
+				)}
+				style={{
+					transform: entered ? `translateY(${dragY}px)` : 'translateY(100%)'
+				}}
+			>
+				{/* Draggable header */}
+				<div
+					onPointerDown={onPointerDown}
+					onPointerMove={onPointerMove}
+					onPointerUp={onPointerUp}
+					onPointerCancel={onPointerUp}
+					className="shrink-0 cursor-grab touch-none px-4 pb-3 pt-2 active:cursor-grabbing"
+				>
+					<span className="bg-border mx-auto block h-1.5 w-10 rounded-full" />
+					<div className="mt-3 flex items-center justify-between gap-3">
+						<div className="min-w-0">
+							<h2 id="machine-sheet-title" className="text-main text-[22px] font-semibold tracking-tight">
+								Add equipment
+							</h2>
+							{gymName && <p className="text-sub truncate text-[13px]">to {gymName}</p>}
+						</div>
+						<button
+							type="button"
+							onClick={onClose}
+							onPointerDown={(e) => e.stopPropagation()}
+							className="text-accent h-11 shrink-0 px-1 text-base font-semibold"
+						>
+							{count > 0 ? `Done · ${count}` : 'Done'}
+						</button>
+					</div>
+				</div>
+				<div className="border-border flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto overscroll-contain border-t [&>*]:shrink-0 px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+					{children}
+				</div>
+			</div>
 		</div>
 	);
 }
