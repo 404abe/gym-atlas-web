@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { fetchAllEquipment, fetchGyms } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { logoForGym } from '@/lib/gymLogos';
 
 // ── Card data ───────────────────────────────────────────
 // The hero carousel alternates machine cards and gym cards. It starts on a
@@ -31,7 +32,7 @@ type GymCard = {
 
 type CarouselCard = MachineCard | GymCard;
 
-const PUREGYM_LOGO = '/landing/puregym-logo.png';
+const PUREGYM_LOGO = logoForGym('PureGym');
 
 const FALLBACK: CarouselCard[] = [
 	{
@@ -57,10 +58,6 @@ const MAX_MACHINES = 5;
 const MAX_GYMS = 4;
 // Enough cards per loop that the track is always taller/wider than the stage.
 const MIN_LOOP = 8;
-
-function logoForGym(name: string): string | null {
-	return /pure\s?gym/i.test(name) ? PUREGYM_LOGO : null;
-}
 
 function interleave(machines: CarouselCard[], gyms: CarouselCard[]): CarouselCard[] {
 	const out: CarouselCard[] = [];

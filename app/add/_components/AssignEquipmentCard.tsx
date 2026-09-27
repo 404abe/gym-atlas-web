@@ -1,15 +1,26 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
-import { formatDistance, getDistanceKm, matchesSearch } from '@/lib/utils';
+import {
+	Check,
+	ChevronUp,
+	Dumbbell,
+	Loader2,
+	MapPin,
+	Minus,
+	Plus,
+	Search,
+	ShieldCheck,
+	X
+} from 'lucide-react';
+import { cn, formatDistance, getDistanceKm, matchesSearch } from '@/lib/utils';
+import { logoForGym } from '@/lib/gymLogos';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { useAuth } from '@/app/contexts/AuthContext';
-import { Building2, Dumbbell, MapPin, Minus, Plus, Check, Loader2, ArrowLeftRight } from 'lucide-react';
 import { useToastContext } from '@/app/contexts/ToastContext';
 import { useAuthGate } from '@/app/contexts/AuthGateContext';
 import { addGymEquipment, fetchGymEquipment } from '@/lib/api';
-import FullScreenSearch from './FullScreenSearch';
 import type { Gym, GymEquipment } from '@/types/gym';
 import type { Equipment } from '@/types/equipment';
 
@@ -17,32 +28,156 @@ type Props = {
 	gyms: Gym[];
 	equipment: Equipment[];
 	preselectedEquipmentId?: number;
+	preselectedGymId?: number;
+	/** Switch to the New machine / New gym tabs when what they want isn't listed. */
+	onCreateMachine: () => void;
+	onCreateGym: () => void;
 };
 
 type SelectedMachine = { id: number; qty: number };
 
-const equipLabel = (e: Equipment) => [e.brand, e.series, e.name].filter(Boolean).join(' ');
+const GYM_RESULTS = 8;
+const MACHINE_RESULTS = 60;
+const MAX_CATEGORY_CHIPS = 6;
 
-export default function AssignEquipmentCard({ gyms, equipment, preselectedEquipmentId }: Props) {
+const equipLabel = (e: Equipment) => [e.brand, e.series, e.name].filter(Boolean).join(' ');
+const brandLine = (e: Equipment) => [e.brand, e.series].filter(Boolean).join(' · ');
+
+// ── Small building blocks ───────────────────────────────
+
+function StepBadge({ n }: { n: number }) {
+	return (
+		<span className="bg-main text-bg flex h-6.5 w-6.5 shrink-0 items-center justify-center rounded-full text-xs font-semibold">
+			{n}
+		</span>
+	);
+}
+
+function GymThumb({ gym, size }: { gym: Gym; size: 'sm' | 'md' }) {
+	const logo = logoForGym(gym.name);
+	const box = size === 'md' ? 'h-13 w-13 rounded-xl' : 'h-10.5 w-10.5 rounded-[10px]';
+	return (
+		<div
+			className={cn(
+				'border-border relative flex shrink-0 items-center justify-center overflow-hidden border',
+				box,
+				gym.image_url || logo ? 'bg-white' : 'bg-sub-alt'
+			)}
+		>
+			{gym.image_url ? (
+				<Image src={gym.image_url} alt="" fill sizes="52px" className="object-cover" />
+			) : logo ? (
+				// eslint-disable-next-line @next/next/no-img-element
+				<img src={logo} alt="" className="h-[85%] w-[85%] object-contain" />
+			) : (
+				<span className="text-main text-base font-semibold">{gym.name.slice(0, 1).toUpperCase()}</span>
+			)}
+		</div>
+	);
+}
+
+/** Light photo well so white-background product shots blend in (both themes). */
+function MachinePhoto({ item, className, sizes }: { item: Equipment; className: string; sizes: string }) {
+	return (
+		<div className={cn('relative flex items-center justify-center overflow-hidden bg-[#eeede9]', className)}>
+			{item.image_url ? (
+				<Image src={item.image_url} alt="" fill sizes={sizes} className="object-contain p-2 mix-blend-multiply" />
+			) : (
+				<Dumbbell className="h-1/3 w-1/3 text-[#a7a49a]" />
+			)}
+		</div>
+	);
+}
+
+function QtyStepper({
+	name,
+	qty,
+	onChange,
+	large = false
+}: {
+	name: string;
+	qty: number;
+	onChange: (delta: number) => void;
+	large?: boolean;
+}) {
+	const btn = cn(
+		'text-sub hover:text-main flex items-center justify-center transition-colors disabled:opacity-40',
+		large ? 'h-11 w-10' : 'h-8 w-8'
+	);
+	return (
+		<div className={cn('border-border bg-bg flex shrink-0 items-center rounded-full border', large ? 'h-11' : 'h-8.5')}>
+			<button type="button" onClick={() => onChange(-1)} disabled={qty <= 1} aria-label={`Fewer ${name}`} className={btn}>
+				<Minus className="h-3.5 w-3.5" />
+			</button>
+			<span className="text-main min-w-4 text-center text-sm font-medium tabular-nums">{qty}</span>
+			<button type="button" onClick={() => onChange(1)} aria-label={`More ${name}`} className={btn}>
+				<Plus className="h-3.5 w-3.5" />
+			</button>
+		</div>
+	);
+}
+
+/** Height of the on-screen keyboard (0 when closed), from the visual viewport. */
+function useKeyboardInset() {
+	const [inset, setInset] = useState(0);
+	useEffect(() => {
+		const vv = window.visualViewport;
+		if (!vv) return;
+		const update = () => setInset(Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)));
+		vv.addEventListener('resize', update);
+		vv.addEventListener('scroll', update);
+		update();
+		return () => {
+			vv.removeEventListener('resize', update);
+			vv.removeEventListener('scroll', update);
+		};
+	}, []);
+	return inset;
+}
+
+// ── Main ────────────────────────────────────────────────
+
+export default function AssignEquipmentCard({
+	gyms,
+	equipment,
+	preselectedEquipmentId,
+	preselectedGymId,
+	onCreateMachine,
+	onCreateGym
+}: Props) {
 	const { addToast } = useToastContext();
 	const { user } = useAuth();
 	const { requireAuth } = useAuthGate();
 
 	const [selectedGymId, setSelectedGymId] = useState<number | null>(null);
 	const [machines, setMachines] = useState<SelectedMachine[]>([]);
-	const [sheet, setSheet] = useState<'none' | 'gym' | 'machine'>('none');
 	const [gymQuery, setGymQuery] = useState('');
 	const [machineQuery, setMachineQuery] = useState('');
+	const [category, setCategory] = useState<string | null>(null);
+	const [brand, setBrand] = useState<string>('');
+	const [reviewOpen, setReviewOpen] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [justAdded, setJustAdded] = useState(false);
 	const [preselectApplied, setPreselectApplied] = useState(false);
 
-	useEffect(() => {
-		if (preselectApplied || !preselectedEquipmentId || equipment.length === 0) return;
-		const match = equipment.find((e) => e.id === preselectedEquipmentId);
-		if (match) setMachines((prev) => (prev.some((m) => m.id === match.id) ? prev : [...prev, { id: match.id, qty: 1 }]));
+	const gymInputRef = useRef<HTMLInputElement>(null);
+	const machineInputRef = useRef<HTMLInputElement>(null);
+	const keyboardInset = useKeyboardInset();
+	const keyboardOpen = keyboardInset > 80;
+
+	// Deep links: /add?equipmentId=… and /add?gymId=…, applied once the data they
+	// point at has loaded (state adjusted during render rather than in an effect).
+	const preselectReady =
+		(!preselectedEquipmentId || equipment.length > 0) && (!preselectedGymId || gyms.length > 0);
+	if (!preselectApplied && preselectReady) {
 		setPreselectApplied(true);
-	}, [preselectApplied, preselectedEquipmentId, equipment]);
+		if (preselectedEquipmentId && equipment.some((e) => e.id === preselectedEquipmentId)) {
+			setMachines((prev) =>
+				prev.some((m) => m.id === preselectedEquipmentId) ? prev : [...prev, { id: preselectedEquipmentId, qty: 1 }]
+			);
+		}
+		if (preselectedGymId && gyms.some((g) => g.id === preselectedGymId)) setSelectedGymId(preselectedGymId);
+	}
 
 	const selectedGym = gyms.find((g) => g.id === selectedGymId) ?? null;
 
@@ -60,13 +195,10 @@ export default function AssignEquipmentCard({ gyms, equipment, preselectedEquipm
 			cancelled = true;
 		};
 	}, [selectedGymId]);
-	const inGymMap = new Map(
-		gymStock && gymStock.gymId === selectedGymId
-			? gymStock.items.map((e) => [e.equipment_id, e] as const)
-			: []
-	);
+	const stock = gymStock && gymStock.gymId === selectedGymId ? gymStock.items : null;
+	const inGymMap = new Map((stock ?? []).map((e) => [e.equipment_id, e] as const));
 
-	// Only ask for location once the gym picker has been opened.
+	// Only ask for location once the user starts choosing a gym.
 	const [locationWanted, setLocationWanted] = useState(false);
 	const userLocation = useUserLocation(locationWanted);
 
@@ -78,7 +210,32 @@ export default function AssignEquipmentCard({ gyms, equipment, preselectedEquipm
 		.filter((g) => matchesSearch(gymQuery, g.name, g.city, g.country))
 		.map((g) => ({ gym: g, distance: gymDistance(g) }))
 		.sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity));
-	const filteredEquipment = equipment.filter((e) => matchesSearch(machineQuery, e.brand, e.series, e.name));
+
+	// Category chips: the most common categories in the catalogue.
+	const categories = useMemo(() => {
+		const counts = new Map<string, number>();
+		for (const e of equipment) {
+			const c = e.exercise?.category_name;
+			if (c) counts.set(c, (counts.get(c) ?? 0) + 1);
+		}
+		return [...counts.entries()]
+			.sort((a, b) => b[1] - a[1])
+			.slice(0, MAX_CATEGORY_CHIPS)
+			.map(([name]) => name);
+	}, [equipment]);
+
+	const brands = useMemo(
+		() => [...new Set(equipment.map((e) => e.brand).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
+		[equipment]
+	);
+
+	const filteredEquipment = equipment.filter(
+		(e) =>
+			matchesSearch(machineQuery, e.brand, e.series, e.name, e.exercise?.name) &&
+			(!category || e.exercise?.category_name === category) &&
+			(!brand || e.brand === brand)
+	);
+	const shownEquipment = filteredEquipment.slice(0, MACHINE_RESULTS);
 
 	const selectedMachines = machines
 		.map((m) => {
@@ -87,19 +244,19 @@ export default function AssignEquipmentCard({ gyms, equipment, preselectedEquipm
 		})
 		.filter((m): m is Equipment & { qty: number } => m !== null);
 
-	const toggleMachine = (id: number) => {
+	const toggleMachine = (id: number) =>
 		setMachines((prev) =>
 			prev.some((m) => m.id === id) ? prev.filter((m) => m.id !== id) : [...prev, { id, qty: 1 }]
 		);
-	};
-
-	const adjustQty = (id: number, delta: number) => {
-		setMachines((prev) =>
-			prev.map((m) => (m.id === id ? { ...m, qty: Math.max(1, m.qty + delta) } : m))
-		);
-	};
-
+	const adjustQty = (id: number, delta: number) =>
+		setMachines((prev) => prev.map((m) => (m.id === id ? { ...m, qty: Math.max(1, m.qty + delta) } : m)));
 	const removeMachine = (id: number) => setMachines((prev) => prev.filter((m) => m.id !== id));
+
+	const chooseGym = (id: number) => {
+		setSelectedGymId(id);
+		setGymQuery('');
+		gymInputRef.current?.blur();
+	};
 
 	const canSubmit = !!selectedGymId && selectedMachines.length > 0;
 	const totalQty = machines.reduce((sum, m) => sum + m.qty, 0);
@@ -113,20 +270,20 @@ export default function AssignEquipmentCard({ gyms, equipment, preselectedEquipm
 			const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
 			const gymName = selectedGym?.name ?? 'the gym';
 			const summary =
-				selectedMachines.length === 1
-					? equipLabel(selectedMachines[0])
-					: `${selectedMachines.length} machines`;
+				selectedMachines.length === 1 ? equipLabel(selectedMachines[0]) : `${selectedMachines.length} machines`;
 			addToast(
-				isAdmin
-					? `Added ${summary} to ${gymName}`
-					: `Suggested ${summary} for ${gymName} — pending review`,
+				isAdmin ? `Added ${summary} to ${gymName}` : `Suggested ${summary} for ${gymName} — pending review`,
 				'success'
 			);
 			setJustAdded(true);
+			setReviewOpen(false);
 			setTimeout(() => {
 				setJustAdded(false);
-				setSelectedGymId(null);
 				setMachines([]);
+				// Refresh "already at this gym" so the new machines show as listed.
+				fetchGymEquipment(selectedGymId)
+					.then((items) => setGymStock({ gymId: selectedGymId, items }))
+					.catch(console.error);
 			}, 1500);
 		} catch {
 			addToast('Failed to assign equipment to gym', 'error');
@@ -135,321 +292,502 @@ export default function AssignEquipmentCard({ gyms, equipment, preselectedEquipm
 		}
 	};
 
+	const machineWord = totalQty === 1 ? 'machine' : 'machines';
 	const ctaLabel = justAdded
-		? 'Added to gym'
-		: !canSubmit
-			? 'Add to gym'
-			: totalQty > 1
-				? `Add ${totalQty} machines to gym`
-				: 'Add to gym';
-	const ctaHint = !selectedGym
-		? 'Select a gym to continue'
-		: selectedMachines.length === 0
-			? 'Add at least one machine'
-			: '';
+		? 'Added'
+		: isSubmitting
+			? 'Adding…'
+			: !selectedGym
+				? 'Choose a gym first'
+				: totalQty === 0
+					? 'Add machines to continue'
+					: `Add ${totalQty} ${machineWord} to ${selectedGym.name}`;
+	const ctaShort = justAdded ? 'Added' : isSubmitting ? 'Adding…' : `Add ${totalQty} ${machineWord}`;
 
-	const closeMachinePicker = () => {
-		setSheet('none');
-		setMachineQuery('');
-	};
+	const ctaIcon = isSubmitting ? (
+		<Loader2 className="h-4.5 w-4.5 animate-spin" />
+	) : justAdded ? (
+		<Check className="h-4.5 w-4.5" />
+	) : null;
 
-	const machineResults = (
-		<div className="grid grid-cols-[repeat(auto-fill,minmax(min(150px,calc(50%-0.25rem)),1fr))] gap-2">
-			{filteredEquipment.map((item) => {
-				const selected = machines.some((m) => m.id === item.id);
-				const existing = inGymMap.get(item.id);
-				return (
+	// ── Pieces ──
+
+	const additionsList = (large: boolean) => (
+		<ul className="flex flex-col gap-2">
+			{selectedMachines.map((m) => (
+				<li key={m.id} className={cn('bg-bg flex items-center gap-3 rounded-2xl p-2.5', large && 'bg-sub-alt')}>
+					<MachinePhoto item={m} className="h-11 w-11 shrink-0 rounded-[10px]" sizes="44px" />
+					<div className="min-w-0 flex-1">
+						<div className="text-main truncate text-sm font-medium">{m.name}</div>
+						<div className="text-sub truncate text-xs">{brandLine(m)}</div>
+					</div>
+					<QtyStepper name={m.name} qty={m.qty} onChange={(d) => adjustQty(m.id, d)} large={large} />
 					<button
-						key={item.id}
 						type="button"
-						onClick={() => toggleMachine(item.id)}
-						aria-pressed={selected}
-						className={`bg-sub-alt relative flex flex-col gap-2 rounded-2xl border p-2 text-left transition hover:opacity-90 ${
-							selected ? 'border-accent' : 'border-border'
-						}`}
+						onClick={() => removeMachine(m.id)}
+						aria-label={`Remove ${m.name}`}
+						className="text-sub hover:text-main flex h-8 w-8 shrink-0 items-center justify-center"
 					>
-						{existing && (
-							<div className="bg-main/60 text-bg absolute left-3 top-3 z-10 rounded-md px-1.5 py-0.5 text-[11px] font-bold backdrop-blur-sm">
-								{existing.status === 'pending'
-									? 'Pending'
-									: existing.quantity > 1
-										? `${existing.quantity} in gym`
-										: 'In gym'}
-							</div>
-						)}
-						<div className="bg-main/5 relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl">
-							{item.image_url ? (
-								<Image
-									src={item.image_url}
-									alt={item.name}
-									fill
-									sizes="(max-width: 640px) 50vw, 200px"
-									className="object-contain p-1.5"
-								/>
-							) : (
-								<Dumbbell className="text-sub h-8 w-8 opacity-30" />
-							)}
-						</div>
-						<div className="min-w-0 px-0.5">
-							<div className="text-main line-clamp-2 text-[13px] font-semibold leading-snug">
-								{equipLabel(item)}
-							</div>
-							<div className="text-sub mt-0.5 text-xs">
-								{item.type === 'pin_loaded' ? 'Pin loaded' : 'Plate loaded'}
-							</div>
-						</div>
-						<div
-							className={`absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full transition ${
-								selected ? 'bg-accent' : 'border-border bg-surface border-2'
-							}`}
-						>
-							{selected && <Check className="text-bg h-3.5 w-3.5" strokeWidth={3} />}
-						</div>
+						<X className="h-4 w-4" />
 					</button>
-				);
-			})}
-			{filteredEquipment.length === 0 && (
-				<p className="text-sub col-span-full py-8 text-center text-sm">No equipment found</p>
-			)}
+				</li>
+			))}
+		</ul>
+	);
+
+	const alreadyAtGym = stock && stock.length > 0 && (
+		<div className="border-border flex flex-col gap-2 border-t pt-4">
+			<span className="text-sub text-[11px] font-medium uppercase tracking-[0.08em]">
+				Already at this gym · {stock.length}
+			</span>
+			<ul className="flex flex-col gap-1.5">
+				{stock.slice(0, 6).map((e) => (
+					<li key={e.equipment_id} className="text-sub flex justify-between gap-3 text-sm">
+						<span className="truncate">{e.name}</span>
+						<span className="shrink-0 text-xs tabular-nums">
+							{e.status === 'pending' ? 'pending' : `×${e.quantity}`}
+						</span>
+					</li>
+				))}
+			</ul>
+			{stock.length > 6 && <span className="text-sub text-xs">and {stock.length - 6} more</span>}
 		</div>
 	);
 
 	return (
-		<div className="flex flex-col gap-3">
-			{/* Gym box */}
-			<button
-				type="button"
-				onClick={() => {
-					setLocationWanted(true);
-					setSheet('gym');
-				}}
-				className="bg-surface flex w-full items-center rounded-[22px] p-[18px] text-left shadow-sm transition hover:opacity-90"
-			>
-				{selectedGym ? (
-					<div className="flex w-full items-center gap-3.5">
-						<div className="bg-main text-bg relative flex h-13 w-13 shrink-0 items-center justify-center overflow-hidden rounded-2xl text-lg font-bold">
-							{selectedGym.image_url ? (
-								<Image src={selectedGym.image_url} alt={selectedGym.name} fill sizes="52px" className="object-cover" />
-							) : (
-								selectedGym.name.slice(0, 1).toUpperCase()
-							)}
-						</div>
-						<div className="min-w-0 flex-1">
-							<div className="text-accent mb-0.5 text-xs font-semibold uppercase tracking-wide">
-								Selected gym
-							</div>
-							<div className="text-main truncate text-[17px] font-semibold leading-tight">
-								{selectedGym.name}
-							</div>
+		<div className={cn('flex flex-col gap-6', selectedGym && 'pb-40 md:pb-8')}>
+			{/* ── Step 1: gym ── */}
+			{selectedGym ? (
+				<div className="border-border flex items-center gap-3 rounded-[18px] border p-3 sm:gap-4 sm:p-4">
+					<span className="hidden sm:contents">
+						<StepBadge n={1} />
+					</span>
+					<GymThumb gym={selectedGym} size="md" />
+					<div className="min-w-0 flex-1">
+						<div className="text-main truncate text-lg font-semibold">{selectedGym.name}</div>
+						<div className="text-sub flex items-center gap-1 truncate text-xs">
 							{(selectedGym.city || selectedGym.country) && (
-								<div className="text-sub mt-0.5 flex items-center gap-1 text-sm">
+								<>
 									<MapPin className="h-3 w-3 shrink-0" />
 									{[selectedGym.city, selectedGym.country].filter(Boolean).join(', ')}
-								</div>
+									{stock && ' · '}
+								</>
 							)}
-						</div>
-						<span className="bg-sub-alt text-sub shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium">
-							Change
-						</span>
-					</div>
-				) : (
-					<div className="flex w-full flex-col items-center gap-2.5 py-1">
-						<div className="bg-sub-alt flex h-13 w-13 items-center justify-center rounded-2xl">
-							<Building2 className="text-main h-6 w-6" />
-						</div>
-						<div className="text-center">
-							<div className="text-main text-base font-semibold">Select a gym</div>
-							<div className="text-sub mt-0.5 text-xs">Tap to search all gyms</div>
+							{stock && `${stock.length} machines listed`}
 						</div>
 					</div>
-				)}
-			</button>
-
-			{/* Connector */}
-			<div className="flex h-8 items-center justify-center">
-				<div className="bg-surface flex h-7 w-7 items-center justify-center rounded-full shadow">
-					<ArrowLeftRight className="text-sub h-3.5 w-3.5 rotate-90" />
+					<button
+						type="button"
+						onClick={() => {
+							setSelectedGymId(null);
+							setLocationWanted(true);
+							requestAnimationFrame(() => gymInputRef.current?.focus());
+						}}
+						className="border-border text-main hover:bg-sub-alt h-10 shrink-0 rounded-full border px-4 text-sm transition-colors"
+					>
+						Change<span className="hidden sm:inline"> gym</span>
+					</button>
 				</div>
-			</div>
-
-			{/* Machine box */}
-			<div className="bg-surface w-full rounded-[22px] p-[18px] shadow-sm">
-				{selectedMachines.length > 0 ? (
-					<div>
-						<div className="mb-3 flex items-center justify-between">
-							<span className="text-accent text-xs font-semibold uppercase tracking-wide">
-								Equipment · {selectedMachines.length}
-							</span>
+			) : (
+				<section aria-labelledby="gym-step" className="flex flex-col gap-3">
+					<div className="flex items-center gap-2.5">
+						<StepBadge n={1} />
+						<label id="gym-step" htmlFor="gym-search" className="text-main text-base font-semibold">
+							Which gym?
+						</label>
+					</div>
+					<div className="bg-surface focus-within:ring-accent flex h-12 scroll-mt-4 items-center gap-2.5 rounded-xl px-3.5 focus-within:ring-2">
+						<Search className="text-sub h-4 w-4 shrink-0" />
+						<input
+							ref={gymInputRef}
+							id="gym-search"
+							type="search"
+							value={gymQuery}
+							onChange={(e) => setGymQuery(e.target.value)}
+							onFocus={(e) => {
+								setLocationWanted(true);
+								// On phones, lift the field to the top so results fit above the keyboard.
+								if (window.matchMedia('(max-width: 848px)').matches) {
+									e.currentTarget.parentElement?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+								}
+							}}
+							placeholder="Search gyms by name or city"
+							autoComplete="off"
+							className="text-main placeholder:text-sub min-w-0 flex-1 bg-transparent text-[15px] outline-none"
+						/>
+						{gymQuery && (
 							<button
 								type="button"
-								onClick={() => setSheet('machine')}
-								className="text-accent flex items-center gap-1 text-sm font-semibold"
+								onClick={() => setGymQuery('')}
+								aria-label="Clear search"
+								className="bg-sub/40 text-bg flex h-5.5 w-5.5 items-center justify-center rounded-full"
 							>
-								<Plus className="h-3.5 w-3.5" />
+								<X className="h-3 w-3" />
+							</button>
+						)}
+					</div>
+					<div className="flex flex-col">
+						<span className="text-sub px-1 pb-1.5 text-[11px] font-medium uppercase tracking-[0.08em]">
+							{userLocation ? 'Nearest first' : gymQuery ? 'Matches' : 'Gyms'}
+						</span>
+						{filteredGyms.slice(0, GYM_RESULTS).map(({ gym: g, distance }) => (
+							<button
+								key={g.id}
+								type="button"
+								onClick={() => chooseGym(g.id)}
+								className="hover:bg-surface border-border flex min-h-16 items-center gap-3 border-b px-1 text-left transition-colors last:border-b-0"
+							>
+								<GymThumb gym={g} size="sm" />
+								<div className="min-w-0 flex-1">
+									<div className="text-main truncate text-[15px] font-medium">{g.name}</div>
+									<div className="text-sub truncate text-xs">
+										{[
+											[g.city, g.country].filter(Boolean).join(', '),
+											distance !== null && formatDistance(distance),
+											Number(g.total_equipment) > 0 && `${Number(g.total_equipment)} machines`
+										]
+											.filter(Boolean)
+											.join(' · ') || '—'}
+									</div>
+								</div>
+							</button>
+						))}
+						{filteredGyms.length > GYM_RESULTS && (
+							<p className="text-sub px-1 pt-2 text-xs">
+								Showing {GYM_RESULTS} of {filteredGyms.length}. Keep typing to narrow it down.
+							</p>
+						)}
+						{gyms.length > 0 && filteredGyms.length === 0 && (
+							<p className="text-sub px-1 py-4 text-sm">No gyms match “{gymQuery}”.</p>
+						)}
+						{gyms.length === 0 && (
+							<p className="text-sub flex items-center gap-2 px-1 py-4 text-sm">
+								<Loader2 className="h-4 w-4 animate-spin" /> Loading gyms…
+							</p>
+						)}
+						<button
+							type="button"
+							onClick={onCreateGym}
+							className="text-accent flex min-h-12 items-center gap-2 px-1 text-left text-sm"
+						>
+							<Plus className="h-4 w-4" />
+							Not here? Add it as a new gym
+						</button>
+					</div>
+				</section>
+			)}
+
+			{/* ── Step 2: machines + additions ── */}
+			<div
+				className={cn(
+					'flex flex-col gap-6 lg:flex-row lg:items-start',
+					!selectedGym && 'pointer-events-none opacity-40'
+				)}
+				aria-disabled={!selectedGym}
+			>
+				<section aria-labelledby="machine-step" className="flex min-w-0 flex-1 flex-col gap-3.5">
+					<div className="flex items-center gap-2.5">
+						<StepBadge n={2} />
+						<label id="machine-step" htmlFor="machine-search" className="text-main text-base font-semibold">
+							{selectedGym ? 'Find the machines' : 'Then find the machines'}
+						</label>
+					</div>
+
+					<div className="flex gap-2.5">
+						<div className="bg-surface focus-within:ring-accent flex h-12 min-w-0 flex-1 scroll-mt-4 items-center gap-2.5 rounded-xl px-3.5 focus-within:ring-2">
+							<Search className="text-sub h-4 w-4 shrink-0" />
+							<input
+								ref={machineInputRef}
+								id="machine-search"
+								type="search"
+								value={machineQuery}
+								onChange={(e) => setMachineQuery(e.target.value)}
+								onFocus={(e) => {
+									if (window.matchMedia('(max-width: 848px)').matches) {
+										e.currentTarget.parentElement?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+									}
+								}}
+								placeholder="Search by machine, brand or exercise"
+								autoComplete="off"
+								disabled={!selectedGym}
+								className="text-main placeholder:text-sub min-w-0 flex-1 bg-transparent text-[15px] outline-none"
+							/>
+							{machineQuery && (
+								<button
+									type="button"
+									onClick={() => setMachineQuery('')}
+									aria-label="Clear search"
+									className="bg-sub/40 text-bg flex h-5.5 w-5.5 items-center justify-center rounded-full"
+								>
+									<X className="h-3 w-3" />
+								</button>
+							)}
+						</div>
+						<label className="sr-only" htmlFor="brand-filter">
+							Brand
+						</label>
+						<select
+							id="brand-filter"
+							value={brand}
+							onChange={(e) => setBrand(e.target.value)}
+							disabled={!selectedGym}
+							className="border-border bg-bg text-main hidden h-12 max-w-44 rounded-xl border px-3 text-sm sm:block"
+						>
+							<option value="">Brand: Any</option>
+							{brands.map((b) => (
+								<option key={b} value={b}>
+									{b}
+								</option>
+							))}
+						</select>
+					</div>
+
+					{categories.length > 0 && (
+						<div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
+							{[null, ...categories].map((c) => {
+								const on = category === c;
+								return (
+									<button
+										key={c ?? 'all'}
+										type="button"
+										aria-pressed={on}
+										onClick={() => setCategory(c)}
+										className={cn(
+											'h-9 shrink-0 rounded-full border px-3.5 text-[13px] transition-colors',
+											on ? 'bg-main text-bg border-main' : 'border-border text-main hover:bg-surface'
+										)}
+									>
+										{c ?? 'All'}
+									</button>
+								);
+							})}
+						</div>
+					)}
+
+					{/* Results: compact rows on phones, cards from sm up */}
+					<ul className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
+						{shownEquipment.map((item) => {
+							const selected = machines.some((m) => m.id === item.id);
+							const existing = inGymMap.get(item.id);
+							const tag = existing
+								? existing.status === 'pending'
+									? 'Pending'
+									: existing.quantity > 1
+										? `Listed ×${existing.quantity}`
+										: 'Listed'
+								: null;
+							return (
+								<li key={item.id}>
+									<button
+										type="button"
+										onClick={() => toggleMachine(item.id)}
+										aria-pressed={selected}
+										aria-label={`${selected ? 'Remove' : 'Add'} ${equipLabel(item)}${tag ? ` (${tag.toLowerCase()})` : ''}`}
+										className={cn(
+											'bg-bg flex w-full items-center gap-3 rounded-2xl border p-2 text-left transition-colors sm:flex-col sm:items-stretch sm:gap-0',
+											selected ? 'border-accent' : 'border-border hover:border-sub/60'
+										)}
+									>
+										<MachinePhoto
+											item={item}
+											className="h-16 w-16 shrink-0 rounded-[11px] sm:h-32 sm:w-full sm:rounded-[13px]"
+											sizes="(max-width: 720px) 64px, 260px"
+										/>
+										<div className="flex min-w-0 flex-1 items-center gap-2.5 sm:px-1.5 sm:pb-1 sm:pt-2.5">
+											<div className="min-w-0 flex-1">
+												<div className="text-main truncate text-[15px] font-medium sm:line-clamp-2 sm:whitespace-normal">
+													{item.name}
+												</div>
+												<div className="text-sub truncate text-[13px]">{brandLine(item) || '—'}</div>
+											</div>
+											{tag && !selected && (
+												<span className="bg-sub-alt text-sub shrink-0 rounded-full px-2 py-1 text-[10px] font-medium uppercase tracking-wide">
+													{tag}
+												</span>
+											)}
+											<span
+												className={cn(
+													'flex h-10 w-10 shrink-0 items-center justify-center rounded-full',
+													selected ? 'bg-accent text-bg' : 'border-border text-main border'
+												)}
+												aria-hidden="true"
+											>
+												{selected ? <Check className="h-4 w-4" strokeWidth={2.6} /> : <Plus className="h-4 w-4" />}
+											</span>
+										</div>
+									</button>
+								</li>
+							);
+						})}
+					</ul>
+
+					{filteredEquipment.length > MACHINE_RESULTS && (
+						<p className="text-sub text-xs">
+							Showing {MACHINE_RESULTS} of {filteredEquipment.length}. Search or filter to narrow it down.
+						</p>
+					)}
+					{equipment.length > 0 && filteredEquipment.length === 0 && (
+						<p className="text-sub py-2 text-sm">No machines match{machineQuery ? ` “${machineQuery}”` : ''}.</p>
+					)}
+
+					<button
+						type="button"
+						onClick={onCreateMachine}
+						className="border-border text-sub hover:text-main flex min-h-13 items-center justify-center gap-1.5 rounded-2xl border-[1.5px] border-dashed px-4 text-sm transition-colors"
+					>
+						{machineQuery ? `Can't find “${machineQuery}”?` : "Can't find the one you train on?"}
+						<span className="text-accent font-medium">Create a new machine</span>
+					</button>
+				</section>
+
+				{/* Additions (desktop sidebar) */}
+				<aside
+					aria-label="Your additions"
+					className="bg-surface sticky top-4 hidden w-95 shrink-0 flex-col gap-3 rounded-[20px] p-5 lg:flex"
+				>
+					<div className="flex items-center justify-between">
+						<span className="text-main text-base font-semibold">Your additions</span>
+						<span className="bg-main text-bg flex h-5.5 min-w-5.5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold tabular-nums">
+							{totalQty}
+						</span>
+					</div>
+					{selectedMachines.length > 0 ? (
+						additionsList(false)
+					) : (
+						<p className="text-sub py-3 text-sm">Tap machines on the left to add them here.</p>
+					)}
+					{alreadyAtGym}
+				</aside>
+			</div>
+
+			{/* ── Action bar ──
+			    Phones: fixed to the bottom; while the keyboard is up it becomes a slim
+			    bar riding on top of it. md+: a floating bar above the footer pills. */}
+			{selectedGym && (
+				<div
+					className="bg-bg/95 border-border fixed inset-x-0 bottom-0 z-40 border-t backdrop-blur md:sticky md:bottom-16 md:rounded-2xl md:border md:shadow-[0_12px_40px_-16px_rgba(0,0,0,0.3)]"
+					style={keyboardOpen ? { transform: `translateY(-${keyboardInset}px)` } : undefined}
+				>
+					{keyboardOpen ? (
+						<div className="flex h-13 items-center justify-between px-4">
+							<button
+								type="button"
+								onClick={() => {
+									(document.activeElement as HTMLElement | null)?.blur();
+									setReviewOpen(true);
+								}}
+								disabled={totalQty === 0}
+								className="text-main flex items-center gap-2 text-sm disabled:opacity-50"
+							>
+								<span className="bg-accent text-bg flex h-5.5 min-w-5.5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold tabular-nums">
+									{totalQty}
+								</span>
+								added · Review
+							</button>
+							<button
+								type="button"
+								onClick={() => (document.activeElement as HTMLElement | null)?.blur()}
+								className="bg-main text-bg h-9 rounded-full px-4 text-sm font-medium"
+							>
+								Done
+							</button>
+						</div>
+					) : (
+						<div className="flex flex-col gap-2.5 px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 md:flex-row md:items-center md:justify-between md:gap-6 md:px-5 md:py-3.5">
+							{/* Phone/tablet: open the review sheet */}
+							<button
+								type="button"
+								onClick={() => setReviewOpen(true)}
+								disabled={totalQty === 0}
+								className="text-main flex h-9 items-center justify-between text-sm disabled:opacity-50 lg:hidden"
+							>
+								<span className="flex items-center gap-2">
+									<span className="bg-main text-bg flex h-5.5 min-w-5.5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold tabular-nums">
+										{totalQty}
+									</span>
+									Your additions
+								</span>
+								<span className="text-sub ml-4 flex items-center gap-1">
+									Review <ChevronUp className="h-3.5 w-3.5" />
+								</span>
+							</button>
+							<p className="text-sub hidden items-center gap-2 text-sm lg:flex">
+								<ShieldCheck className="text-accent h-4.5 w-4.5 shrink-0" />
+								Reviewed by an admin before it goes live.
+							</p>
+							<button
+								type="button"
+								onClick={handleSubmit}
+								disabled={!canSubmit || isSubmitting}
+								className={cn(
+									'flex h-13 items-center justify-center gap-2 rounded-full px-7 text-base font-medium transition disabled:cursor-not-allowed',
+									justAdded ? 'bg-accent text-bg' : canSubmit ? 'bg-main text-bg hover:opacity-90' : 'bg-sub-alt text-sub'
+								)}
+							>
+								{ctaIcon}
+								<span className="md:hidden">{canSubmit || justAdded || isSubmitting ? ctaShort : ctaLabel}</span>
+								<span className="hidden truncate md:inline">{ctaLabel}</span>
+							</button>
+						</div>
+					)}
+				</div>
+			)}
+
+			{/* ── Review sheet (below lg) ── */}
+			{reviewOpen && (
+				<div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-labelledby="review-title">
+					<button
+						type="button"
+						aria-label="Close"
+						onClick={() => setReviewOpen(false)}
+						className="absolute inset-0 bg-black/40"
+					/>
+					<div className="bg-bg absolute inset-x-0 bottom-0 flex max-h-[85dvh] flex-col gap-3.5 rounded-t-3xl px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-2.5">
+						<span className="bg-border h-1.5 w-10 self-center rounded-full" />
+						<div className="flex items-end justify-between">
+							<div>
+								<h2 id="review-title" className="text-main text-xl font-semibold">
+									Your additions
+								</h2>
+								<p className="text-sub text-sm">to {selectedGym?.name}</p>
+							</div>
+							<button
+								type="button"
+								onClick={() => {
+									setReviewOpen(false);
+									requestAnimationFrame(() => machineInputRef.current?.focus());
+								}}
+								className="text-accent h-11 text-sm"
+							>
 								Add more
 							</button>
 						</div>
-						<div className="grid grid-cols-2 gap-2.5">
-							{selectedMachines.map((m) => (
-								<div key={m.id} className="bg-sub-alt border-border relative rounded-2xl border p-2.5">
-									<button
-										type="button"
-										onClick={() => removeMachine(m.id)}
-										aria-label={`Remove ${m.name}`}
-										className="bg-main/60 absolute right-1.5 top-1.5 z-10 flex h-5.5 w-5.5 items-center justify-center rounded-full text-bg backdrop-blur-sm"
-									>
-										<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
-											<path d="M18 6 6 18M6 6l12 12" />
-										</svg>
-									</button>
-									{m.qty > 1 && (
-										<div className="bg-main/60 text-bg absolute left-1.5 top-1.5 z-10 rounded-md px-1.5 py-0.5 text-[11px] font-bold backdrop-blur-sm">
-											×{m.qty}
-										</div>
-									)}
-									<div className="bg-main/5 relative flex h-23 items-center justify-center overflow-hidden rounded-xl">
-										{m.image_url ? (
-											<Image src={m.image_url} alt={m.name} fill sizes="140px" className="object-contain p-1.5" />
-										) : (
-											<Dumbbell className="text-sub h-8 w-8 opacity-30" />
-										)}
-									</div>
-									<div className="mt-2 flex items-center justify-between gap-1.5">
-										<div className="text-main min-w-0 flex-1 truncate text-[13px] font-semibold">
-											{m.name}
-										</div>
-										<div className="flex shrink-0 items-center gap-0.5">
-											<button
-												type="button"
-												onClick={() => adjustQty(m.id, -1)}
-												aria-label={`Decrease ${m.name} quantity`}
-												className="text-sub hover:text-main flex h-5 w-5 items-center justify-center"
-											>
-												<Minus className="h-3 w-3" />
-											</button>
-											<span className="text-sub min-w-3 text-center text-xs font-semibold">
-												{m.qty}
-											</span>
-											<button
-												type="button"
-												onClick={() => adjustQty(m.id, 1)}
-												aria-label={`Increase ${m.name} quantity`}
-												className="text-sub hover:text-main flex h-5 w-5 items-center justify-center"
-											>
-												<Plus className="h-3 w-3" />
-											</button>
-										</div>
-									</div>
-								</div>
-							))}
-						</div>
-					</div>
-				) : (
-					<button
-						type="button"
-						onClick={() => setSheet('machine')}
-						className="flex w-full flex-col items-center gap-2.5 py-1"
-					>
-						<div className="bg-sub-alt flex h-13 w-13 items-center justify-center rounded-2xl">
-							<Dumbbell className="text-main h-6 w-6" />
-						</div>
-						<div className="text-center">
-							<div className="text-main text-base font-semibold">Add equipment</div>
-							<div className="text-sub mt-0.5 text-xs">Assign one or more machines</div>
-						</div>
-					</button>
-				)}
-			</div>
-
-			{/* CTA */}
-			<button
-				type="button"
-				onClick={handleSubmit}
-				disabled={!canSubmit || isSubmitting}
-				className={`mt-1 flex h-13.5 w-full items-center justify-center gap-2 rounded-2xl text-[16.5px] font-semibold transition disabled:cursor-not-allowed ${
-					justAdded
-						? 'bg-accent text-bg'
-						: canSubmit
-							? 'bg-main text-bg shadow-lg hover:opacity-90'
-							: 'bg-sub-alt text-sub'
-				}`}
-			>
-				{isSubmitting ? (
-					<Loader2 className="h-4.5 w-4.5 animate-spin" />
-				) : justAdded ? (
-					<Check className="h-5 w-5" />
-				) : (
-					<Plus className="h-4.5 w-4.5" />
-				)}
-				{isSubmitting ? 'Adding...' : ctaLabel}
-			</button>
-			{ctaHint && <p className="text-sub text-center text-xs">{ctaHint}</p>}
-
-			{/* Gym picker (full-screen search) */}
-			<FullScreenSearch
-				open={sheet === 'gym'}
-				onClose={() => {
-					setSheet('none');
-					setGymQuery('');
-				}}
-				title="Select gym"
-				search={gymQuery}
-				onSearchChange={setGymQuery}
-				searchPlaceholder="Search gyms..."
-			>
-				{filteredGyms.map(({ gym: g, distance }) => {
-					const selected = g.id === selectedGymId;
-					return (
-						<button
-							key={g.id}
-							type="button"
-							onClick={() => {
-								setSelectedGymId(g.id);
-								setSheet('none');
-								setGymQuery('');
-							}}
-							className="hover:bg-main/5 flex w-full items-center gap-3.5 rounded-2xl p-2.5 text-left transition"
-						>
-							<div className="bg-main text-bg relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl font-bold">
-								{g.image_url ? (
-									<Image src={g.image_url} alt={g.name} fill sizes="40px" className="object-cover" />
-								) : (
-									g.name.slice(0, 1).toUpperCase()
-								)}
-							</div>
-							<div className="min-w-0 flex-1">
-								<div className="text-main truncate text-[15px] font-semibold">{g.name}</div>
-								<div className="text-sub text-xs">
-									{[[g.city, g.country].filter(Boolean).join(', '), distance !== null && formatDistance(distance)]
-										.filter(Boolean)
-										.join(' · ') || '—'}
-								</div>
-							</div>
-							{selected && (
-								<div className="bg-accent flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
-									<Check className="text-bg h-3.5 w-3.5" strokeWidth={3} />
-								</div>
+						<div className="min-h-0 overflow-y-auto">
+							{selectedMachines.length > 0 ? (
+								additionsList(true)
+							) : (
+								<p className="text-sub py-4 text-sm">Nothing added yet.</p>
 							)}
+						</div>
+						<p className="text-sub flex items-center gap-2 text-[13px]">
+							<ShieldCheck className="text-accent h-4 w-4 shrink-0" />
+							Reviewed by an admin before it goes live
+						</p>
+						<button
+							type="button"
+							onClick={handleSubmit}
+							disabled={!canSubmit || isSubmitting}
+							className={cn(
+								'flex h-14 items-center justify-center gap-2 rounded-full text-base font-medium transition disabled:cursor-not-allowed',
+								canSubmit ? 'bg-main text-bg' : 'bg-sub-alt text-sub'
+							)}
+						>
+							{ctaIcon}
+							{canSubmit || isSubmitting || justAdded ? ctaShort : ctaLabel}
 						</button>
-					);
-				})}
-				{filteredGyms.length === 0 && (
-					<p className="text-sub py-8 text-center text-sm">No gyms found</p>
-				)}
-			</FullScreenSearch>
-
-			{/* Machine picker (full-screen search) */}
-			<FullScreenSearch
-				open={sheet === 'machine'}
-				onClose={closeMachinePicker}
-				title="Add equipment"
-				search={machineQuery}
-				onSearchChange={setMachineQuery}
-				searchPlaceholder="Search machines..."
-				closeLabel={machines.length > 0 ? `Done · ${machines.length}` : 'Done'}
-			>
-				{machineResults}
-			</FullScreenSearch>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }
