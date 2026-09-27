@@ -310,7 +310,6 @@ export default function AssignEquipmentCard({
 		<Check className="h-4.5 w-4.5" />
 	) : null;
 
-<<<<<<< Updated upstream
 	// ── Pieces ──
 
 	const additionsList = (large: boolean) => (
@@ -323,83 +322,13 @@ export default function AssignEquipmentCard({
 						<div className="text-sub truncate text-xs">{brandLine(m)}</div>
 					</div>
 					<QtyStepper name={m.name} qty={m.qty} onChange={(d) => adjustQty(m.id, d)} large={large} />
-=======
-	const machineResults = (
-		<div className="grid grid-cols-[repeat(auto-fill,minmax(min(160px,calc(50%-0.375rem)),1fr))] gap-3">
-			{filteredEquipment.map((item) => {
-				const selected = machines.some((m) => m.id === item.id);
-				const existing = inGymMap.get(item.id);
-				// Space-style hierarchy: small grey eyebrow (brand + series), big headline (machine name).
-				const eyebrow = [item.brand, item.series].filter(Boolean).join(' ');
-				const headline = item.name || equipLabel(item);
-				return (
->>>>>>> Stashed changes
 					<button
 						type="button"
-<<<<<<< Updated upstream
 						onClick={() => removeMachine(m.id)}
 						aria-label={`Remove ${m.name}`}
 						className="text-sub hover:text-main flex h-8 w-8 shrink-0 items-center justify-center"
 					>
 						<X className="h-4 w-4" />
-=======
-						onClick={() => toggleMachine(item.id)}
-						aria-pressed={selected}
-						className={`group bg-surface relative flex flex-col overflow-hidden rounded-[22px] text-left transition duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_12px_28px_-14px_rgba(0,0,0,0.25)] active:translate-y-0 active:scale-[0.985] ${
-							selected ? 'ring-accent ring-2' : 'ring-border/70 ring-1'
-						}`}
-					>
-						{/* Stage: soft grey shelf the machine floats on */}
-						<div className="from-surface to-sub-alt relative flex aspect-[5/4] w-full items-center justify-center bg-linear-to-b">
-							{/* Soft spotlight so dark machines still lift off the stage in dark mode */}
-							<div className="bg-main/[0.07] pointer-events-none absolute inset-x-[18%] inset-y-[14%] rounded-full blur-2xl" />
-							{item.image_url ? (
-								<Image
-									src={item.image_url}
-									alt={item.name}
-									fill
-									sizes="(max-width: 640px) 50vw, 220px"
-									className="object-contain p-4 drop-shadow-[0_10px_10px_rgba(0,0,0,0.14)] transition-transform duration-300 ease-out group-hover:scale-[1.04]"
-								/>
-							) : (
-								<Dumbbell className="text-sub h-9 w-9 opacity-30" />
-							)}
-
-							{existing && (
-								<div className="bg-bg/80 text-main ring-border/60 absolute left-2.5 top-2.5 z-10 flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 backdrop-blur-md">
-									<span
-										className={`h-1.5 w-1.5 rounded-full ${
-											existing.status === 'pending' ? 'bg-amber-400' : 'bg-accent'
-										}`}
-									/>
-									{existing.status === 'pending'
-										? 'Pending'
-										: existing.quantity > 1
-											? `${existing.quantity} in gym`
-											: 'In gym'}
-								</div>
-							)}
-
-							<div
-								className={`absolute right-2.5 top-2.5 z-10 flex h-6 w-6 items-center justify-center rounded-full transition ${
-									selected ? 'bg-accent scale-100' : 'bg-bg/80 ring-border ring-1 backdrop-blur-md'
-								}`}
-							>
-								{selected && <Check className="text-bg h-3.5 w-3.5" strokeWidth={3} />}
-							</div>
-						</div>
-
-						{/* Caption band: eyebrow, headline, meta */}
-						<div className="bg-bg border-border/60 flex min-w-0 flex-1 flex-col border-t px-3.5 pb-3.5 pt-3">
-							{eyebrow && <div className="text-sub truncate text-[11px] font-medium">{eyebrow}</div>}
-							<div className="text-main mt-0.5 line-clamp-2 text-[15px] font-semibold leading-snug tracking-tight">
-								{headline}
-							</div>
-							<div className="text-sub mt-auto pt-1.5 text-xs">
-								{item.type === 'pin_loaded' ? 'Pin loaded' : 'Plate loaded'}
-							</div>
-						</div>
->>>>>>> Stashed changes
 					</button>
 				</li>
 			))}
@@ -635,9 +564,10 @@ export default function AssignEquipmentCard({
 						</div>
 					)}
 
-					{/* Results: 2-up cards on phones, 3-up on wide screens. The add/added
-					    state sits on the photo so it fits even at ~170px wide. */}
-					<ul className="grid grid-cols-2 gap-2.5 xl:grid-cols-3">
+					{/* Results: 2-up on phones, 3-up on wide screens. Space-style card: the
+					    machine floats on a soft grey stage, with a small grey eyebrow (brand
+					    + series) over a bigger headline (machine name). */}
+					<ul className="grid grid-cols-2 gap-3 xl:grid-cols-3">
 						{shownEquipment.map((item) => {
 							const selected = machines.some((m) => m.id === item.id);
 							const existing = inGymMap.get(item.id);
@@ -645,9 +575,10 @@ export default function AssignEquipmentCard({
 								? existing.status === 'pending'
 									? 'Pending'
 									: existing.quantity > 1
-										? `Listed ×${existing.quantity}`
-										: 'Listed'
+										? `${existing.quantity} in gym`
+										: 'In gym'
 								: null;
+							const eyebrow = [item.brand, item.series].filter(Boolean).join(' ');
 							return (
 								<li key={item.id}>
 									<button
@@ -656,36 +587,58 @@ export default function AssignEquipmentCard({
 										aria-pressed={selected}
 										aria-label={`${selected ? 'Remove' : 'Add'} ${equipLabel(item)}${tag ? ` (${tag.toLowerCase()})` : ''}`}
 										className={cn(
-											'bg-bg flex h-full w-full flex-col rounded-2xl border p-2 text-left transition-colors',
-											selected ? 'border-accent' : 'border-border hover:border-sub/60'
+											'group bg-surface relative flex h-full w-full flex-col overflow-hidden rounded-[22px] text-left transition duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_12px_28px_-14px_rgba(0,0,0,0.25)] active:translate-y-0 active:scale-[0.985]',
+											selected ? 'ring-accent ring-2' : 'ring-border/70 ring-1'
 										)}
 									>
-										<div className="relative">
-											<MachinePhoto
-												item={item}
-												className="aspect-square w-full rounded-xl sm:aspect-auto sm:h-32 sm:rounded-[13px]"
-												sizes="(max-width: 720px) 45vw, 260px"
-											/>
+										{/* Stage: soft grey shelf the machine floats on */}
+										<div className="from-surface to-sub-alt relative flex aspect-[5/4] w-full items-center justify-center bg-linear-to-b">
+											{/* Soft spotlight so dark machines still lift off the stage in dark mode */}
+											<div className="bg-main/[0.07] pointer-events-none absolute inset-x-[18%] inset-y-[14%] rounded-full blur-2xl" />
+											{item.image_url ? (
+												<Image
+													src={item.image_url}
+													alt=""
+													fill
+													sizes="(max-width: 720px) 50vw, 260px"
+													className="object-contain p-4 drop-shadow-[0_10px_10px_rgba(0,0,0,0.14)] transition-transform duration-300 ease-out group-hover:scale-[1.04]"
+												/>
+											) : (
+												<Dumbbell className="text-sub h-9 w-9 opacity-30" />
+											)}
+
 											{tag && (
-												<span className="bg-main/65 text-bg absolute left-2 top-2 rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide backdrop-blur-sm">
+												<span className="bg-bg/80 text-main ring-border/60 absolute left-2.5 top-2.5 z-10 flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 backdrop-blur-md">
+													<span
+														className={cn(
+															'h-1.5 w-1.5 rounded-full',
+															existing?.status === 'pending' ? 'bg-amber-400' : 'bg-accent'
+														)}
+													/>
 													{tag}
 												</span>
 											)}
+
 											<span
-												className={cn(
-													'absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full shadow-sm',
-													selected ? 'bg-accent text-bg' : 'bg-bg text-main'
-												)}
 												aria-hidden="true"
+												className={cn(
+													'absolute right-2.5 top-2.5 z-10 flex h-7 w-7 items-center justify-center rounded-full transition',
+													selected ? 'bg-accent text-bg' : 'bg-bg/80 text-main ring-border ring-1 backdrop-blur-md'
+												)}
 											>
-												{selected ? <Check className="h-4 w-4" strokeWidth={2.6} /> : <Plus className="h-4 w-4" />}
+												{selected ? <Check className="h-3.5 w-3.5" strokeWidth={3} /> : <Plus className="h-3.5 w-3.5" />}
 											</span>
 										</div>
-										<div className="min-w-0 px-1 pb-0.5 pt-2">
-											<div className="text-main line-clamp-2 text-sm font-medium leading-snug sm:text-[15px]">
-												{item.name}
+
+										{/* Caption band: eyebrow, headline, meta */}
+										<div className="bg-bg border-border/60 flex min-w-0 flex-1 flex-col border-t px-3.5 pb-3.5 pt-3">
+											{eyebrow && <div className="text-sub truncate text-[11px] font-medium">{eyebrow}</div>}
+											<div className="text-main mt-0.5 line-clamp-2 text-[15px] font-semibold leading-snug tracking-tight">
+												{item.name || equipLabel(item)}
 											</div>
-											<div className="text-sub mt-0.5 truncate text-xs sm:text-[13px]">{brandLine(item) || '—'}</div>
+											<div className="text-sub mt-auto pt-1.5 text-xs">
+												{item.type === 'pin_loaded' ? 'Pin loaded' : 'Plate loaded'}
+											</div>
 										</div>
 									</button>
 								</li>
