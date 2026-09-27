@@ -331,6 +331,12 @@ function Card({ card, mono }: { card: CarouselCard; mono: string }) {
 // cards rather than a straight list (machines are narrower than gyms).
 const OFFSETS_Y = ['120px', '20px', '150px', '40px', '110px', '10px', '140px', '50px'];
 const OFFSETS_X = ['0px', '44px', '8px', '52px', '4px', '40px', '12px', '48px'];
+// Small alternating tilt per card so the overlapping stack looks hand-placed.
+const ROTATIONS = ['-3deg', '2deg', '-1.5deg', '3deg', '-2.5deg', '1.5deg', '-2deg', '2.5deg'];
+// Negative spacing makes each card tuck under the one after it. Every item gets
+// the same margin, so the -50% loop still lands exactly on the seam.
+const OVERLAP_Y = '-70px';
+const OVERLAP_X = '-44px';
 
 /**
  * Decorative, auto-scrolling stack of machine and gym cards for the landing
@@ -350,13 +356,20 @@ export default function HeroCarousel({ mono }: { mono: string }) {
 				className="hero-stage hero-mask-y pointer-events-auto absolute -right-10 -top-10 bottom-0 hidden w-[46%] max-w-[640px] lg:block"
 			>
 				<div className="hero-tilt h-full w-full pt-10">
-					{/* Spacing is per-item padding, not gap, so -50% lands exactly on the seam. */}
+					{/* Spacing is a per-item margin, not gap, so -50% lands exactly on the seam. */}
 					<div className="hero-track-y flex flex-col">
 						{doubled.map((card, i) => (
 							<div
 								key={card.key}
-								className="shrink-0 pb-[30px]"
-								style={{ marginLeft: OFFSETS_Y[i % OFFSETS_Y.length] }}
+								className="relative shrink-0"
+								style={{
+									// Earlier cards sit on top, so the overlap hides the top of
+									// the next card's photo rather than this card's name.
+									zIndex: doubled.length - i,
+									marginLeft: OFFSETS_Y[i % OFFSETS_Y.length],
+									marginBottom: OVERLAP_Y,
+									transform: `rotate(${ROTATIONS[i % ROTATIONS.length]})`
+								}}
 							>
 								<Card card={card} mono={mono} />
 							</div>
@@ -375,10 +388,15 @@ export default function HeroCarousel({ mono }: { mono: string }) {
 								<div
 									key={card.key}
 									className={cn(
-										'mr-4 shrink-0',
+										'relative shrink-0',
 										isMachine ? 'h-[218px] w-[213px]' : 'h-[168px] w-[258px]'
 									)}
-									style={{ marginTop: OFFSETS_X[i % OFFSETS_X.length] }}
+									style={{
+										zIndex: doubled.length - i,
+										marginTop: OFFSETS_X[i % OFFSETS_X.length],
+										marginRight: OVERLAP_X,
+										transform: `rotate(${ROTATIONS[i % ROTATIONS.length]})`
+									}}
 								>
 									<div className="origin-top-left scale-[0.56]">
 										<Card card={card} mono={mono} />
