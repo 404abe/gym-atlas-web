@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import { Check, ChevronRight, Dumbbell, Loader2, MapPin, Minus, Plus, Search, ShieldCheck, X } from 'lucide-react';
 import { cn, formatDistance, getDistanceKm, matchesSearch } from '@/lib/utils';
@@ -135,6 +135,13 @@ export default function AssignEquipmentCard({
 	// Below lg, machine search lives in an Apple Maps-style near-full-height sheet.
 	const [sheetOpen, setSheetOpen] = useState(false);
 	const [sheetAutoFocus, setSheetAutoFocus] = useState(false);
+	const sheetInputRef = useRef<HTMLInputElement>(null);
+	// Focus in a layout effect so it still counts as part of the tap (iOS only
+	// opens the keyboard from a user gesture), and with preventScroll so Safari
+	// doesn't jump the page to reveal the field.
+	useLayoutEffect(() => {
+		if (sheetOpen && sheetAutoFocus) sheetInputRef.current?.focus({ preventScroll: true });
+	}, [sheetOpen, sheetAutoFocus]);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [justAdded, setJustAdded] = useState(false);
 	const [preselectApplied, setPreselectApplied] = useState(false);
@@ -340,9 +347,9 @@ export default function AssignEquipmentCard({
 							onChange={(e) => setMachineQuery(e.target.value)}
 							placeholder="Search by machine, brand or exercise"
 							autoComplete="off"
-							autoFocus={where === 'sheet' && sheetAutoFocus}
+							ref={where === 'sheet' ? sheetInputRef : undefined}
 							disabled={!selectedGym}
-							className="text-main placeholder:text-sub min-w-0 flex-1 bg-transparent text-[15px] outline-none"
+							className="text-main placeholder:text-sub min-w-0 flex-1 bg-transparent text-base outline-none md:text-[15px]"
 						/>
 						{machineQuery && (
 							<button
@@ -587,7 +594,7 @@ export default function AssignEquipmentCard({
 							}}
 							placeholder="Search gyms by name or city"
 							autoComplete="off"
-							className="text-main placeholder:text-sub min-w-0 flex-1 bg-transparent text-[15px] outline-none"
+							className="text-main placeholder:text-sub min-w-0 flex-1 bg-transparent text-base outline-none md:text-[15px]"
 						/>
 						{gymQuery && (
 							<button
@@ -760,7 +767,7 @@ export default function AssignEquipmentCard({
 
 			{/* ── Machine sheet (below lg) ── */}
 			{sheetOpen && (
-				<MachineSheet count={totalQty} gymName={selectedGym?.name ?? ''} onClose={() => setSheetOpen(false)}>
+				<MachineSheet fadeIn={sheetAutoFocus} count={totalQty} gymName={selectedGym?.name ?? ''} onClose={() => setSheetOpen(false)}>
 					{finder('sheet')}
 				</MachineSheet>
 			)}
@@ -773,11 +780,15 @@ export default function AssignEquipmentCard({
 // drag the header down (or tap the backdrop / Done) to close.
 
 function MachineSheet({
+	fadeIn,
 	count,
 	gymName,
 	onClose,
 	children
 }: {
+	/** Opened for typing: fade in place instead of sliding up, so the focused
+	    input is never off-screen (iOS would scroll the page to reveal it). */
+	fadeIn: boolean;
 	count: number;
 	gymName: string;
 	onClose: () => void;
@@ -832,10 +843,11 @@ function MachineSheet({
 			<div
 				className={cn(
 					'bg-bg absolute inset-x-0 bottom-0 top-[max(2.75rem,env(safe-area-inset-top))] flex flex-col rounded-t-[28px] shadow-[0_-10px_40px_-12px_rgba(0,0,0,0.35)]',
-					!dragging && 'transition-transform duration-300 ease-out'
+					!dragging && 'transition-[transform,opacity] duration-300 ease-out'
 				)}
 				style={{
-					transform: entered ? `translateY(${dragY}px)` : 'translateY(100%)'
+					transform: entered ? `translateY(${dragY}px)` : fadeIn ? 'translateY(12px)' : 'translateY(100%)',
+					opacity: entered || !fadeIn ? 1 : 0
 				}}
 			>
 				{/* Draggable header */}
