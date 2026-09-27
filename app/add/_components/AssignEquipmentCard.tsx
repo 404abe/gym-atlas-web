@@ -635,8 +635,9 @@ export default function AssignEquipmentCard({
 						</div>
 					)}
 
-					{/* Results: compact rows on phones, cards from sm up */}
-					<ul className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
+					{/* Results: 2-up cards on phones, 3-up on wide screens. The add/added
+					    state sits on the photo so it fits even at ~170px wide. */}
+					<ul className="grid grid-cols-2 gap-2.5 xl:grid-cols-3">
 						{shownEquipment.map((item) => {
 							const selected = machines.some((m) => m.id === item.id);
 							const existing = inGymMap.get(item.id);
@@ -655,36 +656,36 @@ export default function AssignEquipmentCard({
 										aria-pressed={selected}
 										aria-label={`${selected ? 'Remove' : 'Add'} ${equipLabel(item)}${tag ? ` (${tag.toLowerCase()})` : ''}`}
 										className={cn(
-											'bg-bg flex w-full items-center gap-3 rounded-2xl border p-2 text-left transition-colors sm:flex-col sm:items-stretch sm:gap-0',
+											'bg-bg flex h-full w-full flex-col rounded-2xl border p-2 text-left transition-colors',
 											selected ? 'border-accent' : 'border-border hover:border-sub/60'
 										)}
 									>
-										<MachinePhoto
-											item={item}
-											className="h-16 w-16 shrink-0 rounded-[11px] sm:h-32 sm:w-full sm:rounded-[13px]"
-											sizes="(max-width: 720px) 64px, 260px"
-										/>
-										<div className="flex min-w-0 flex-1 items-center gap-2.5 sm:px-1.5 sm:pb-1 sm:pt-2.5">
-											<div className="min-w-0 flex-1">
-												<div className="text-main truncate text-[15px] font-medium sm:line-clamp-2 sm:whitespace-normal">
-													{item.name}
-												</div>
-												<div className="text-sub truncate text-[13px]">{brandLine(item) || '—'}</div>
-											</div>
-											{tag && !selected && (
-												<span className="bg-sub-alt text-sub shrink-0 rounded-full px-2 py-1 text-[10px] font-medium uppercase tracking-wide">
+										<div className="relative">
+											<MachinePhoto
+												item={item}
+												className="aspect-square w-full rounded-xl sm:aspect-auto sm:h-32 sm:rounded-[13px]"
+												sizes="(max-width: 720px) 45vw, 260px"
+											/>
+											{tag && (
+												<span className="bg-main/65 text-bg absolute left-2 top-2 rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide backdrop-blur-sm">
 													{tag}
 												</span>
 											)}
 											<span
 												className={cn(
-													'flex h-10 w-10 shrink-0 items-center justify-center rounded-full',
-													selected ? 'bg-accent text-bg' : 'border-border text-main border'
+													'absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full shadow-sm',
+													selected ? 'bg-accent text-bg' : 'bg-bg text-main'
 												)}
 												aria-hidden="true"
 											>
 												{selected ? <Check className="h-4 w-4" strokeWidth={2.6} /> : <Plus className="h-4 w-4" />}
 											</span>
+										</div>
+										<div className="min-w-0 px-1 pb-0.5 pt-2">
+											<div className="text-main line-clamp-2 text-sm font-medium leading-snug sm:text-[15px]">
+												{item.name}
+											</div>
+											<div className="text-sub mt-0.5 truncate text-xs sm:text-[13px]">{brandLine(item) || '—'}</div>
 										</div>
 									</button>
 								</li>
