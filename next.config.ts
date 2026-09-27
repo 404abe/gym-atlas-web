@@ -1,7 +1,7 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-	allowedDevOrigins: ['192.168.1.6', 'localhost', '127.0.0.1'],
+	allowedDevOrigins: ['192.168.1.6', '192.168.1.137', 'localhost', '127.0.0.1'],
 	transpilePackages: ['react-map-gl', 'mapbox-gl'],
 	images: {
 		remotePatterns: [
