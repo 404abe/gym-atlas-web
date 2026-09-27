@@ -146,6 +146,18 @@ body {
 	font-family: var(--font-sans);
 }
 
+/* iOS Safari force-zooms the page when a focused field's font-size is under
+   16px. Our inputs use smaller type by design, so on touch devices bump every
+   text field to 16px to suppress the zoom. Desktop (pointer: fine) keeps the
+   compact sizing set by the utility classes. */
+@media (pointer: coarse) {
+	input:not([type='checkbox']):not([type='radio']),
+	textarea,
+	select {
+		font-size: 16px;
+	}
+}
+
 /* MonkeyType content grid — credit Kevin Powell */
 .content-grid {
 	--padding-inline: 2rem;

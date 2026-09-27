@@ -192,9 +192,7 @@ export default function CommandPalette({
 							}
 						}}
 						placeholder="Search gyms, exercises, machines, or brands…"
-						// 16px on mobile: iOS Safari force-zooms the page when a focused
-						// field is smaller than that, and this input auto-focuses on open.
-						className="text-text placeholder:text-sub min-w-0 flex-1 bg-transparent text-[16px] outline-none md:text-[13px]"
+						className="text-text placeholder:text-sub min-w-0 flex-1 bg-transparent text-[13px] outline-none"
 					/>
 				</div>
 
