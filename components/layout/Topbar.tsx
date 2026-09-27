@@ -1,8 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Plus, Trophy, UserCircle, ShieldCheck } from 'lucide-react';
-import { FaDatabase, FaMap } from 'react-icons/fa';
+import { BadgePlus, Trophy, UserCircle, ShieldCheck, Map, Database } from 'lucide-react';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { useAuthGate } from '@/app/contexts/AuthGateContext';
 import { cn } from '@/lib/utils';
@@ -49,14 +48,14 @@ export default function Topbar() {
 						aria-label="Map view"
 						className={cn(iconLinkClsBase, isMap ? 'text-text' : iconLinkColorCls)}
 					>
-						<FaMap size={18} />
+						<Map size={18} />
 					</Link>
 					<Link
 						href="/data"
 						aria-label="Equipment database"
 						className={cn(iconLinkClsBase, isData ? 'text-text' : iconLinkColorCls)}
 					>
-						<FaDatabase size={18} />
+						<Database size={18} />
 					</Link>
 					<Link
 						href="/add"
@@ -66,7 +65,7 @@ export default function Topbar() {
 						}}
 						className={iconLinkCls}
 					>
-						<Plus size={18} />
+						<BadgePlus size={20} />
 					</Link>
 				</div>
 			</div>

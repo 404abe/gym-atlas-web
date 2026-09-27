@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
-import { Check, ChevronRight, Dumbbell, Loader2, MapPin, Minus, Plus, Search, ShieldCheck, X } from 'lucide-react';
+import { Check, Dumbbell, Loader2, MapPin, Minus, Plus, Search, ShieldCheck, X } from 'lucide-react';
 import { cn, formatDistance, getDistanceKm, matchesSearch } from '@/lib/utils';
 import { logoForGym } from '@/lib/gymLogos';
 import { useUserLocation } from '@/hooks/useUserLocation';
@@ -27,7 +27,6 @@ type SelectedMachine = { id: number; qty: number };
 
 const GYM_RESULTS = 8;
 const MACHINE_RESULTS = 60;
-const MAX_CATEGORY_CHIPS = 6;
 
 const equipLabel = (e: Equipment) => [e.brand, e.series, e.name].filter(Boolean).join(' ');
 const brandLine = (e: Equipment) => [e.brand, e.series].filter(Boolean).join(' · ');
@@ -130,7 +129,6 @@ export default function AssignEquipmentCard({
 	const [machines, setMachines] = useState<SelectedMachine[]>([]);
 	const [gymQuery, setGymQuery] = useState('');
 	const [machineQuery, setMachineQuery] = useState('');
-	const [category, setCategory] = useState<string | null>(null);
 	const [brand, setBrand] = useState<string>('');
 	// Below lg, machine search lives in an Apple Maps-style near-full-height sheet.
 	const [sheetOpen, setSheetOpen] = useState(false);
@@ -196,19 +194,6 @@ export default function AssignEquipmentCard({
 		.map((g) => ({ gym: g, distance: gymDistance(g) }))
 		.sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity));
 
-	// Category chips: the most common categories in the catalogue.
-	const categories = useMemo(() => {
-		const counts = new Map<string, number>();
-		for (const e of equipment) {
-			const c = e.exercise?.category_name;
-			if (c) counts.set(c, (counts.get(c) ?? 0) + 1);
-		}
-		return [...counts.entries()]
-			.sort((a, b) => b[1] - a[1])
-			.slice(0, MAX_CATEGORY_CHIPS)
-			.map(([name]) => name);
-	}, [equipment]);
-
 	const brands = useMemo(
 		() => [...new Set(equipment.map((e) => e.brand).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
 		[equipment]
@@ -217,7 +202,6 @@ export default function AssignEquipmentCard({
 	const filteredEquipment = equipment.filter(
 		(e) =>
 			matchesSearch(machineQuery, e.brand, e.series, e.name, e.exercise?.name) &&
-			(!category || e.exercise?.category_name === category) &&
 			(!brand || e.brand === brand)
 	);
 	const shownEquipment = filteredEquipment.slice(0, MACHINE_RESULTS);
@@ -319,8 +303,7 @@ export default function AssignEquipmentCard({
 		</ul>
 	);
 
-	const openSheet = (autoFocus: boolean, presetCategory?: string | null) => {
-		if (presetCategory !== undefined) setCategory(presetCategory);
+	const openSheet = (autoFocus: boolean) => {
 		setSheetAutoFocus(autoFocus);
 		setSheetOpen(true);
 	};
@@ -331,7 +314,7 @@ export default function AssignEquipmentCard({
 			{/* In the sheet, search + chips stay pinned while the results scroll */}
 			<div
 				className={
-					where === 'sheet' ? 'bg-bg sticky top-0 z-10 -mx-4 flex flex-col gap-3 px-4 pb-2 pt-3.5' : 'contents'
+					where === 'sheet' ? 'bg-bg sticky top-0 z-20 -mx-4 flex flex-col gap-3 px-4 pb-2 pt-3.5' : 'contents'
 				}
 			>
 				<div className="flex gap-2.5">
@@ -384,28 +367,6 @@ export default function AssignEquipmentCard({
 						</>
 					)}
 				</div>
-
-				{categories.length > 0 && (
-					<div className={cn('flex gap-2 overflow-x-auto pb-1', where === 'sheet' ? '-mx-4 px-4' : 'flex-wrap')}>
-						{[null, ...categories].map((c) => {
-							const on = category === c;
-							return (
-								<button
-									key={c ?? 'all'}
-									type="button"
-									aria-pressed={on}
-									onClick={() => setCategory(c)}
-									className={cn(
-										'h-9 shrink-0 rounded-full border px-3.5 text-[13px] transition-colors',
-										on ? 'bg-main text-bg border-main' : 'border-border text-main hover:bg-surface'
-									)}
-								>
-									{c ?? 'All'}
-								</button>
-							);
-						})}
-					</div>
-				)}
 			</div>
 
 			{/* 2-up on phones, 3-up on wide screens. Space-style card: the machine floats
@@ -677,7 +638,7 @@ export default function AssignEquipmentCard({
 					{/* lg+: everything inline */}
 					<div className="hidden flex-col gap-3.5 lg:flex">{finder('inline')}</div>
 
-					{/* Below lg: a search-style button and category shortcuts that open the sheet */}
+					{/* Below lg: a search-style button that opens the sheet */}
 					<div className="flex flex-col gap-3 lg:hidden">
 						<button
 							type="button"
@@ -688,22 +649,6 @@ export default function AssignEquipmentCard({
 							<Search className="h-4 w-4 shrink-0" />
 							<span className="flex-1 truncate">Search by machine, brand or exercise</span>
 						</button>
-						{categories.length > 0 && (
-							<div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
-								{categories.map((c) => (
-									<button
-										key={c}
-										type="button"
-										onClick={() => openSheet(false, c)}
-										disabled={!selectedGym}
-										className="border-border text-main flex h-9 shrink-0 items-center gap-1 rounded-full border pl-3.5 pr-2.5 text-[13px]"
-									>
-										{c}
-										<ChevronRight className="text-sub h-3.5 w-3.5" />
-									</button>
-								))}
-							</div>
-						)}
 					</div>
 				</section>
 
@@ -732,7 +677,7 @@ export default function AssignEquipmentCard({
 					) : (
 						<p className="text-sub py-2 text-sm">
 							<span className="hidden lg:inline">Tap machines on the left to add them here.</span>
-							<span className="lg:hidden">Search above, or pick a category, to add machines.</span>
+							<span className="lg:hidden">Search above to add machines.</span>
 						</p>
 					)}
 					{alreadyAtGym}

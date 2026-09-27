@@ -9,8 +9,14 @@ import { useAuth } from '@/app/contexts/AuthContext';
 import { useAuthGate } from '@/app/contexts/AuthGateContext';
 import { cn } from '@/lib/utils';
 
-const iconCls =
-	'flex items-center justify-center w-10 h-10 rounded-lg text-sub hover:text-text transition-colors duration-[0.22s]';
+// iOS-style sizing: 22px glyphs in 44px-tall tap targets. Widths stay at 40px
+// so all nine icons still fit on a phone. The svg size is set here (not per
+// icon) so ThemeToggle and NotificationDrawer's own icons match too.
+const iconBaseCls =
+	'flex items-center justify-center w-10 h-11 rounded-lg text-sub hover:text-text transition-colors duration-[0.22s]';
+const iconCls = cn(iconBaseCls, '[&_svg]:size-[22px]');
+// The circled plus reads smaller than open glyphs, so it gets an optical +2px.
+const addIconCls = cn(iconBaseCls, '[&_svg]:size-6');
 
 export default function MobileHeader() {
 	const { user } = useAuth();
@@ -28,14 +34,14 @@ export default function MobileHeader() {
 
 			<div className="flex items-center">
 				<Link href="/map" aria-label="Map view" className={cn(iconCls, active('/map') ? 'text-text' : '')}>
-					<Map size={18} />
+					<Map />
 				</Link>
 				<Link
 					href="/data"
 					aria-label="Equipment database"
 					className={cn(iconCls, active('/data') ? 'text-text' : '')}
 				>
-					<Database size={18} />
+					<Database />
 				</Link>
 				<Link
 					href="/add"
@@ -43,16 +49,16 @@ export default function MobileHeader() {
 					onClick={(e) => {
 						if (!requireAuth('make a contribution')) e.preventDefault();
 					}}
-					className={cn(iconCls, active('/add') ? 'text-text' : '')}
+					className={cn(addIconCls, active('/add') ? 'text-text' : '')}
 				>
-					<BadgePlus size={20} />
+					<BadgePlus />
 				</Link>
 				<Link
 					href="/leaderboard"
 					aria-label="Leaderboard"
 					className={cn(iconCls, active('/leaderboard') ? 'text-text' : '')}
 				>
-					<Trophy size={18} />
+					<Trophy />
 				</Link>
 			</div>
 
@@ -64,7 +70,7 @@ export default function MobileHeader() {
 				<ThemeToggle className={iconCls} />
 				{(user?.role === 'admin' || user?.role === 'super_admin') && (
 					<Link href="/admin" title="Admin" aria-label="Admin" className={iconCls}>
-						<ShieldCheck size={18} />
+						<ShieldCheck />
 					</Link>
 				)}
 				<NotificationDrawer buttonClassName={iconCls} />
@@ -73,7 +79,7 @@ export default function MobileHeader() {
 					aria-label="Account"
 					className={cn(iconCls, active('/account') ? 'text-text' : '')}
 				>
-					<UserCircle size={18} />
+					<UserCircle />
 				</Link>
 			</div>
 		</header>
