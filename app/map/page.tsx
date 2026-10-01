@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Dumbbell, Eye, EyeOff, PanelLeftOpen, X } from 'lucide-react';
 import Image from 'next/image';
 import MapView from './_components/MapView';
@@ -120,8 +120,12 @@ export default function Page() {
 	const userLocation = useUserLocation();
 
 	// Mobile: tapping the already-selected gym again (pin or story) closes the card.
-	const toggleSelectGym = (gym: Gym) =>
-		setSelectedGym((prev) => (prev?.id === gym.id ? null : gym));
+	// Stable identity: MapView passes this down to several hundred memoised pins,
+	// and a fresh function each render would defeat all of them.
+	const toggleSelectGym = useCallback(
+		(gym: Gym) => setSelectedGym((prev) => (prev?.id === gym.id ? null : gym)),
+		[]
+	);
 
 	const openPalette = (initialQuery = '', anchor?: PaletteAnchor) => {
 		setPaletteInitialQuery(initialQuery);
@@ -180,19 +184,24 @@ export default function Page() {
 	// from both the map and the list. Off by default.
 	const [showUnmatched, setShowUnmatched] = useState(false);
 
-	// Gyms whose equipment includes ALL selected filters.
-	const filteredGyms = matchedGymIds ? gyms.filter((g) => matchedGymIds.has(g.id)) : gyms;
+	// Gyms whose equipment includes ALL selected filters. Memoised because the
+	// array identity is what MapView keys its clustering (and its cluster cache)
+	// on — rebuilding it on every unrelated render re-clusters every gym.
+	const filteredGyms = useMemo(
+		() => (matchedGymIds ? gyms.filter((g) => matchedGymIds.has(g.id)) : gyms),
+		[gyms, matchedGymIds]
+	);
 	// What the map and list actually render, per the eye toggle.
 	const mapGyms = showUnmatched ? gyms : filteredGyms;
 	const mapMatched = showUnmatched ? matchedGymIds : null;
 	const listGyms = showUnmatched ? gyms : filteredGyms;
-	const searchFilteredGyms = gymSearch
-		? listGyms.filter(
-				(g) =>
-					g.name.toLowerCase().includes(gymSearch.toLowerCase()) ||
-					g.city?.toLowerCase().includes(gymSearch.toLowerCase())
-			)
-		: listGyms;
+	const searchFilteredGyms = useMemo(() => {
+		if (!gymSearch) return listGyms;
+		const needle = gymSearch.toLowerCase();
+		return listGyms.filter(
+			(g) => g.name.toLowerCase().includes(needle) || g.city?.toLowerCase().includes(needle)
+		);
+	}, [listGyms, gymSearch]);
 
 	const startSidebarResize = (startX: number) => {
 		const startWidth = sidebarCollapsed ? 48 : sidebarWidth;
