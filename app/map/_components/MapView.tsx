@@ -321,7 +321,11 @@ export default function MapView({
 				style={{ width: '100%', height: '100%' }}
 				onMove={handleMove}
 				onMoveEnd={handleMoveEnd}
-				onLoad={() => {
+				onLoad={(e) => {
+					// Speed up Mapbox's default zoom so scroll/pinch feels closer to Google Maps.
+					const scrollZoom = e.target.scrollZoom;
+					scrollZoom.setZoomRate(1 / 24); // trackpad + pinch, default 1/100
+					scrollZoom.setWheelZoomRate(1 / 108); // mouse wheel, default 1/450
 					setMapLoaded(true);
 					refreshBounds();
 				}}
