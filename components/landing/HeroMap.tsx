@@ -5,6 +5,7 @@ import ReactMap, { Marker, type MapRef } from 'react-map-gl/mapbox';
 import { Dumbbell } from 'lucide-react';
 import { fetchGyms } from '@/lib/api';
 import { useTheme } from '@/app/contexts/ThemeContext';
+import { getMapStyle, getMapThemeClass } from '@/lib/mapStyle';
 import type { Gym } from '@/types/gym';
 
 // UK-wide fallback view, used until gyms load and whenever there are too
@@ -56,7 +57,7 @@ export default function HeroMap() {
 	const [mapLoaded, setMapLoaded] = useState(false);
 	const [points, setPoints] = useState<GymPoint[]>([]);
 	const { theme } = useTheme();
-	const mapStyle = theme === 'light' ? 'mapbox://styles/mapbox/light-v11' : 'mapbox://styles/mapbox/dark-v11';
+	const mapStyle = getMapStyle(theme);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -111,7 +112,9 @@ export default function HeroMap() {
 				}}
 			/>
 
-			<div className="border-border bg-sub-alt relative h-[280px] w-full overflow-hidden rounded-2xl border shadow-sm sm:h-[320px]">
+			<div
+				className={`border-border bg-sub-alt relative h-[280px] w-full overflow-hidden rounded-2xl border shadow-sm sm:h-[320px] ${getMapThemeClass(theme) ?? ''}`}
+			>
 				<ReactMap
 					ref={mapRef}
 					mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}

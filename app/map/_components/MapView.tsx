@@ -4,6 +4,7 @@ import ReactMap, { Marker, type MapRef, type ViewStateChangeEvent } from 'react-
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Gym } from '@/types/gym';
 import { useTheme } from '@/app/contexts/ThemeContext';
+import { getMapStyle, getMapThemeClass } from '@/lib/mapStyle';
 import GymMarker, { type MarkerState } from './GymMarker';
 import { CLUSTER_MAX_ZOOM, clusterGymsCached, type GymCluster } from './clustering';
 
@@ -149,7 +150,7 @@ export default function MapView({
 	const [bounds, setBounds] = useState<Bounds | null>(null);
 	const [mapLoaded, setMapLoaded] = useState(false);
 	const { theme } = useTheme();
-	const mapStyle = theme === 'light' ? 'mapbox://styles/mapbox/light-v11' : 'mapbox://styles/mapbox/dark-v11';
+	const mapStyle = getMapStyle(theme);
 
 	// Both handlers below are handed to several hundred memoised markers, so they
 	// must keep the same identity for the lifetime of the map. They read their
@@ -308,7 +309,11 @@ export default function MapView({
 	}, [mapLoaded, refreshBounds]);
 
 	return (
-		<div id="MapView" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+		<div
+			id="MapView"
+			className={getMapThemeClass(theme)}
+			style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+		>
 			<ReactMap
 				ref={mapRef}
 				initialViewState={{

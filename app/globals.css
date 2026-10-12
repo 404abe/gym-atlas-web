@@ -80,6 +80,16 @@
 	display: none !important;
 }
 
+/*
+ * "Ocean" colour theme for the light-mode map, matching the one in Mapbox's
+ * homepage demo. It isn't a real Standard theme: the demo runs the default theme
+ * and tints the map with this filter. Scoped to the canvas so the gym markers
+ * keep their true colours.
+ */
+.map-ocean-theme .mapboxgl-canvas {
+	filter: hue-rotate(20deg) saturate(1.15) brightness(0.97);
+}
+
 .map-marker-shell {
 	animation: map-marker-soft-in 420ms ease-out;
 	transition:
