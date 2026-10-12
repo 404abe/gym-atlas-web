@@ -107,7 +107,7 @@ function ActiveFilterCards() {
 export default function Page() {
 	const [gyms, setGyms] = useState<Gym[]>([]);
 	const [selectedGym, setSelectedGym] = useState<Gym | null>(null);
-	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+	const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
 	const [sidebarWidth, setSidebarWidth] = useState(320);
 	const [isResizingSidebar, setIsResizingSidebar] = useState(false);
 	const [shortcutsOpen, setShortcutsOpen] = useState(false);
