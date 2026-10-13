@@ -133,16 +133,23 @@ export default function GymProfileClient() {
 	};
 
 	const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-		const file = e.target.files?.[0];
+		const input = e.target;
+		const file = input.files?.[0];
 		if (!file) return;
 		try {
 			setUploading(true);
-			const url = await uploadGymImage(Number(id), file);
-			setImageUrl(url);
+			const { image_url, status } = await uploadGymImage(Number(id), file);
+			if (status === 'pending') {
+				addToast('New photo submitted for review. The current photo stays until it is approved.', 'success');
+			} else {
+				setImageUrl(image_url);
+			}
 		} catch (err) {
 			console.error('Failed to upload image:', err);
+			addToast('Failed to upload photo', 'error');
 		} finally {
 			setUploading(false);
+			input.value = '';
 		}
 	};
 

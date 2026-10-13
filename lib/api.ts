@@ -86,15 +86,16 @@ export const submitGymFreeWeights = (
 		body: JSON.stringify(body)
 	});
 
-export const uploadGymImage = async (id: number, file: File): Promise<string> => {
+export type ImageUploadResult = { image_url: string; status: 'approved' | 'pending' };
+
+export const uploadGymImage = async (id: number, file: File): Promise<ImageUploadResult> => {
 	const formData = new FormData();
 	formData.append('image', file);
-	const data = await apiFetch<{ image_url: string }>(`/gyms/${id}/image`, {
+	return apiFetch<ImageUploadResult>(`/gyms/${id}/image`, {
 		method: 'POST',
 		headers: authHeaders(),
 		body: formData
 	});
-	return data.image_url;
 };
 
 export const createGym = (body: {
@@ -283,15 +284,17 @@ export const unfavouriteEquipment = (id: string | number): Promise<void> =>
 		headers: authHeaders()
 	});
 
-export const uploadEquipmentImage = async (id: string | number, file: File): Promise<string> => {
+export const uploadEquipmentImage = async (
+	id: string | number,
+	file: File
+): Promise<ImageUploadResult> => {
 	const formData = new FormData();
 	formData.append('image', file);
-	const data = await apiFetch<{ image_url: string }>(`/equipment/${id}/image`, {
+	return apiFetch<ImageUploadResult>(`/equipment/${id}/image`, {
 		method: 'POST',
 		headers: authHeaders(),
 		body: formData
 	});
-	return data.image_url;
 };
 
 // ── Admin ─────────────────────────────────────────────────────────────────────

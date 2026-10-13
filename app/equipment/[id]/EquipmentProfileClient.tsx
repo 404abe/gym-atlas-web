@@ -7,6 +7,7 @@ import FavoriteButton from '@/components/ui/FavoriteButton';
 import ResistanceProfile from '@/components/ui/ResistanceProfile';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { useAuthGate } from '@/app/contexts/AuthGateContext';
+import { useToastContext } from '@/app/contexts/ToastContext';
 import {
 	fetchEquipmentById,
 	fetchBestInClassCategories,
@@ -43,6 +44,7 @@ export default function EquipmentProfileClient() {
 	const [uploading, setUploading] = useState(false);
 	const { user } = useAuth();
 	const { requireAuth } = useAuthGate();
+	const { addToast } = useToastContext();
 	const [categories, setCategories] = useState<BestInClassCategory[]>([]);
 	const [showBestInClass, setShowBestInClass] = useState(false);
 	const [saving, setSaving] = useState(false);
@@ -114,16 +116,23 @@ export default function EquipmentProfileClient() {
 	};
 
 	const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-		const file = e.target.files?.[0];
+		const input = e.target;
+		const file = input.files?.[0];
 		if (!file) return;
 		try {
 			setUploading(true);
-			const url = await uploadEquipmentImage(id as string, file);
-			setImageUrl(url);
+			const { image_url, status } = await uploadEquipmentImage(id as string, file);
+			if (status === 'pending') {
+				addToast('New photo submitted for review. The current photo stays until it is approved.', 'success');
+			} else {
+				setImageUrl(image_url);
+			}
 		} catch (err) {
 			console.error('Failed to upload image:', err);
+			addToast('Failed to upload photo', 'error');
 		} finally {
 			setUploading(false);
+			input.value = '';
 		}
 	};
 
