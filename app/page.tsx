@@ -89,47 +89,48 @@ function FilterPanel() {
 function FeatureSection({
 	id,
 	index,
-	title,
+	lead,
+	muted,
 	body,
 	ctaText,
 	ctaHref,
 	visual,
-	windowTitle,
-	reverse = false
+	windowTitle
 }: {
 	id: string;
 	index: string;
-	title: string;
+	lead: string;
+	muted: string;
 	body: string;
 	ctaText: string;
 	ctaHref: string;
 	visual: React.ReactNode;
 	windowTitle: string;
-	reverse?: boolean;
 }) {
 	return (
-		<section
-			id={id}
-			className="flex scroll-mt-24 flex-col items-center gap-8 py-16 lg:flex-row lg:gap-14 lg:py-24"
-		>
-			<div className={`w-full max-w-120 lg:w-120 ${reverse ? 'lg:order-2' : 'lg:order-1'}`}>
-				<span className={`${mono} text-accent text-xs tracking-[0.25em]`}>{index}</span>
-				<h2 className="text-main mt-4 text-2xl font-semibold tracking-tight md:text-3xl">
-					{title}
-				</h2>
-				<p className="text-sub mt-3 text-base leading-relaxed">{body}</p>
-				<Link
-					href={ctaHref}
-					className="text-main hover:text-accent border-accent mt-6 inline-flex items-center gap-1.5 border-b pb-0.5 text-sm font-medium no-underline transition-colors"
-				>
-					{ctaText}
-					<ArrowRight size={15} />
-				</Link>
+		<section id={id} className="flex scroll-mt-24 flex-col gap-10 py-16 lg:py-24">
+			<div className="flex flex-wrap items-end justify-between gap-6">
+				<div className="flex min-w-0 flex-[1_1_480px] flex-col gap-5">
+					<span className={`${mono} text-accent text-xs tracking-[0.25em]`}>{index}</span>
+					<h2 className="text-main text-[clamp(32px,4vw,52px)] font-bold leading-[1.06] tracking-[-0.035em]">
+						{lead} <span className="text-sub">{muted}</span>
+					</h2>
+				</div>
+				<div className="max-w-105 flex-[1_1_340px]">
+					<p className="text-sub text-lg leading-relaxed">{body}</p>
+					<Link
+						href={ctaHref}
+						className="text-main hover:text-accent border-accent mt-5 inline-flex items-center gap-1.5 border-b pb-0.5 text-sm font-medium no-underline transition-colors"
+					>
+						{ctaText}
+						<ArrowRight size={15} />
+					</Link>
+				</div>
 			</div>
-			<div
-				className={`bg-sub-alt w-full max-w-198.5 rounded-[32px] p-5 md:p-8 lg:w-198.5 ${reverse ? 'lg:order-1' : 'lg:order-2'}`}
-			>
-				<WindowFrame title={windowTitle}>{visual}</WindowFrame>
+			<div className="bg-sub-alt flex justify-center rounded-[32px] p-5 md:p-10">
+				<div className="w-full max-w-182.5">
+					<WindowFrame title={windowTitle}>{visual}</WindowFrame>
+				</div>
 			</div>
 		</section>
 	);
@@ -188,8 +189,9 @@ export default function LandingPage() {
 					<FeatureSection
 						id="filter"
 						index="01"
-						title="Filter by equipment"
-						body="Don't just find a gym nearby — find one with the specific machines and brands you train on. Search by category, brand, or exercise."
+						lead="Search by the machine,"
+						muted="not just the gym."
+						body="Looking for a pendulum squat or a chest-supported T-bar row? Filter by brand, model and category and see only the gyms that stock it."
 						ctaText="Filter the database"
 						ctaHref="/data"
 						visual={<FilterPanel />}
@@ -198,19 +200,20 @@ export default function LandingPage() {
 					<FeatureSection
 						id="database"
 						index="02"
-						title="Browse the database"
-						body="Every gym's full equipment list, searchable by category, brand, and exercise — so you always know what you're walking into."
+						lead="See what is really"
+						muted="on the floor."
+						body="Every gym page lists its equipment with photos, brands and models, so you know what you are walking into before the commute."
 						ctaText="Browse gyms"
 						ctaHref="/data?view=gyms"
 						visual={<DatabasePanel />}
 						windowTitle="Gyms"
-						reverse
 					/>
 					<FeatureSection
 						id="community"
 						index="03"
-						title="Built by the community"
-						body="Gyms and machines are added by the people who train there. Contribute a find and climb the leaderboard."
+						lead="Built by lifters,"
+						muted="checked before it goes live."
+						body="Anyone can add a gym or a machine. Photos wait for admin approval first, so the map stays clean. The code is open, so you can read it or contribute."
 						ctaText="View the leaderboard"
 						ctaHref="/leaderboard"
 						visual={<CommunityPanel />}
