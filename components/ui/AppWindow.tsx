@@ -80,6 +80,53 @@ export function AppWindow({
   );
 }
 
+// ---------- Theme-aware fluid window ----------
+// Same chrome as AppWindow (14px radius, 30px title bar, traffic lights,
+// layered shadow) but sized by its parent and coloured from the site's theme
+// tokens, so it follows the light/dark toggle. Used by the landing sections.
+
+export function WindowFrame({
+  title,
+  children,
+  className = "",
+}: {
+  title: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={[
+        "bg-bg text-main flex w-full flex-col overflow-hidden rounded-[14px]",
+        className,
+      ].join(" ")}
+      style={{
+        boxShadow:
+          "0 24px 48px -12px rgb(0 0 0 / 0.32), 0 6px 16px -6px rgb(0 0 0 / 0.14)",
+      }}
+    >
+      <div className="border-border bg-surface relative flex h-[30px] shrink-0 items-center justify-center border-b">
+        <div className="absolute left-[11px] flex" style={{ gap: 8 }} aria-hidden="true">
+          {DOTS.map((c) => (
+            <span
+              key={c}
+              className="block rounded-full"
+              style={{
+                width: 12,
+                height: 12,
+                background: c,
+                boxShadow: "inset 0 0 0 0.5px rgb(0 0 0 / 0.12)",
+              }}
+            />
+          ))}
+        </div>
+        <span className="text-main/80 truncate px-[58px] text-[12px] font-semibold">{title}</span>
+      </div>
+      <div className="min-h-0 flex-1">{children}</div>
+    </div>
+  );
+}
+
 // ---------- Example: GymAtlas "find equipment" mock ----------
 
 export function GymAtlasMock() {

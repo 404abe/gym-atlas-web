@@ -3,6 +3,8 @@ import { DM_Sans, JetBrains_Mono } from 'next/font/google';
 import { ArrowRight, Check, Search } from 'lucide-react';
 import MarketingHeader from '@/components/layout/MarketingHeader';
 import HeroCarousel from '@/components/landing/HeroCarousel';
+import LandingFooter from '@/components/landing/LandingFooter';
+import { WindowFrame } from '@/components/ui/AppWindow';
 import SectionNav from '@/components/landing/SectionNav';
 import CommunityPanel from '@/components/landing/CommunityPanel';
 import DatabasePanel from '@/components/landing/DatabasePanel';
@@ -92,6 +94,7 @@ function FeatureSection({
 	ctaText,
 	ctaHref,
 	visual,
+	windowTitle,
 	reverse = false
 }: {
 	id: string;
@@ -101,6 +104,7 @@ function FeatureSection({
 	ctaText: string;
 	ctaHref: string;
 	visual: React.ReactNode;
+	windowTitle: string;
 	reverse?: boolean;
 }) {
 	return (
@@ -122,8 +126,10 @@ function FeatureSection({
 					<ArrowRight size={15} />
 				</Link>
 			</div>
-			<div className={`w-full max-w-182.5 lg:w-182.5 ${reverse ? 'lg:order-1' : 'lg:order-2'}`}>
-				{visual}
+			<div
+				className={`bg-sub-alt w-full max-w-198.5 rounded-[32px] p-5 md:p-8 lg:w-198.5 ${reverse ? 'lg:order-1' : 'lg:order-2'}`}
+			>
+				<WindowFrame title={windowTitle}>{visual}</WindowFrame>
 			</div>
 		</section>
 	);
@@ -134,41 +140,34 @@ export default function LandingPage() {
 		<div className={`${dmSans.className} flex min-h-full flex-col`}>
 			<MarketingHeader bordered={false} />
 
-			<div className="overflow-x-hidden pb-28">
-				{/* ── Hero ── copy on the left, tilted card carousel bleeding off
-				    the right edge (lg+) or sliding underneath (below lg). */}
-				<section className="relative lg:min-h-[760px]">
-					<div className="mx-auto flex w-full max-w-328.5 px-6 lg:min-h-[760px] lg:items-center">
-						<div className="relative z-10 flex max-w-2xl flex-col pt-12 md:pt-16 lg:w-[54%] lg:py-24">
-							<span
-								className={`${mono} border-border bg-bg text-sub flex h-9 items-center gap-2.5 self-start rounded-full border px-4 text-xs tracking-wide`}
+			<div className="overflow-x-hidden pb-10">
+				{/* ── Hero ── centred copy; on lg+ two rows of cards drift along a
+				    wave above and a smile below it, below lg a tilted strip slides
+				    underneath. */}
+				<section className="relative lg:h-[1080px]">
+					<div className="relative z-10 mx-auto flex max-w-3xl flex-col items-center px-6 pt-12 text-center md:pt-16 lg:pt-[300px]">
+						<h1 className="text-5xl font-semibold leading-[0.98] tracking-[-0.045em] sm:text-6xl lg:text-7xl xl:text-[5.5rem]">
+							<span className="text-main block">Every gym.</span>
+							<span className="text-main/50 block">Every machine.</span>
+						</h1>
+						<p className="text-sub mt-7 max-w-xl text-lg leading-relaxed md:text-xl">
+							Search gyms by the exact equipment on the floor, down to the brand and model.
+							Mapped, photographed and checked by lifters.
+						</p>
+						<div className="xs:flex-row mt-9 flex flex-col gap-3">
+							<Link
+								href="/map"
+								className="bg-main text-bg flex h-14 items-center justify-center gap-2 rounded-full px-8 text-base font-medium no-underline transition-opacity hover:opacity-90"
 							>
-								<span className="bg-accent h-2 w-2 rounded-full" />
-								Community-mapped gym equipment
-							</span>
-							<h1 className="mt-8 text-5xl font-semibold leading-[0.98] tracking-[-0.045em] sm:text-6xl lg:text-7xl xl:text-[5.5rem]">
-								<span className="text-main block">Every machine,</span>
-								<span className="text-main/50 block">in every gym.</span>
-							</h1>
-							<p className="text-sub mt-7 max-w-xl text-lg leading-relaxed md:text-xl">
-								Find gyms by the exact equipment they stock, down to brand and model. Search for a
-								pendulum squat, not a postcode.
-							</p>
-							<div className="mt-9 flex flex-col gap-3 xs:flex-row">
-								<Link
-									href="/map"
-									className="bg-main text-bg flex h-14 items-center justify-center gap-2 rounded-full px-8 text-base font-medium no-underline transition-opacity hover:opacity-90"
-								>
-									Open the map
-									<ArrowRight size={16} />
-								</Link>
-								<Link
-									href="/add"
-									className="border-border text-main hover:bg-sub-alt flex h-14 items-center justify-center rounded-full border px-8 text-base font-medium no-underline transition-colors"
-								>
-									Add your gym
-								</Link>
-							</div>
+								Open the map
+								<ArrowRight size={16} />
+							</Link>
+							<Link
+								href="/data"
+								className="border-border bg-bg text-main hover:bg-sub-alt flex h-14 items-center justify-center rounded-full border px-8 text-base font-medium no-underline transition-colors"
+							>
+								Browse equipment
+							</Link>
 						</div>
 					</div>
 					<HeroCarousel mono={mono} />
@@ -194,6 +193,7 @@ export default function LandingPage() {
 						ctaText="Filter the database"
 						ctaHref="/data"
 						visual={<FilterPanel />}
+						windowTitle="Equipment"
 					/>
 					<FeatureSection
 						id="database"
@@ -203,6 +203,7 @@ export default function LandingPage() {
 						ctaText="Browse gyms"
 						ctaHref="/data?view=gyms"
 						visual={<DatabasePanel />}
+						windowTitle="Gyms"
 						reverse
 					/>
 					<FeatureSection
@@ -213,9 +214,12 @@ export default function LandingPage() {
 						ctaText="View the leaderboard"
 						ctaHref="/leaderboard"
 						visual={<CommunityPanel />}
+						windowTitle="Leaderboard"
 					/>
 				</div>
 			</div>
+
+			<LandingFooter mono={mono} />
 		</div>
 	);
 }

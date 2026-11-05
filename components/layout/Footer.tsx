@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { FaGithub } from 'react-icons/fa';
 import { FaCodeBranch } from 'react-icons/fa6';
 import { MdEmail } from 'react-icons/md';
@@ -11,6 +12,10 @@ const footerLinkCls =
 	'flex items-center gap-2 h-[var(--hit-size)] px-4 text-sub hover:text-text text-[11px] tracking-[0.04em] uppercase no-underline transition-colors duration-[0.22s]';
 
 export default function Footer() {
+	const pathname = usePathname();
+	// The landing page renders its own full-width footer.
+	if (pathname === '/') return null;
+
 	return (
 		<footer className="pointer-events-none fixed bottom-3 left-0 right-0 z-50 hidden items-center justify-between px-6 md:flex">
 			{' '}
