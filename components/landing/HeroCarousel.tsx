@@ -30,7 +30,7 @@ type GymCard = {
 	logo: string | null;
 };
 
-type CarouselCard = MachineCard | GymCard;
+export type CarouselCard = MachineCard | GymCard;
 
 const PUREGYM_LOGO = logoForGym('PureGym');
 
@@ -69,7 +69,7 @@ function interleave(machines: CarouselCard[], gyms: CarouselCard[]): CarouselCar
 }
 
 /** Repeat the list until it has at least MIN_LOOP cards, keeping keys unique. */
-function fillLoop(cards: CarouselCard[]): CarouselCard[] {
+export function fillLoop(cards: CarouselCard[]): CarouselCard[] {
 	if (cards.length === 0) return cards;
 	const out: CarouselCard[] = [];
 	for (let round = 0; out.length < MIN_LOOP; round++) {
@@ -78,7 +78,7 @@ function fillLoop(cards: CarouselCard[]): CarouselCard[] {
 	return out;
 }
 
-function useCarouselCards(): CarouselCard[] {
+export function useCarouselCards(): CarouselCard[] {
 	const [cards, setCards] = useState<CarouselCard[]>(FALLBACK);
 
 	useEffect(() => {
@@ -314,7 +314,7 @@ function GymCardView({ card, mono }: { card: GymCard; mono: string }) {
 	);
 }
 
-function Card({ card, mono }: { card: CarouselCard; mono: string }) {
+export function Card({ card, mono }: { card: CarouselCard; mono: string }) {
 	return card.kind === 'machine' ? (
 		<MachineCardView card={card} mono={mono} />
 	) : (
@@ -322,101 +322,174 @@ function Card({ card, mono }: { card: CarouselCard; mono: string }) {
 	);
 }
 
-// ── Desktop: radial arc ─────────────────────────────────
-// Every card sits on ONE circle whose centre is off the right edge of the
-// hero, so the stack reads as a single object sweeping past rather than
-// separate floating cards. Cards drift along the arc, tilt with it, overlap
-// their neighbours, and grow slightly (and come to the front) near the middle.
+// ── Desktop: two wavy card paths ────────────────────────
+// Cards ride two bezier paths around the centred hero copy: a gentle wave
+// across the top and a smile-shaped curve underneath. The top row drifts
+// right, the bottom row drifts left, and every card turns to follow the
+// tangent of its path. Positions are written straight to the DOM each frame
+// (no React state), and the loop is static under prefers-reduced-motion.
 
-const CARD_SIZE = {
+export const CARD_SIZE = {
 	machine: { w: 380, h: 390 },
 	gym: { w: 460, h: 300 }
 } as const;
 
-const ARC_BASE_SCALE = 0.72; // cards are drawn smaller so more fit on the arc
-const ARC_STEP_DEG = 19; // angular gap between neighbouring cards (smaller = more overlap)
-const ARC_SPEED_DEG_PER_S = 3.2; // drift speed along the arc
-const ARC_TILT = 0.45; // card rotation per degree of arc
-const ARC_SCALE_BOOST = 0.07; // extra scale at the middle of the arc
+type Pt = [number, number];
+type Path = { pts: Pt[]; cum: number[] };
 
-function ArcStack({ cards, mono }: { cards: CarouselCard[]; mono: string }) {
-	const stageRef = useRef<HTMLDivElement>(null);
-	const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
-	const pausedRef = useRef(false);
+const WAVE_STAGE = { w: 1440, h: 1100 } as const;
+const WAVE_CARD_W = 200; // every card is scaled to this width
+const WAVE_ROW_COUNT = 12; // ~one card-width apart, so neighbours almost touch
+
+/** Smooth cubic chain: each segment mirrors the previous control point. */
+function buildPath(start: Pt, first: [Pt, Pt, Pt], rest: [Pt, Pt][]): Path {
+	const segs: [Pt, Pt, Pt, Pt][] = [[start, first[0], first[1], first[2]]];
+	let p0 = first[2];
+	let prevC = first[1];
+	for (const [c2, end] of rest) {
+		segs.push([p0, [2 * p0[0] - prevC[0], 2 * p0[1] - prevC[1]], c2, end]);
+		p0 = end;
+		prevC = c2;
+	}
+	const pts: Pt[] = [];
+	for (const [a, b, c, d] of segs) {
+		for (let n = 0; n <= 200; n++) {
+			const t = n / 200;
+			const u = 1 - t;
+			pts.push([
+				u * u * u * a[0] + 3 * u * u * t * b[0] + 3 * u * t * t * c[0] + t * t * t * d[0],
+				u * u * u * a[1] + 3 * u * u * t * b[1] + 3 * u * t * t * c[1] + t * t * t * d[1]
+			]);
+		}
+	}
+	const cum = [0];
+	for (let n = 1; n < pts.length; n++) {
+		cum.push(cum[n - 1] + Math.hypot(pts[n][0] - pts[n - 1][0], pts[n][1] - pts[n - 1][1]));
+	}
+	return { pts, cum };
+}
+
+const WAVE_TOP = buildPath(
+	[-520, 310],
+	[[-200, 310], [60, 80], [330, 80]],
+	[[[700, 150], [1000, 190]], [[1500, 230], [1960, 100]]]
+);
+const WAVE_BOTTOM = buildPath(
+	[-520, 760],
+	[[-300, 700], [0, 640], [220, 650]],
+	[[[600, 940], [1000, 940]], [[1500, 700], [1960, 470]]]
+);
+
+/** Point and tangent angle (deg) at fraction f (0..1) of the path's length. */
+function pointAt(path: Path, f: number): { x: number; y: number; angle: number } {
+	const want = path.cum[path.cum.length - 1] * f;
+	let j = 1;
+	while (j < path.cum.length - 1 && path.cum[j] < want) j++;
+	const a = path.pts[j - 1];
+	const b = path.pts[j];
+	const span = path.cum[j] - path.cum[j - 1] || 1;
+	const r = (want - path.cum[j - 1]) / span;
+	return {
+		x: a[0] + (b[0] - a[0]) * r,
+		y: a[1] + (b[1] - a[1]) * r,
+		angle: (Math.atan2(b[1] - a[1], b[0] - a[0]) * 180) / Math.PI
+	};
+}
+
+/** Repeat cards until there are `count`, keeping keys unique. */
+function fillTo(cards: CarouselCard[], count: number, tag: string): CarouselCard[] {
+	const out: CarouselCard[] = [];
+	for (let i = 0; i < count; i++) {
+		const card = cards[i % cards.length];
+		out.push({ ...card, key: `${card.key}-${tag}${Math.floor(i / cards.length)}` });
+	}
+	return out;
+}
+
+type WaveRow = { path: Path; dir: 1 | -1; seconds: number; cards: CarouselCard[] };
+
+function WaveStack({ cards, mono }: { cards: CarouselCard[]; mono: string }) {
+	const itemRefs = useRef<(HTMLDivElement | null)[][]>([[], []]);
 
 	useEffect(() => {
-		const stage = stageRef.current;
-		if (!stage) return;
-
+		if (cards.length === 0) return;
+		const rows: WaveRow[] = [
+			{ path: WAVE_TOP, dir: 1, seconds: 90, cards: fillTo(cards, WAVE_ROW_COUNT, 't') },
+			{
+				path: WAVE_BOTTOM,
+				dir: -1,
+				seconds: 100,
+				cards: fillTo([...cards.slice(1), cards[0]], WAVE_ROW_COUNT, 'b')
+			}
+		];
 		const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-		const span = cards.length * ARC_STEP_DEG; // total angle the loop covers
-		let offset = 0;
+		let elapsed = 0;
 		let last = performance.now();
 		let raf = 0;
 
 		const place = () => {
-			const w = stage.clientWidth;
-			const h = stage.clientHeight;
-			const r = Math.max(500, h * 0.66);
-			// Centre far enough right that the leftmost card never crosses into the
-			// hero copy, and the outer cards run off the edge.
-			const cx = Math.max(w + r * 0.25, r + 190);
-			const cy = h / 2;
-
-			cards.forEach((card, i) => {
-				const el = itemRefs.current[i];
-				if (!el) return;
-				// Angle from the leftmost point of the circle: negative = above, positive = below.
-				const a = (((i * ARC_STEP_DEG + offset) % span) + span) % span - span / 2;
-				const rad = (a * Math.PI) / 180;
-				const x = cx - r * Math.cos(rad);
-				const y = cy + r * Math.sin(rad);
-				const { w: cw, h: ch } = CARD_SIZE[card.kind];
-				const scale = ARC_BASE_SCALE + ARC_SCALE_BOOST * Math.max(0, Math.cos(rad * 1.6));
-				el.style.transform = `translate(${x - cw / 2}px, ${y - ch / 2}px) rotate(${-a * ARC_TILT}deg) scale(${scale})`;
-				el.style.zIndex = String(Math.round(200 - Math.abs(a)));
-				el.style.visibility = Math.abs(a) > 88 ? 'hidden' : 'visible';
+			rows.forEach((row, r) => {
+				row.cards.forEach((card, i) => {
+					const el = itemRefs.current[r][i];
+					if (!el) return;
+					const f = (((i / WAVE_ROW_COUNT + (row.dir * elapsed) / row.seconds) % 1) + 1) % 1;
+					const { x, y, angle } = pointAt(row.path, f);
+					const hh = (CARD_SIZE[card.kind].h * WAVE_CARD_W) / CARD_SIZE[card.kind].w / 2;
+					el.style.transform = `translate(${x - WAVE_CARD_W / 2}px, ${y - hh}px) rotate(${angle}deg)`;
+				});
 			});
 		};
 
 		const tick = (now: number) => {
-			const dt = Math.min(0.1, (now - last) / 1000);
+			elapsed += Math.min(0.1, (now - last) / 1000);
 			last = now;
-			if (!pausedRef.current) offset += dt * ARC_SPEED_DEG_PER_S;
 			place();
 			raf = requestAnimationFrame(tick);
 		};
 
 		place();
 		if (!reduceMotion) raf = requestAnimationFrame(tick);
-		const ro = new ResizeObserver(place);
-		ro.observe(stage);
-		return () => {
-			cancelAnimationFrame(raf);
-			ro.disconnect();
-		};
+		return () => cancelAnimationFrame(raf);
 	}, [cards]);
+
+	const rowCards = [
+		fillTo(cards, WAVE_ROW_COUNT, 't'),
+		fillTo([...cards.slice(1), cards[0]], WAVE_ROW_COUNT, 'b')
+	];
 
 	return (
 		<div
-			ref={stageRef}
 			aria-hidden="true"
-			onMouseEnter={() => (pausedRef.current = true)}
-			onMouseLeave={() => (pausedRef.current = false)}
-			className="hero-mask-y pointer-events-none absolute inset-y-0 right-0 hidden w-1/2 overflow-hidden lg:block"
+			className="hero-mask-x pointer-events-none absolute inset-0 hidden overflow-hidden lg:block"
 		>
-			{cards.map((card, i) => (
-				<div
-					key={card.key}
-					ref={(el) => {
-						itemRefs.current[i] = el;
-					}}
-					className="pointer-events-auto absolute left-0 top-0 origin-center will-change-transform"
-					style={{ visibility: 'hidden' }}
-				>
-					<Card card={card} mono={mono} />
-				</div>
-			))}
+			<div
+				className="absolute left-1/2 top-0 -translate-x-1/2"
+				style={{ width: WAVE_STAGE.w, height: WAVE_STAGE.h }}
+			>
+				{rowCards.map((row, r) =>
+					row.map((card, i) => {
+						const size = CARD_SIZE[card.kind];
+						const scale = WAVE_CARD_W / size.w;
+						return (
+							<div
+								key={card.key}
+								ref={(el) => {
+									itemRefs.current[r][i] = el;
+								}}
+								className="absolute left-0 top-0 will-change-transform"
+								style={{ width: WAVE_CARD_W, height: size.h * scale, zIndex: r === 0 ? 1 : 2 }}
+							>
+								<div
+									className="origin-top-left"
+									style={{ width: size.w, height: size.h, transform: `scale(${scale})` }}
+								>
+									<Card card={card} mono={mono} />
+								</div>
+							</div>
+						);
+					})
+				)}
+			</div>
 		</div>
 	);
 }
@@ -431,7 +504,7 @@ const OVERLAP_X = '-44px';
 
 /**
  * Decorative stack of machine and gym cards for the landing hero.
- * Desktop (lg+): cards orbit along a single arc bleeding off the right edge.
+ * Desktop (lg+): two rows of cards drift along wavy paths around the hero copy.
  * Below lg: a tilted horizontal strip under the hero copy, rendered twice and
  * slid by -50% for a seamless CSS loop (see globals.css).
  */
@@ -441,7 +514,7 @@ export default function HeroCarousel({ mono }: { mono: string }) {
 
 	return (
 		<>
-			<ArcStack cards={loop} mono={mono} />
+			<WaveStack cards={loop} mono={mono} />
 
 			<div aria-hidden="true" className="hero-mask-x mt-10 h-[330px] overflow-hidden lg:hidden">
 				<div className="h-full w-full -rotate-6 pl-6 pt-10">
