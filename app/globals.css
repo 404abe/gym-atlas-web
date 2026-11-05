@@ -299,3 +299,19 @@ html {
 		animation: none;
 	}
 }
+
+/* ── Landing footer wordmark ─────────────────────
+   Huge dot-halftone wordmark that fades out towards the bottom edge.
+   See components/landing/LandingFooter.tsx. */
+.landing-wordmark-wrap {
+	-webkit-mask-image: linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, 0.55) 55%, transparent 100%);
+	mask-image: linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, 0.55) 55%, transparent 100%);
+}
+
+.landing-wordmark {
+	color: transparent;
+	background-image: radial-gradient(circle, var(--sub-color) 1.1px, transparent 1.6px);
+	background-size: 6px 6px;
+	-webkit-background-clip: text;
+	background-clip: text;
+}
