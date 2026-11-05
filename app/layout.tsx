@@ -36,7 +36,7 @@ const organizationJsonLd = {
 	'@type': 'Organization',
 	name: 'GymAtlas',
 	url: SITE_URL,
-	logo: `${SITE_URL}/gymatlas_logo_white.png`,
+	logo: `${SITE_URL}/icon-512.png`,
 	description:
 		'GymAtlas is a community-driven gym and equipment discovery platform with per-machine equipment data, helping people search gyms by brand, machine, and exercise.'
 };
