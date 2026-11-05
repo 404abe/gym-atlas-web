@@ -8,7 +8,15 @@ export const metadata: Metadata = {
 		template: '%s | GymAtlas'
 	},
 	description:
-		'GymAtlas is a community-driven gym discovery platform with per-machine equipment data. Search gyms by brand, machine, and exercise — not just location.'
+		'GymAtlas is a community-driven gym discovery platform with per-machine equipment data. Search gyms by brand, machine, and exercise — not just location.',
+	icons: {
+		icon: [
+			{ url: '/favicon-light.ico', sizes: 'any', media: '(prefers-color-scheme: light)' },
+			{ url: '/favicon-dark.ico', sizes: 'any', media: '(prefers-color-scheme: dark)' },
+			{ url: '/icon-light.svg', type: 'image/svg+xml', media: '(prefers-color-scheme: light)' },
+			{ url: '/icon-dark.svg', type: 'image/svg+xml', media: '(prefers-color-scheme: dark)' }
+		]
+	}
 };
 
 export const viewport: Viewport = {
