@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { JetBrains_Mono } from 'next/font/google';
 import { fetchGyms } from '@/lib/api';
 import type { Gym } from '@/types/gym';
-import { PANEL_CLS, PANEL_LABEL_CLS } from './panelStyles';
+import AppWindow from './AppWindow';
+import { PANEL_LABEL_CLS, STAGE_CLS, WINDOW_CLS } from './panelStyles';
 
 const jetbrainsMono = JetBrains_Mono({ subsets: ['latin'], weight: ['400', '500'] });
 const mono = jetbrainsMono.className;
@@ -15,7 +16,7 @@ const TOP_N = 8;
 // panel doesn't reflow when the gym list lands.
 function SkeletonRows() {
 	return (
-		<ul className="mt-5 flex flex-1 animate-pulse flex-col justify-between gap-3" aria-hidden="true">
+		<ul className="mt-4 flex flex-1 animate-pulse flex-col justify-between gap-3" aria-hidden="true">
 			{Array.from({ length: TOP_N }).map((_, index) => (
 				<li key={index} className="flex items-center gap-4">
 					<span className="bg-border h-3 w-40 rounded" />
@@ -53,39 +54,46 @@ export default function DatabasePanel() {
 	const maxCount = rows && rows.length > 0 ? Number(rows[0].total_equipment) : 0;
 
 	return (
-		<div className={PANEL_CLS}>
-			<div className="border-border flex shrink-0 items-center justify-between border-b pb-4">
-				<span className={`${mono} ${PANEL_LABEL_CLS}`}>Gym</span>
-				<span className={`${mono} ${PANEL_LABEL_CLS}`}>Machines</span>
-			</div>
+		<div className={STAGE_CLS}>
+			<AppWindow title="Gyms" className={WINDOW_CLS}>
+				<div className="border-border flex shrink-0 items-center justify-between border-b pb-3">
+					<span className={`${mono} ${PANEL_LABEL_CLS}`}>Gym</span>
+					<span className={`${mono} ${PANEL_LABEL_CLS}`}>Machines</span>
+				</div>
 
-			{rows === null ? (
-				<SkeletonRows />
-			) : rows.length === 0 ? (
-				<p className="text-sub mt-5 text-sm">No gyms yet</p>
-			) : (
-				<ul className="mt-5 flex flex-1 flex-col justify-between gap-3">
-					{rows.map((gym) => {
-						const count = Number(gym.total_equipment);
-						const pct = maxCount > 0 ? Math.round((count / maxCount) * 100) : 0;
-						return (
-							<li key={gym.id} className="flex items-center gap-4">
-								<span className="text-main w-40 shrink-0 truncate text-sm">{gym.name}</span>
-								<span className={`${mono} text-sub w-24 shrink-0 truncate text-[11px]`}>
-									{gym.city || '—'}
-								</span>
-								<span className="bg-border relative h-1.5 flex-1 overflow-hidden rounded-full">
-									<span
-										className="bg-accent absolute inset-y-0 left-0 rounded-full"
-										style={{ width: `${pct}%` }}
-									/>
-								</span>
-								<span className={`${mono} text-main w-6 shrink-0 text-right text-xs`}>{count}</span>
-							</li>
-						);
-					})}
-				</ul>
-			)}
+				{rows === null ? (
+					<SkeletonRows />
+				) : rows.length === 0 ? (
+					<p className="text-sub mt-4 text-sm">No gyms yet</p>
+				) : (
+					<ul className="mt-4 flex flex-1 flex-col justify-between gap-2">
+						{rows.map((gym) => {
+							const count = Number(gym.total_equipment);
+							const pct = maxCount > 0 ? Math.round((count / maxCount) * 100) : 0;
+							return (
+								<li
+									key={gym.id}
+									className={`-mx-2 flex items-center gap-3 rounded-md px-2 py-1 ${
+										gym.id === rows[0].id ? 'bg-accent/10' : ''
+									}`}
+								>
+									<span className="text-main min-w-0 flex-1 truncate text-sm">{gym.name}</span>
+									<span className={`${mono} text-sub w-20 shrink-0 truncate text-[11px]`}>
+										{gym.city || '—'}
+									</span>
+									<span className="bg-border relative h-1.5 w-24 shrink-0 overflow-hidden rounded-full">
+										<span
+											className="bg-accent absolute inset-y-0 left-0 rounded-full"
+											style={{ width: `${pct}%` }}
+										/>
+									</span>
+									<span className={`${mono} text-main w-6 shrink-0 text-right text-xs`}>{count}</span>
+								</li>
+							);
+						})}
+					</ul>
+				)}
+			</AppWindow>
 		</div>
 	);
 }

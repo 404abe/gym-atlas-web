@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { JetBrains_Mono } from 'next/font/google';
 import { fetchLeaderboard } from '@/lib/api';
 import type { LeaderboardEntry } from '@/types/leaderboard';
-import { PANEL_CLS, PANEL_LABEL_CLS } from './panelStyles';
+import AppWindow from './AppWindow';
+import { PANEL_LABEL_CLS, STAGE_CLS, WINDOW_CLS } from './panelStyles';
 
 const jetbrainsMono = JetBrains_Mono({ subsets: ['latin'], weight: ['400', '500'] });
 const mono = jetbrainsMono.className;
@@ -30,7 +31,7 @@ function breakdown(entry: LeaderboardEntry): string {
 // so the panel doesn't reflow when the leaderboard lands.
 function SkeletonRows() {
 	return (
-		<ul className="mt-5 flex flex-1 animate-pulse flex-col justify-between gap-3" aria-hidden="true">
+		<ul className="mt-4 flex flex-1 animate-pulse flex-col justify-between gap-2" aria-hidden="true">
 			{Array.from({ length: TOP_N }).map((_, index) => (
 				<li key={index} className="flex items-center gap-4">
 					<span className="bg-border h-3 w-6 shrink-0 rounded" />
@@ -69,39 +70,46 @@ export default function CommunityPanel() {
 	}, []);
 
 	return (
-		<div className={PANEL_CLS}>
-			<div className="border-border flex shrink-0 items-center justify-between border-b pb-4">
-				<span className={`${mono} ${PANEL_LABEL_CLS}`}>Top contributors</span>
-				{rows !== null && rows.length > 0 && (
-					<span className={`${mono} text-sub text-[10px]`}>Top {rows.length}</span>
-				)}
-			</div>
+		<div className={STAGE_CLS}>
+			<AppWindow title="Top contributors" className={WINDOW_CLS}>
+				<div className="border-border flex shrink-0 items-center justify-between border-b pb-3">
+					<span className={`${mono} ${PANEL_LABEL_CLS}`}>Top contributors</span>
+					{rows !== null && rows.length > 0 && (
+						<span className={`${mono} text-sub text-[10px]`}>Top {rows.length}</span>
+					)}
+				</div>
 
-			{rows === null ? (
-				<SkeletonRows />
-			) : rows.length === 0 ? (
-				<p className="text-sub mt-5 text-sm">No contributions yet</p>
-			) : (
-				<ul className="mt-5 flex flex-1 flex-col justify-between gap-3">
-					{rows.map((entry, index) => (
-						<li key={entry.id} className="flex items-center gap-4">
-							<span className={`${mono} text-sub w-6 shrink-0 text-xs`}>
-								{String(index + 1).padStart(2, '0')}
-							</span>
-							{/* <span className="border-border text-sub grid h-10 w-10 shrink-0 place-items-center rounded-full border text-sm font-semibold">
-								{entry.username.charAt(0).toUpperCase()}
-							</span> */}
-							<div className="min-w-0 flex-1">
-								<p className="text-main truncate text-sm font-medium">{entry.username}</p>
-								<p className="text-sub mt-0.5 truncate text-xs">{breakdown(entry)}</p>
-							</div>
-							<span className={`${mono} text-accent shrink-0 text-sm`}>
-								+{Number(entry.total_contributions)}
-							</span>
-						</li>
-					))}
-				</ul>
-			)}
+				{rows === null ? (
+					<SkeletonRows />
+				) : rows.length === 0 ? (
+					<p className="text-sub mt-4 text-sm">No contributions yet</p>
+				) : (
+					<ul className="mt-4 flex flex-1 flex-col justify-between gap-1">
+						{rows.map((entry, index) => (
+							<li
+								key={entry.id}
+								className={`-mx-2 flex items-center gap-3 rounded-md px-2 py-1.5 ${
+									index === 0 ? 'bg-accent/10' : ''
+								}`}
+							>
+								<span className={`${mono} text-sub w-6 shrink-0 text-xs`}>
+									{String(index + 1).padStart(2, '0')}
+								</span>
+								{/* <span className="border-border text-sub grid h-10 w-10 shrink-0 place-items-center rounded-full border text-sm font-semibold">
+									{entry.username.charAt(0).toUpperCase()}
+								</span> */}
+								<div className="min-w-0 flex-1">
+									<p className="text-main truncate text-sm font-medium">{entry.username}</p>
+									<p className="text-sub mt-0.5 truncate text-xs">{breakdown(entry)}</p>
+								</div>
+								<span className={`${mono} text-accent shrink-0 text-sm`}>
+									+{Number(entry.total_contributions)}
+								</span>
+							</li>
+						))}
+					</ul>
+				)}
+			</AppWindow>
 		</div>
 	);
 }

@@ -1,12 +1,12 @@
 import Link from 'next/link';
 import { DM_Sans, JetBrains_Mono } from 'next/font/google';
-import { ArrowRight, Check, Search } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import MarketingHeader from '@/components/layout/MarketingHeader';
 import HeroCarousel from '@/components/landing/HeroCarousel';
 import SectionNav from '@/components/landing/SectionNav';
 import CommunityPanel from '@/components/landing/CommunityPanel';
 import DatabasePanel from '@/components/landing/DatabasePanel';
-import { PANEL_CLS, PANEL_LABEL_CLS } from '@/components/landing/panelStyles';
+import FilterPanel from '@/components/landing/FilterPanel';
 
 const dmSans = DM_Sans({ subsets: ['latin'] });
 const jetbrainsMono = JetBrains_Mono({ subsets: ['latin'], weight: ['400', '500'] });
@@ -17,70 +17,6 @@ export const metadata = {
 	description:
 		'Search gyms by the exact machines and brands they carry, browse the full equipment database, and help build the map.'
 };
-
-// ── Schematic visual panels ─────────────────────────────
-// FilterPanel below is a static mock — generic placeholder content standing
-// in for the real product screen. DatabasePanel and CommunityPanel instead
-// live in their own files (components/landing/DatabasePanel.tsx and
-// CommunityPanel.tsx) and read real gyms/leaderboard data.
-
-function FilterPanel() {
-	const rows = [
-		{ label: 'Leg Press', brand: 'Hammer Strength', count: 128, on: true },
-		{ label: 'Lat Pulldown', brand: 'Life Fitness', count: 112, on: true },
-		{ label: 'Chest Press', brand: 'Technogym', count: 96, on: true },
-		{ label: 'Cable Crossover', brand: 'Matrix', count: 74, on: false },
-		{ label: 'Smith Machine', brand: 'Atlantis', count: 68, on: false },
-		{ label: 'Hack Squat', brand: 'Cybex', count: 61, on: false },
-		{ label: 'Leg Extension', brand: 'Nautilus', count: 54, on: false },
-		{ label: 'Seated Row', brand: 'Prime', count: 43, on: false }
-	];
-	const chips = ['Category', 'Brand', 'Exercise'];
-
-	return (
-		<div className={PANEL_CLS}>
-			<div className="flex items-center justify-between">
-				<span className={`${mono} ${PANEL_LABEL_CLS}`}>Equipment</span>
-				<span className={`${mono} text-sub text-[10px]`}>3 / 312</span>
-			</div>
-
-			<div className="border-border bg-bg mt-5 flex h-10 shrink-0 items-center gap-2.5 rounded-lg border px-3">
-				<Search size={14} className="text-sub shrink-0" />
-				<div className="bg-border h-1.5 w-28 rounded-full" />
-			</div>
-
-			<div className="mt-4 flex shrink-0 gap-2">
-				{chips.map((chip, index) => (
-					<span
-						key={chip}
-						className={`${mono} rounded-full border px-3 py-1 text-[10px] uppercase tracking-[0.12em] ${
-							index === 0 ? 'border-accent text-accent' : 'border-border text-sub'
-						}`}
-					>
-						{chip}
-					</span>
-				))}
-			</div>
-
-			<ul className="mt-5 flex flex-1 flex-col justify-between gap-3">
-				{rows.map((row) => (
-					<li key={row.label} className="flex items-center gap-3">
-						<span
-							className={`grid h-4 w-4 shrink-0 place-items-center rounded ${
-								row.on ? 'bg-accent' : 'border-border border'
-							}`}
-						>
-							{row.on && <Check size={11} className="text-bg" />}
-						</span>
-						<span className="text-main shrink-0 text-sm">{row.label}</span>
-						<span className={`${mono} text-sub truncate text-[11px]`}>{row.brand}</span>
-						<span className={`${mono} text-sub ml-auto shrink-0 text-xs`}>{row.count}</span>
-					</li>
-				))}
-			</ul>
-		</div>
-	);
-}
 
 // ── Feature section ─────────────────────────────────────
 
