@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { fetchAllEquipment, fetchGyms } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { logoForGym } from '@/lib/gymLogos';
+import { cloudinaryThumb } from '@/lib/cloudinary';
 
 // ── Card data ───────────────────────────────────────────
 // The hero carousel alternates machine cards and gym cards. It starts on a
@@ -55,8 +56,12 @@ const FALLBACK: CarouselCard[] = [
 ];
 
 // The hero and footer draw from one pool of unique cards (no photo twice).
-const MAX_MACHINES = 36;
-const MAX_GYMS = 8;
+// The pool holds every machine with a photo; only the slots below are ever in
+// the DOM at once, so its size has no effect on rendering cost.
+// Rendered width of a card in CSS px (hero 200, footer 220, mobile ~213).
+const THUMB_PX = 220;
+// Mobile strip renders every card twice for its CSS loop, so keep it short.
+const MOBILE_MAX = 16;
 // Enough cards per loop that the track is always taller/wider than the stage.
 const MIN_LOOP = 8;
 
@@ -78,6 +83,16 @@ function uniqueBy<T>(items: T[], keyOf: (item: T) => string | null): T[] {
 		if (k === null || seen.has(k)) continue;
 		seen.add(k);
 		out.push(item);
+	}
+	return out;
+}
+
+/** Fisher-Yates shuffle into a new array. */
+function shuffled<T>(items: T[]): T[] {
+	const out = [...items];
+	for (let i = out.length - 1; i > 0; i--) {
+		const j = Math.floor(Math.random() * (i + 1));
+		[out[i], out[j]] = [out[j], out[i]];
 	}
 	return out;
 }
@@ -109,21 +124,25 @@ const HERO_MAX = 24;
 const FOOTER_MAX = 13;
 
 /**
- * Split the unique pool between hero and footer so no card shows in both.
- * Items are distributed evenly (not head/tail) so both sections keep the mix
- * of machine and gym cards.
+ * Split the unique pool between footer and hero so no card shows in both.
+ * The footer gets a fixed, evenly spread handful (so it keeps the mix of
+ * machine and gym cards). The hero gets everything else: it shows HERO_MAX of
+ * them at a time and swaps cards out as they leave the screen.
  */
 function splitPool(pool: CarouselCard[], section: CarouselSection): CarouselCard[] {
 	const n = pool.length;
 	if (n < 2) return section === 'hero' ? pool : [];
-	const heroN = Math.min(HERO_MAX, Math.max(1, Math.min(n - 1, Math.round((n * HERO_MAX) / (HERO_MAX + FOOTER_MAX)))));
+	const footerN = Math.min(
+		FOOTER_MAX,
+		Math.max(1, Math.min(n - 1, Math.round((n * FOOTER_MAX) / (HERO_MAX + FOOTER_MAX))))
+	);
 	const hero: CarouselCard[] = [];
 	const footer: CarouselCard[] = [];
 	pool.forEach((card, i) => {
-		const toHero = Math.floor(((i + 1) * heroN) / n) > Math.floor((i * heroN) / n);
-		(toHero ? hero : footer).push(card);
+		const toFooter = Math.floor(((i + 1) * footerN) / n) > Math.floor((i * footerN) / n);
+		(toFooter ? footer : hero).push(card);
 	});
-	return section === 'hero' ? hero : footer.slice(0, FOOTER_MAX);
+	return section === 'hero' ? hero : footer;
 }
 
 /** Repeat the list until it has at least MIN_LOOP cards, keeping keys unique. */
@@ -147,7 +166,7 @@ export function useCarouselCards(section: CarouselSection = 'hero'): CarouselCar
 		Promise.allSettled([fetchAllEquipment(), fetchGyms()]).then(([equipmentRes, gymsRes]) => {
 			if (cancelled) return;
 
-			const machines: CarouselCard[] =
+			const machines: CarouselCard[] = shuffled(
 				equipmentRes.status === 'fulfilled'
 					? uniqueBy(
 							// Same machine entered twice (or as variants) must show once, even if
@@ -158,7 +177,6 @@ export function useCarouselCards(section: CarouselSection = 'hero'): CarouselCar
 							),
 							(eq) => eq.image_url ?? null
 						)
-							.slice(0, MAX_MACHINES)
 							.map((eq) => ({
 								kind: 'machine' as const,
 								key: `eq-${eq.id}`,
@@ -170,7 +188,8 @@ export function useCarouselCards(section: CarouselSection = 'hero'): CarouselCar
 								).toUpperCase(),
 								image: eq.image_url ?? null
 							}))
-					: [];
+					: []
+			);
 
 			const gyms: CarouselCard[] =
 				gymsRes.status === 'fulfilled'
@@ -183,7 +202,6 @@ export function useCarouselCards(section: CarouselSection = 'hero'): CarouselCar
 							// Branches of one chain share a logo card, so key on what is drawn.
 							(gym) => gym.image_url || logoForGym(gym.name) || null
 						)
-							.slice(0, MAX_GYMS)
 							.map((gym) => ({
 								kind: 'gym' as const,
 								key: `gym-${gym.id}`,
@@ -200,9 +218,9 @@ export function useCarouselCards(section: CarouselSection = 'hero'): CarouselCar
 
 			// Keep the static set unless the API gave us enough to fill a loop.
 			if (machines.length + gyms.length >= 4) {
-					setPool(interleave(machines, gyms));
-					setLoaded(true);
-				}
+				setPool(interleave(machines, gyms));
+				setLoaded(true);
+			}
 		});
 
 		return () => {
@@ -286,6 +304,11 @@ function GroupBadge({ group, mono }: { group: string; mono: string }) {
 	);
 }
 
+/** Resized, modern-format Cloudinary URL for a card photo; other URLs pass through. */
+function thumb(url: string | null): string | undefined {
+	return cloudinaryThumb(url, { size: THUMB_PX, fit: 'limit' }) ?? url ?? undefined;
+}
+
 function MachineCardView({ card, mono }: { card: MachineCard; mono: string }) {
 	return (
 		<div
@@ -300,7 +323,7 @@ function MachineCardView({ card, mono }: { card: MachineCard; mono: string }) {
 				{card.image ? (
 					// eslint-disable-next-line @next/next/no-img-element
 					<img
-						src={card.image}
+						src={thumb(card.image)}
 						alt=""
 						loading="lazy"
 						decoding="async"
@@ -334,7 +357,7 @@ function GymCardView({ card, mono }: { card: GymCard; mono: string }) {
 			{card.image ? (
 				// eslint-disable-next-line @next/next/no-img-element
 				<img
-					src={card.image}
+					src={thumb(card.image)}
 					alt=""
 					loading="lazy"
 					decoding="async"
@@ -479,29 +502,78 @@ function dealRows(cards: CarouselCard[]): [CarouselCard[], CarouselCard[]] {
 	return [top, bottom];
 }
 
-type WaveRow = { path: Path; dir: 1 | -1; seconds: number; cards: CarouselCard[] };
+type WaveRow = { path: Path; dir: 1 | -1; seconds: number };
+type WaveState = { slots: [CarouselCard[], CarouselCard[]]; reserve: CarouselCard[] };
+
+/** First HERO_MAX cards go on screen; the rest wait in reserve to be swapped in. */
+function initWave(cards: CarouselCard[]): WaveState {
+	return { slots: dealRows(cards.slice(0, HERO_MAX)), reserve: cards.slice(HERO_MAX) };
+}
+
+/**
+ * Swap the card in one slot for the next reserve card. The outgoing card joins
+ * the back of the reserve, so every card is on screen at most once at a time
+ * and the whole pool cycles through.
+ */
+function recycleSlot(state: WaveState, r: 0 | 1, i: number): WaveState {
+	if (state.reserve.length === 0) return state;
+	const [next, ...rest] = state.reserve;
+	const row = state.slots[r].slice();
+	const out = row[i];
+	row[i] = next;
+	return {
+		slots: r === 0 ? [row, state.slots[1]] : [state.slots[0], row],
+		reserve: [...rest, out]
+	};
+}
+
+const WAVE_ROWS: WaveRow[] = [
+	{ path: WAVE_TOP, dir: 1, seconds: 90 },
+	{ path: WAVE_BOTTOM, dir: -1, seconds: 100 }
+];
 
 function WaveStack({ cards, mono }: { cards: CarouselCard[]; mono: string }) {
 	const itemRefs = useRef<(HTMLDivElement | null)[][]>([[], []]);
-	const rowCards = useMemo(() => dealRows(cards), [cards]);
+	const [source, setSource] = useState(cards);
+	const [wave, setWave] = useState<WaveState>(() => initWave(cards));
+	// The animation loop reads the live slots through a ref (no per-frame React work).
+	const slotsRef = useRef(wave.slots);
+
+	// A new card pool (placeholder -> real data) restarts the wave.
+	if (source !== cards) {
+		setSource(cards);
+		setWave(initWave(cards));
+	}
+
+	useEffect(() => {
+		slotsRef.current = wave.slots;
+	}, [wave.slots]);
 
 	useEffect(() => {
 		if (cards.length === 0) return;
-		const rows: WaveRow[] = [
-			{ path: WAVE_TOP, dir: 1, seconds: 90, cards: rowCards[0] },
-			{ path: WAVE_BOTTOM, dir: -1, seconds: 100, cards: rowCards[1] }
-		];
 		const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 		let elapsed = 0;
 		let last = performance.now();
 		let raf = 0;
 
+		const phase = (r: number, i: number) =>
+			i / slotsRef.current[r].length + (WAVE_ROWS[r].dir * elapsed) / WAVE_ROWS[r].seconds;
+		// Which lap of its path each slot is on; a change means it wrapped past an
+		// off-screen end, which is when its card is swapped for a fresh one.
+		const laps = slotsRef.current.map((row, r) => row.map((_, i) => Math.floor(phase(r, i))));
+
 		const place = () => {
-			rows.forEach((row, r) => {
-				row.cards.forEach((card, i) => {
+			WAVE_ROWS.forEach((row, r) => {
+				slotsRef.current[r].forEach((card, i) => {
 					const el = itemRefs.current[r][i];
 					if (!el) return;
-					const f = (((i / row.cards.length + (row.dir * elapsed) / row.seconds) % 1) + 1) % 1;
+					const ph = phase(r, i);
+					const lap = Math.floor(ph);
+					if (lap !== laps[r][i]) {
+						laps[r][i] = lap;
+						setWave((prev) => recycleSlot(prev, r as 0 | 1, i));
+					}
+					const f = ((ph % 1) + 1) % 1;
 					const { x, y, angle } = pointAt(row.path, f);
 					const hh = (CARD_SIZE[card.kind].h * WAVE_CARD_W) / CARD_SIZE[card.kind].w / 2;
 					el.style.transform = `translate(${x - WAVE_CARD_W / 2}px, ${y - hh}px) rotate(${angle}deg)`;
@@ -519,7 +591,7 @@ function WaveStack({ cards, mono }: { cards: CarouselCard[]; mono: string }) {
 		place();
 		if (!reduceMotion) raf = requestAnimationFrame(tick);
 		return () => cancelAnimationFrame(raf);
-	}, [cards, rowCards]);
+	}, [cards]);
 
 	return (
 		<div
@@ -530,13 +602,15 @@ function WaveStack({ cards, mono }: { cards: CarouselCard[]; mono: string }) {
 				className="absolute left-1/2 top-0 -translate-x-1/2"
 				style={{ width: WAVE_STAGE.w, height: WAVE_STAGE.h }}
 			>
-				{rowCards.map((row, r) =>
+				{wave.slots.map((row, r) =>
 					row.map((card, i) => {
 						const size = CARD_SIZE[card.kind];
 						const scale = WAVE_CARD_W / size.w;
 						return (
 							<div
-								key={card.key}
+								// Keyed by slot, not card: the element (and its transform) persists
+								// when the card inside is swapped.
+								key={`${r}-${i}`}
 								ref={(el) => {
 									itemRefs.current[r][i] = el;
 								}}
@@ -547,7 +621,7 @@ function WaveStack({ cards, mono }: { cards: CarouselCard[]; mono: string }) {
 									className="origin-top-left"
 									style={{ width: size.w, height: size.h, transform: `scale(${scale})` }}
 								>
-									<Card card={card} mono={mono} />
+									<Card key={card.key} card={card} mono={mono} />
 								</div>
 							</div>
 						);
@@ -574,7 +648,7 @@ const OVERLAP_X = '-44px';
  */
 export default function HeroCarousel({ mono }: { mono: string }) {
 	const cards = useCarouselCards('hero');
-	const loop = fillLoop(cards);
+	const loop = fillLoop(cards.slice(0, MOBILE_MAX));
 	const doubled = [...loop, ...loop.map((c) => ({ ...c, key: `${c.key}-b` }))];
 
 	return (

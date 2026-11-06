@@ -23,11 +23,16 @@ const TRANSFORM_KEY =
 export type CloudinaryThumbOptions = {
 	/** Rendered CSS size in px. The request asks for 2x this, for retina screens. */
 	size: number;
+	/**
+	 * 'fill' (default) crops to a square. 'limit' keeps the whole image and only
+	 * caps its width, for photos shown with object-contain / object-cover.
+	 */
+	fit?: 'fill' | 'limit';
 };
 
 export function cloudinaryThumb(
 	url: string | null | undefined,
-	{ size }: CloudinaryThumbOptions
+	{ size, fit = 'fill' }: CloudinaryThumbOptions
 ): string | undefined {
 	if (!url) return undefined;
 	if (!url.includes('res.cloudinary.com') || !url.includes('/upload/')) return url;
@@ -42,5 +47,6 @@ export function cloudinaryThumb(
 	if (TRANSFORM_KEY.test(firstSegment)) return url;
 
 	const pixels = Math.round(size * 2);
+	if (fit === 'limit') return `${head}${marker}c_limit,w_${pixels},f_auto,q_auto/${tail}`;
 	return `${head}${marker}c_fill,g_auto,w_${pixels},h_${pixels},f_auto,q_auto/${tail}`;
 }
