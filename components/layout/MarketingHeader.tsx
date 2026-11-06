@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { FaGithub } from 'react-icons/fa';
 import { MdEmail } from 'react-icons/md';
 import { Menu as MenuIcon, X } from 'lucide-react';
-import GymAtlasLogo from '@/components/ui/GymAtlasLogo';
+import AnimatedLogo from '@/components/ui/AnimatedLogo';
 import { cn } from '@/lib/utils';
 
 const PRODUCT_LINKS = [
@@ -58,13 +58,7 @@ export default function MarketingHeader({ bordered = true }: { bordered?: boolea
 				bordered && 'border-border border-b'
 			)}
 		>
-			<Link
-				href="/"
-				aria-label="GymAtlas home"
-				className="bg-bg border-border flex h-11 w-11 items-center justify-center justify-self-start rounded-full border shadow-[0_6px_20px_-10px_rgba(0,0,0,0.25)]"
-			>
-				<GymAtlasLogo size={24} />
-			</Link>
+			<AnimatedLogo />
 
 			<div ref={rootRef} className="relative justify-self-center">
 				<button
