@@ -26,3 +26,11 @@ export function matchesSearch(query: string, ...fields: (string | null | undefin
 	const full = fields.map((f) => f ?? '').join(' ').toLowerCase();
 	return words.every((w) => full.includes(w));
 }
+
+/** Two-letter monogram for a brand tile: word initials for multi-word names, else the first two letters. */
+export function brandInitials(brand: string | null | undefined): string {
+	const words = (brand ?? '').trim().split(/\s+/).filter(Boolean);
+	if (words.length === 0) return '—';
+	const letters = words.length > 1 ? words.map((w) => w[0]).join('') : words[0];
+	return letters.slice(0, 2).toUpperCase();
+}

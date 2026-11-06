@@ -1,19 +1,18 @@
 'use client';
 
-import { ChevronUp, ChevronDown, Heart, Search } from 'lucide-react';
+import { ChevronUp, ChevronDown, Heart } from 'lucide-react';
 import { FaExpandAlt, FaHashtag } from 'react-icons/fa';
-import Image from 'next/image';
 import ResistanceProfile from '@/components/ui/ResistanceProfile';
 import RatingStars from '@/components/ui/RatingStars';
 import FavoriteButton from '@/components/ui/FavoriteButton';
 import { Equipment } from '@/types/equipment';
 import Link from 'next/link';
+import EquipmentEmptyState from './EquipmentEmptyState';
 
 type SortField = 'id' | 'brand' | 'name' | 'resistance_profile' | 'rating';
 
 type Props = {
 	equipment: Equipment[];
-	viewMode: 'expanded' | 'compact';
 	sortField: SortField;
 	sortDirection: 'asc' | 'desc';
 	onSort: (field: SortField) => void;
@@ -42,66 +41,6 @@ type RowProps = {
 	onToggleFavorite: (id: number) => void;
 	onUpdateRating: (id: number, rating: number) => void;
 };
-
-function ExpandedRow({ item: e, index = 0, onToggleFavorite, onUpdateRating }: RowProps) {
-	return (
-		<tr>
-			<td colSpan={9} className="px-2 py-1">
-				<div
-					className={`flex items-center gap-3 rounded-xl px-4 py-3 ${index % 2 === 0 ? 'bg-sub-alt' : ''}`}
-				>
-					<div className="bg-main/5 relative h-14 w-14 shrink-0 overflow-hidden rounded-xl">
-						{e.image_url ? (
-							<Image src={e.image_url} alt={e.name} fill sizes="56px" className="object-cover" />
-						) : (
-							<div className="flex h-full w-full items-center justify-center">
-								<span className="text-sub text-xs">No img</span>
-							</div>
-						)}
-					</div>
-
-					<div className="min-w-0 flex-1">
-						<div className="flex flex-wrap items-center gap-2">
-							<p className="text-main text-sm font-semibold">{e.name || '—'}</p>
-							<TypeBadge type={e.type} short />
-						</div>
-						<p className="text-sub text-xs">
-							{[e.brand, e.series].filter(Boolean).join(' · ')}
-						</p>
-						<div className="mt-1 hidden sm:block">
-							<ResistanceProfile profile={e.resistance_profile} curve={e.resistance_curve} />
-						</div>
-					</div>
-
-					<div className="hidden shrink-0 sm:block">
-						<RatingStars
-							avgRating={Number(e.avg_rating) || 0}
-							userRating={Number(e.user_rating) || undefined}
-							onRate={(rating) => onUpdateRating(e.id, rating)}
-						/>
-					</div>
-
-					<div className="text-sub shrink-0 text-sm sm:hidden">
-						{e.avg_rating ? Number(e.avg_rating).toFixed(1) : '—'}
-					</div>
-
-					<div className="flex shrink-0 items-center gap-1">
-						<FavoriteButton
-							isFavorite={e.is_favorite}
-							onToggle={() => onToggleFavorite(e.id)}
-						/>
-						<Link
-							href={`/equipment/${e.id}`}
-							className="text-sub hover:text-main flex items-center justify-center rounded-lg p-1 transition"
-						>
-							<FaExpandAlt className="h-3.5 w-3.5" />
-						</Link>
-					</div>
-				</div>
-			</td>
-		</tr>
-	);
-}
 
 function CompactRow({ item: e, onToggleFavorite, onUpdateRating }: RowProps) {
 	return (
@@ -160,7 +99,6 @@ function CompactRow({ item: e, onToggleFavorite, onUpdateRating }: RowProps) {
 
 export default function EquipmentTable({
 	equipment,
-	viewMode,
 	sortField,
 	sortDirection,
 	onSort,
@@ -170,27 +108,12 @@ export default function EquipmentTable({
 	onClearFilters
 }: Props) {
 	if (equipment.length === 0) {
-		return (
-			<div className="flex flex-col items-center justify-center py-16 text-center">
-				<div className="bg-sub-alt mb-3 rounded-full p-4">
-					<Search className="text-sub h-8 w-8" />
-				</div>
-				<p className="text-sub text-sm">No equipment found</p>
-				{hasActiveFilters && (
-					<button
-						onClick={onClearFilters}
-						className="text-sub hover:text-text mt-4 text-sm underline"
-					>
-						Clear all filters
-					</button>
-				)}
-			</div>
-		);
+		return <EquipmentEmptyState hasActiveFilters={hasActiveFilters} onClearFilters={onClearFilters} />;
 	}
 
 	return (
 		<table className="w-full table-auto border-separate border-spacing-y-1">
-			<thead className={`sticky top-0 ${viewMode === 'expanded' ? 'hidden' : ''}`}>
+			<thead className="sticky top-0">
 				<tr className="text-sub text-left text-xs font-medium">
 					<th className="w-8 px-2 py-3 sm:w-12 sm:px-4">
 						<Heart className="h-3.5 w-3.5" />
@@ -248,20 +171,10 @@ export default function EquipmentTable({
 					</th>
 				</tr>
 			</thead>
-			<tbody
-				className={
-					viewMode === 'compact'
-						? '[&>tr:nth-child(odd)>td]:bg-sub-alt [&>tr>td:first-child]:rounded-l-xl [&>tr>td:last-child]:rounded-r-xl'
-						: ''
-				}
-			>
-				{equipment.map((e, index) =>
-					viewMode === 'expanded' ? (
-						<ExpandedRow key={e.id} item={e} index={index} onToggleFavorite={onToggleFavorite} onUpdateRating={onUpdateRating} />
-					) : (
-						<CompactRow key={e.id} item={e} onToggleFavorite={onToggleFavorite} onUpdateRating={onUpdateRating} />
-					)
-				)}
+			<tbody className="[&>tr:nth-child(odd)>td]:bg-sub-alt [&>tr>td:first-child]:rounded-l-xl [&>tr>td:last-child]:rounded-r-xl">
+				{equipment.map((e) => (
+					<CompactRow key={e.id} item={e} onToggleFavorite={onToggleFavorite} onUpdateRating={onUpdateRating} />
+				))}
 			</tbody>
 		</table>
 	);

@@ -3,6 +3,7 @@
 import { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import DataSidebar from './_components/DataSidebar';
+import EquipmentGrid from './_components/EquipmentGrid';
 import EquipmentTable from './_components/EquipmentTable';
 import EquipmentToolbar from './_components/EquipmentToolbar';
 import GymTable from './_components/GymTable';
@@ -110,17 +111,26 @@ function DataPageInner() {
 								onViewModeChange={eq.handleViewModeChange}
 							/>
 							<div className="min-h-0 flex-1 overflow-auto">
-								<EquipmentTable
-									equipment={eq.filtered}
-									sortField={eq.sortField}
-									sortDirection={eq.sortDirection}
-									onSort={eq.handleSort}
-									onToggleFavorite={toggleFavorite}
-									onUpdateRating={updateRating}
-									hasActiveFilters={eq.hasActiveFilters}
-									onClearFilters={eq.clearFilters}
-									viewMode={eq.viewMode}
-								/>
+								{eq.viewMode === 'expanded' ? (
+									<EquipmentGrid
+										equipment={eq.filtered}
+										onToggleFavorite={toggleFavorite}
+										onUpdateRating={updateRating}
+										hasActiveFilters={eq.hasActiveFilters}
+										onClearFilters={eq.clearFilters}
+									/>
+								) : (
+									<EquipmentTable
+										equipment={eq.filtered}
+										sortField={eq.sortField}
+										sortDirection={eq.sortDirection}
+										onSort={eq.handleSort}
+										onToggleFavorite={toggleFavorite}
+										onUpdateRating={updateRating}
+										hasActiveFilters={eq.hasActiveFilters}
+										onClearFilters={eq.clearFilters}
+									/>
+								)}
 							</div>
 						</>
 					) : (

@@ -1,7 +1,8 @@
 'use client';
-import { Search, Filter, X, LayoutList, List, Plus } from 'lucide-react';
+import { Search, Filter, X, LayoutGrid, List, Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuthGate } from '@/app/contexts/AuthGateContext';
+import ActiveFilterCards from './ActiveFilterCards';
 
 type Props = {
 	search: string;
@@ -107,18 +108,18 @@ export default function EquipmentToolbar({
 						className={`flex items-center rounded-md px-2 py-1 text-sm transition ${
 							viewMode === 'expanded' ? 'bg-main text-bg' : 'text-sub hover:text-main'
 						}`}
-						title="Expanded view"
-						aria-label="Expanded view"
+						title="Grid view"
+						aria-label="Grid view"
 					>
-						<LayoutList className="h-3.5 w-3.5" />
+						<LayoutGrid className="h-3.5 w-3.5" />
 					</button>
 					<button
 						onClick={() => onViewModeChange('compact')}
 						className={`flex items-center rounded-md px-2 py-1 text-sm transition ${
 							viewMode === 'compact' ? 'bg-main text-bg' : 'text-sub hover:text-main'
 						}`}
-						title="Compact view"
-						aria-label="Compact view"
+						title="Table view"
+						aria-label="Table view"
 					>
 						<List className="h-3.5 w-3.5" />
 					</button>
@@ -143,6 +144,22 @@ export default function EquipmentToolbar({
 					)}
 				</button>
 			</div>
+
+			{/* Active filters, shown just below the search bar */}
+			<ActiveFilterCards
+				selectedType={selectedType}
+				onTypeChange={onTypeChange}
+				selectedBrand={selectedBrand}
+				onBrandChange={onBrandChange}
+				selectedResistance={selectedResistance}
+				onResistanceChange={onResistanceChange}
+				showFavoritesOnly={showFavoritesOnly}
+				onFavoritesChange={onFavoritesChange}
+				minRating={minRating}
+				onMinRatingChange={onMinRatingChange}
+				itemCount={itemCount}
+				onClearFilters={onClearFilters}
+			/>
 
 			{/* Filter panel */}
 			{showFilters && (
