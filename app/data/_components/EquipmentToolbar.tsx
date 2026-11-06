@@ -1,7 +1,9 @@
 'use client';
-import { Search, Filter, X, LayoutList, List, Plus } from 'lucide-react';
+import { Search, Filter, X, LayoutGrid, List, Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuthGate } from '@/app/contexts/AuthGateContext';
+import ActiveFilterCards from './ActiveFilterCards';
+import BrandMultiSelect from './BrandMultiSelect';
 
 type Props = {
 	search: string;
@@ -12,8 +14,9 @@ type Props = {
 	activeFilterCount: number;
 	selectedType: string;
 	onTypeChange: (val: string) => void;
-	selectedBrand: string;
-	onBrandChange: (val: string) => void;
+	selectedBrands: string[];
+	onBrandsChange: (val: string[]) => void;
+	brandLogos: Record<string, string | null>;
 	selectedResistance: string;
 	onResistanceChange: (val: string) => void;
 	showFavoritesOnly: boolean;
@@ -36,8 +39,9 @@ export default function EquipmentToolbar({
 	activeFilterCount,
 	selectedType,
 	onTypeChange,
-	selectedBrand,
-	onBrandChange,
+	selectedBrands,
+	onBrandsChange,
+	brandLogos,
 	selectedResistance,
 	onResistanceChange,
 	showFavoritesOnly,
@@ -107,18 +111,18 @@ export default function EquipmentToolbar({
 						className={`flex items-center rounded-md px-2 py-1 text-sm transition ${
 							viewMode === 'expanded' ? 'bg-main text-bg' : 'text-sub hover:text-main'
 						}`}
-						title="Expanded view"
-						aria-label="Expanded view"
+						title="Grid view"
+						aria-label="Grid view"
 					>
-						<LayoutList className="h-3.5 w-3.5" />
+						<LayoutGrid className="h-3.5 w-3.5" />
 					</button>
 					<button
 						onClick={() => onViewModeChange('compact')}
 						className={`flex items-center rounded-md px-2 py-1 text-sm transition ${
 							viewMode === 'compact' ? 'bg-main text-bg' : 'text-sub hover:text-main'
 						}`}
-						title="Compact view"
-						aria-label="Compact view"
+						title="Table view"
+						aria-label="Table view"
 					>
 						<List className="h-3.5 w-3.5" />
 					</button>
@@ -144,6 +148,23 @@ export default function EquipmentToolbar({
 				</button>
 			</div>
 
+			{/* Active filters, shown just below the search bar */}
+			<ActiveFilterCards
+				selectedType={selectedType}
+				onTypeChange={onTypeChange}
+				selectedBrands={selectedBrands}
+				onBrandsChange={onBrandsChange}
+				brandLogos={brandLogos}
+				selectedResistance={selectedResistance}
+				onResistanceChange={onResistanceChange}
+				showFavoritesOnly={showFavoritesOnly}
+				onFavoritesChange={onFavoritesChange}
+				minRating={minRating}
+				onMinRatingChange={onMinRatingChange}
+				itemCount={itemCount}
+				onClearFilters={onClearFilters}
+			/>
+
 			{/* Filter panel */}
 			{showFilters && (
 				<div className="xs:gap-4 border-border mt-3 flex flex-wrap items-center gap-2 border-t pt-3">
@@ -157,18 +178,12 @@ export default function EquipmentToolbar({
 						<option value="plate_loaded">Plate loaded</option>
 					</select>
 
-					<select
-						value={selectedBrand}
-						onChange={(e) => onBrandChange(e.target.value)}
-						className="select-toolbar"
-					>
-						<option value="all">All brands</option>
-						{brands.map((brand) => (
-							<option key={brand} value={brand}>
-								{brand}
-							</option>
-						))}
-					</select>
+					<BrandMultiSelect
+						brands={brands}
+						selected={selectedBrands}
+						onChange={onBrandsChange}
+						logos={brandLogos}
+					/>
 
 					<select
 						value={selectedResistance}

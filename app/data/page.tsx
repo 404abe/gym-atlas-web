@@ -3,6 +3,7 @@
 import { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import DataSidebar from './_components/DataSidebar';
+import EquipmentGrid from './_components/EquipmentGrid';
 import EquipmentTable from './_components/EquipmentTable';
 import EquipmentToolbar from './_components/EquipmentToolbar';
 import GymTable from './_components/GymTable';
@@ -19,7 +20,7 @@ function DataPageInner() {
 	);
 	const [sidebarOpen, setSidebarOpen] = useState(false);
 
-	const { equipment, gyms, categories, toggleFavorite, toggleGymFavorite, updateRating, updateGymRating } =
+	const { equipment, gyms, categories, brandLogos, toggleFavorite, toggleGymFavorite, updateRating, updateGymRating } =
 		useDataPageData();
 	const eq = useEquipmentFilters(equipment, categories, searchParams.get('bic') ?? 'all');
 	const gym = useGymFilters(gyms);
@@ -95,8 +96,9 @@ function DataPageInner() {
 								activeFilterCount={eq.activeFilterCount}
 								selectedType={eq.selectedType}
 								onTypeChange={eq.setSelectedType}
-								selectedBrand={eq.selectedBrand}
-								onBrandChange={eq.setSelectedBrand}
+								selectedBrands={eq.selectedBrands}
+								onBrandsChange={eq.setSelectedBrands}
+								brandLogos={brandLogos}
 								selectedResistance={eq.selectedResistance}
 								onResistanceChange={eq.setSelectedResistance}
 								showFavoritesOnly={eq.showFavoritesOnly}
@@ -110,17 +112,27 @@ function DataPageInner() {
 								onViewModeChange={eq.handleViewModeChange}
 							/>
 							<div className="min-h-0 flex-1 overflow-auto">
-								<EquipmentTable
-									equipment={eq.filtered}
-									sortField={eq.sortField}
-									sortDirection={eq.sortDirection}
-									onSort={eq.handleSort}
-									onToggleFavorite={toggleFavorite}
-									onUpdateRating={updateRating}
-									hasActiveFilters={eq.hasActiveFilters}
-									onClearFilters={eq.clearFilters}
-									viewMode={eq.viewMode}
-								/>
+								{eq.viewMode === 'expanded' ? (
+									<EquipmentGrid
+										equipment={eq.filtered}
+										brandLogos={brandLogos}
+										onToggleFavorite={toggleFavorite}
+										onUpdateRating={updateRating}
+										hasActiveFilters={eq.hasActiveFilters}
+										onClearFilters={eq.clearFilters}
+									/>
+								) : (
+									<EquipmentTable
+										equipment={eq.filtered}
+										sortField={eq.sortField}
+										sortDirection={eq.sortDirection}
+										onSort={eq.handleSort}
+										onToggleFavorite={toggleFavorite}
+										onUpdateRating={updateRating}
+										hasActiveFilters={eq.hasActiveFilters}
+										onClearFilters={eq.clearFilters}
+									/>
+								)}
 							</div>
 						</>
 					) : (
