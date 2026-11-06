@@ -8,6 +8,7 @@ import ThemeToggle from '@/components/ui/ThemeToggle';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { useAuthGate } from '@/app/contexts/AuthGateContext';
 import { cn } from '@/lib/utils';
+import { isMarketingRoute } from '@/lib/marketingRoutes';
 
 // iOS-style sizing: 22px glyphs in 44px-tall tap targets. Widths stay at 40px
 // so all nine icons still fit on a phone. The svg size is set here (not per
@@ -24,7 +25,7 @@ export default function MobileHeader() {
 	const pathname = usePathname();
 	const active = (href: string) => pathname === href;
 
-	if (pathname === '/' || pathname === '/about') return null;
+	if (isMarketingRoute(pathname)) return null;
 
 	return (
 		<header className="bg-bg border-border flex shrink-0 items-center px-2 py-1 md:hidden">
