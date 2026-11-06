@@ -3,6 +3,7 @@ import { Search, Filter, X, LayoutGrid, List, Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuthGate } from '@/app/contexts/AuthGateContext';
 import ActiveFilterCards from './ActiveFilterCards';
+import BrandMultiSelect from './BrandMultiSelect';
 
 type Props = {
 	search: string;
@@ -13,8 +14,9 @@ type Props = {
 	activeFilterCount: number;
 	selectedType: string;
 	onTypeChange: (val: string) => void;
-	selectedBrand: string;
-	onBrandChange: (val: string) => void;
+	selectedBrands: string[];
+	onBrandsChange: (val: string[]) => void;
+	brandLogos: Record<string, string | null>;
 	selectedResistance: string;
 	onResistanceChange: (val: string) => void;
 	showFavoritesOnly: boolean;
@@ -37,8 +39,9 @@ export default function EquipmentToolbar({
 	activeFilterCount,
 	selectedType,
 	onTypeChange,
-	selectedBrand,
-	onBrandChange,
+	selectedBrands,
+	onBrandsChange,
+	brandLogos,
 	selectedResistance,
 	onResistanceChange,
 	showFavoritesOnly,
@@ -149,8 +152,9 @@ export default function EquipmentToolbar({
 			<ActiveFilterCards
 				selectedType={selectedType}
 				onTypeChange={onTypeChange}
-				selectedBrand={selectedBrand}
-				onBrandChange={onBrandChange}
+				selectedBrands={selectedBrands}
+				onBrandsChange={onBrandsChange}
+				brandLogos={brandLogos}
 				selectedResistance={selectedResistance}
 				onResistanceChange={onResistanceChange}
 				showFavoritesOnly={showFavoritesOnly}
@@ -174,18 +178,12 @@ export default function EquipmentToolbar({
 						<option value="plate_loaded">Plate loaded</option>
 					</select>
 
-					<select
-						value={selectedBrand}
-						onChange={(e) => onBrandChange(e.target.value)}
-						className="select-toolbar"
-					>
-						<option value="all">All brands</option>
-						{brands.map((brand) => (
-							<option key={brand} value={brand}>
-								{brand}
-							</option>
-						))}
-					</select>
+					<BrandMultiSelect
+						brands={brands}
+						selected={selectedBrands}
+						onChange={onBrandsChange}
+						logos={brandLogos}
+					/>
 
 					<select
 						value={selectedResistance}

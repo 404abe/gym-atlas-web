@@ -13,7 +13,7 @@ export function useEquipmentFilters(
 ) {
 	const [search, setSearch] = useState('');
 	const [selectedType, setSelectedType] = useState('all');
-	const [selectedBrand, setSelectedBrand] = useState('all');
+	const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
 	const [selectedResistance, setSelectedResistance] = useState('all');
 	const [selectedCategory, setSelectedCategory] = useState(initialCategory);
 	const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
@@ -37,7 +37,7 @@ export function useEquipmentFilters(
 			.filter((e) => {
 				const searchMatch = matchesSearch(search, e.brand, e.series, e.name);
 				const matchesType = selectedType === 'all' || e.type === selectedType;
-				const matchesBrand = selectedBrand === 'all' || e.brand === selectedBrand;
+				const matchesBrand = selectedBrands.length === 0 || selectedBrands.includes(e.brand);
 				const matchesResistance =
 					selectedResistance === 'all' || e.resistance_profile === selectedResistance;
 				const matchesFavorite = !showFavoritesOnly || e.is_favorite === true;
@@ -86,7 +86,7 @@ export function useEquipmentFilters(
 		equipment,
 		search,
 		selectedType,
-		selectedBrand,
+		selectedBrands,
 		selectedResistance,
 		selectedCategory,
 		showFavoritesOnly,
@@ -107,7 +107,7 @@ export function useEquipmentFilters(
 	const clearFilters = () => {
 		setSearch('');
 		setSelectedType('all');
-		setSelectedBrand('all');
+		setSelectedBrands([]);
 		setSelectedResistance('all');
 		setSelectedCategory('all');
 		setShowFavoritesOnly(false);
@@ -122,7 +122,7 @@ export function useEquipmentFilters(
 	const activeFilterFlags = [
 		search !== '',
 		selectedType !== 'all',
-		selectedBrand !== 'all',
+		selectedBrands.length > 0,
 		selectedResistance !== 'all',
 		selectedCategory !== 'all',
 		showFavoritesOnly,
@@ -136,8 +136,8 @@ export function useEquipmentFilters(
 		setSearch,
 		selectedType,
 		setSelectedType,
-		selectedBrand,
-		setSelectedBrand,
+		selectedBrands,
+		setSelectedBrands,
 		selectedResistance,
 		setSelectedResistance,
 		selectedCategory,

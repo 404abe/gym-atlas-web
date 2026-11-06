@@ -10,6 +10,7 @@ import {
 	fetchAllEquipment,
 	fetchGyms,
 	fetchBestInClassCategories,
+	fetchBrands,
 	rateEquipment,
 	rateGym
 } from '@/lib/api';
@@ -18,16 +19,19 @@ export function useDataPageData() {
 	const [equipment, setEquipment] = useState<Equipment[]>([]);
 	const [gyms, setGyms] = useState<Gym[]>([]);
 	const [categories, setCategories] = useState<Category[]>([]);
+	const [brandLogos, setBrandLogos] = useState<Record<string, string | null>>({});
 	const pendingEqFavs = useRef(new Set<number>());
 	const pendingGymFavs = useRef(new Set<number>());
 
 	useEffect(() => {
 		const load = async () => {
 			try {
-				const [eqData, gymsData, catsData] = await Promise.all([
+				const [eqData, gymsData, catsData, brandsData] = await Promise.all([
 					fetchAllEquipment(),
 					fetchGyms(),
-					fetchBestInClassCategories()
+					fetchBestInClassCategories(),
+					// Logos are decoration: a failure here must not block the page.
+					fetchBrands().catch(() => [])
 				]);
 				setEquipment(
 					eqData.map((item: Equipment) => ({
@@ -39,6 +43,7 @@ export function useDataPageData() {
 				);
 				setGyms(gymsData);
 				setCategories(catsData.categories ?? []);
+				setBrandLogos(Object.fromEntries(brandsData.map((b) => [b.name, b.logo_url])));
 			} catch (err) {
 				console.error('Failed to load data:', err);
 			}
@@ -114,5 +119,5 @@ export function useDataPageData() {
 		}
 	};
 
-	return { equipment, gyms, categories, toggleFavorite, toggleGymFavorite, updateRating, updateGymRating };
+	return { equipment, gyms, categories, brandLogos, toggleFavorite, toggleGymFavorite, updateRating, updateGymRating };
 }

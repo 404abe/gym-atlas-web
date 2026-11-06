@@ -20,7 +20,7 @@ function DataPageInner() {
 	);
 	const [sidebarOpen, setSidebarOpen] = useState(false);
 
-	const { equipment, gyms, categories, toggleFavorite, toggleGymFavorite, updateRating, updateGymRating } =
+	const { equipment, gyms, categories, brandLogos, toggleFavorite, toggleGymFavorite, updateRating, updateGymRating } =
 		useDataPageData();
 	const eq = useEquipmentFilters(equipment, categories, searchParams.get('bic') ?? 'all');
 	const gym = useGymFilters(gyms);
@@ -96,8 +96,9 @@ function DataPageInner() {
 								activeFilterCount={eq.activeFilterCount}
 								selectedType={eq.selectedType}
 								onTypeChange={eq.setSelectedType}
-								selectedBrand={eq.selectedBrand}
-								onBrandChange={eq.setSelectedBrand}
+								selectedBrands={eq.selectedBrands}
+								onBrandsChange={eq.setSelectedBrands}
+								brandLogos={brandLogos}
 								selectedResistance={eq.selectedResistance}
 								onResistanceChange={eq.setSelectedResistance}
 								showFavoritesOnly={eq.showFavoritesOnly}
@@ -114,6 +115,7 @@ function DataPageInner() {
 								{eq.viewMode === 'expanded' ? (
 									<EquipmentGrid
 										equipment={eq.filtered}
+										brandLogos={brandLogos}
 										onToggleFavorite={toggleFavorite}
 										onUpdateRating={updateRating}
 										hasActiveFilters={eq.hasActiveFilters}

@@ -2,13 +2,14 @@
 
 import type { ReactNode } from 'react';
 import { Activity, Dumbbell, Heart, Star, X } from 'lucide-react';
-import { brandInitials } from '@/lib/utils';
+import BrandLogo from '@/components/ui/BrandLogo';
 
 type Props = {
 	selectedType: string;
 	onTypeChange: (val: string) => void;
-	selectedBrand: string;
-	onBrandChange: (val: string) => void;
+	selectedBrands: string[];
+	onBrandsChange: (val: string[]) => void;
+	brandLogos: Record<string, string | null>;
 	selectedResistance: string;
 	onResistanceChange: (val: string) => void;
 	showFavoritesOnly: boolean;
@@ -24,6 +25,8 @@ type Card = {
 	label: string;
 	value: string;
 	tile: ReactNode;
+	/** The tile brings its own background (brand logos), so skip the wrapper's. */
+	bareTile?: boolean;
 	onRemove: () => void;
 };
 
@@ -39,8 +42,9 @@ function capitalise(value: string) {
 export default function ActiveFilterCards({
 	selectedType,
 	onTypeChange,
-	selectedBrand,
-	onBrandChange,
+	selectedBrands,
+	onBrandsChange,
+	brandLogos,
 	selectedResistance,
 	onResistanceChange,
 	showFavoritesOnly,
@@ -52,13 +56,14 @@ export default function ActiveFilterCards({
 }: Props) {
 	const cards: Card[] = [];
 
-	if (selectedBrand !== 'all') {
+	for (const brand of selectedBrands) {
 		cards.push({
-			key: 'brand',
+			key: `brand-${brand}`,
 			label: 'Brand',
-			value: selectedBrand,
-			tile: <span className="font-mono text-xs font-medium">{brandInitials(selectedBrand)}</span>,
-			onRemove: () => onBrandChange('all')
+			value: brand,
+			tile: <BrandLogo name={brand} logoUrl={brandLogos[brand]} className="h-9 w-9" />,
+			bareTile: true,
+			onRemove: () => onBrandsChange(selectedBrands.filter((b) => b !== brand))
 		});
 	}
 	if (selectedType !== 'all') {
@@ -107,9 +112,13 @@ export default function ActiveFilterCards({
 					key={card.key}
 					className="bg-surface border-border flex items-center gap-2.5 rounded-2xl border py-1.5 pl-1.5 pr-1.5"
 				>
-					<span className="bg-sub-alt text-main flex h-9 w-9 shrink-0 items-center justify-center rounded-lg">
-						{card.tile}
-					</span>
+					{card.bareTile ? (
+						card.tile
+					) : (
+						<span className="bg-sub-alt text-main flex h-9 w-9 shrink-0 items-center justify-center rounded-lg">
+							{card.tile}
+						</span>
+					)}
 					<span className="flex flex-col">
 						<span className="text-sub font-mono text-[10px] font-medium uppercase tracking-[0.14em]">
 							{card.label}

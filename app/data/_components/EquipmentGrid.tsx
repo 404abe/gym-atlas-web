@@ -6,6 +6,7 @@ import { Equipment } from '@/types/equipment';
 
 type Props = {
 	equipment: Equipment[];
+	brandLogos: Record<string, string | null>;
 	onToggleFavorite: (id: number) => void;
 	onUpdateRating: (id: number, rating: number) => void;
 	hasActiveFilters: boolean;
@@ -14,6 +15,7 @@ type Props = {
 
 export default function EquipmentGrid({
 	equipment,
+	brandLogos,
 	onToggleFavorite,
 	onUpdateRating,
 	hasActiveFilters,
@@ -29,6 +31,7 @@ export default function EquipmentGrid({
 				<EquipmentCard
 					key={e.id}
 					item={e}
+					brandLogo={brandLogos[e.brand]}
 					onToggleFavorite={onToggleFavorite}
 					onUpdateRating={onUpdateRating}
 				/>

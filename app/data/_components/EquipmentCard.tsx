@@ -5,16 +5,17 @@ import Link from 'next/link';
 import { FaExpandAlt } from 'react-icons/fa';
 import FavoriteButton from '@/components/ui/FavoriteButton';
 import RatingStars from '@/components/ui/RatingStars';
-import { brandInitials } from '@/lib/utils';
+import BrandLogo from '@/components/ui/BrandLogo';
 import { Equipment } from '@/types/equipment';
 
 type Props = {
 	item: Equipment;
+	brandLogo?: string | null;
 	onToggleFavorite: (id: number) => void;
 	onUpdateRating: (id: number, rating: number) => void;
 };
 
-export default function EquipmentCard({ item: e, onToggleFavorite, onUpdateRating }: Props) {
+export default function EquipmentCard({ item: e, brandLogo, onToggleFavorite, onUpdateRating }: Props) {
 	const href = `/equipment/${e.id}`;
 
 	return (
@@ -44,9 +45,7 @@ export default function EquipmentCard({ item: e, onToggleFavorite, onUpdateRatin
 			</div>
 
 			<Link href={href} className="flex items-center gap-3 px-1.5">
-				<span className="bg-sub-alt text-sub flex h-10 w-10 shrink-0 items-center justify-center rounded-lg font-mono text-[11px] font-medium">
-					{brandInitials(e.brand)}
-				</span>
+				<BrandLogo name={e.brand} logoUrl={brandLogo} className="h-10 w-10" />
 				<span className="min-w-0">
 					<span className="text-main block text-sm font-semibold leading-tight">{e.name || '—'}</span>
 					<span className="text-sub block truncate font-mono text-xs">
