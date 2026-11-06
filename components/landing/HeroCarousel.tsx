@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { fetchAllEquipment, fetchGyms } from '@/lib/api';
+import { fetchAllEquipment, fetchBrands, fetchGyms } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { logoForGym } from '@/lib/gymLogos';
 import { cloudinaryThumb } from '@/lib/cloudinary';
@@ -19,6 +19,8 @@ type MachineCard = {
 	subtitle: string;
 	group: string;
 	image: string | null;
+	/** The brand's uploaded logo, if it has one; the badge falls back to a dumbbell. */
+	brandLogo: string | null;
 };
 
 type GymCard = {
@@ -42,7 +44,8 @@ const FALLBACK: CarouselCard[] = [
 		title: 'Converging Chest Press',
 		subtitle: 'Matrix · Aura',
 		group: 'CHEST',
-		image: '/landing/matrix-aura-converging-chest-press.png'
+		image: '/landing/matrix-aura-converging-chest-press.png',
+		brandLogo: null
 	},
 	{
 		kind: 'gym',
@@ -85,6 +88,11 @@ function uniqueBy<T>(items: T[], keyOf: (item: T) => string | null): T[] {
 		out.push(item);
 	}
 	return out;
+}
+
+/** Case/space-insensitive brand name, for matching equipment to its brand. */
+function brandKey(name: string | null | undefined): string {
+	return (name ?? '').toLowerCase().replace(/\s+/g, ' ').trim();
 }
 
 /** True for a .png photo URL (ignoring any query string or fragment). */
@@ -168,8 +176,17 @@ export function useCarouselCards(section: CarouselSection = 'hero'): CarouselCar
 	useEffect(() => {
 		let cancelled = false;
 
-		Promise.allSettled([fetchAllEquipment(), fetchGyms()]).then(([equipmentRes, gymsRes]) => {
+		Promise.allSettled([fetchAllEquipment(), fetchGyms(), fetchBrands()]).then((results) => {
 			if (cancelled) return;
+			const [equipmentRes, gymsRes, brandsRes] = results;
+
+			// Brand name -> logo, so each machine card can show its maker's mark.
+			const logoByBrand = new Map<string, string>();
+			if (brandsRes.status === 'fulfilled') {
+				for (const brand of brandsRes.value) {
+					if (brand.logo_url) logoByBrand.set(brandKey(brand.name), brand.logo_url);
+				}
+			}
 
 			const machines: CarouselCard[] = shuffled(
 				equipmentRes.status === 'fulfilled'
@@ -191,7 +208,8 @@ export function useCarouselCards(section: CarouselSection = 'hero'): CarouselCar
 									eq.exercise?.category_name ||
 									(eq.type === 'plate_loaded' ? 'Plate' : 'Pin')
 								).toUpperCase(),
-								image: eq.image_url ?? null
+								image: eq.image_url ?? null,
+								brandLogo: logoByBrand.get(brandKey(eq.brand)) ?? null
 							}))
 					: []
 			);
@@ -279,7 +297,15 @@ function GymGlyph({ className }: { className?: string }) {
 }
 
 /** Small "file" badge beside the machine name, after macOS-style file cards. */
-function GroupBadge({ group, mono }: { group: string; mono: string }) {
+function GroupBadge({
+	group,
+	logo,
+	mono
+}: {
+	group: string;
+	logo: string | null;
+	mono: string;
+}) {
 	return (
 		<div className="relative h-[50px] w-10 shrink-0">
 			<svg viewBox="0 0 40 50" fill="none" className="absolute inset-0 h-full w-full">
@@ -289,14 +315,28 @@ function GroupBadge({ group, mono }: { group: string; mono: string }) {
 					strokeWidth={1.5}
 				/>
 				<path d="M26 3v8a2 2 0 0 0 2 2h8" className="stroke-border" strokeWidth={1.5} />
-				<rect x="11" y="15" width="18" height="15" rx="3" className="fill-accent" />
-				<path
-					d="M15 22.5h10M16 19.5v6M24 19.5v6"
-					className="stroke-bg"
-					strokeWidth={1.8}
-					strokeLinecap="round"
-				/>
+				{!logo && (
+					<>
+						<rect x="11" y="15" width="18" height="15" rx="3" className="fill-accent" />
+						<path
+							d="M15 22.5h10M16 19.5v6M24 19.5v6"
+							className="stroke-bg"
+							strokeWidth={1.8}
+							strokeLinecap="round"
+						/>
+					</>
+				)}
 			</svg>
+			{logo && (
+				// eslint-disable-next-line @next/next/no-img-element
+				<img
+					src={cloudinaryThumb(logo, { size: 40, fit: 'limit' }) ?? logo}
+					alt=""
+					loading="lazy"
+					decoding="async"
+					className="absolute left-[18%] top-[26%] h-[36%] w-[64%] object-contain"
+				/>
+			)}
 			<span
 				className={cn(
 					mono,
@@ -339,7 +379,7 @@ function MachineCardView({ card, mono }: { card: MachineCard; mono: string }) {
 				)}
 			</div>
 			<div className="flex flex-1 items-center gap-4 px-2">
-				<GroupBadge group={card.group} mono={mono} />
+				<GroupBadge group={card.group} logo={card.brandLogo} mono={mono} />
 				<div className="flex min-w-0 flex-col gap-0.5">
 					<span className="text-main truncate text-2xl font-medium tracking-tight">
 						{card.title}
