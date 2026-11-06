@@ -56,7 +56,7 @@ const FALLBACK: CarouselCard[] = [
 ];
 
 // The hero and footer draw from one pool of unique cards (no photo twice).
-// The pool holds every machine with a photo; only the slots below are ever in
+// The pool holds every machine with a PNG photo; only the slots below are ever in
 // the DOM at once, so its size has no effect on rendering cost.
 // Rendered width of a card in CSS px (hero 200, footer 220, mobile ~213).
 const THUMB_PX = 220;
@@ -85,6 +85,11 @@ function uniqueBy<T>(items: T[], keyOf: (item: T) => string | null): T[] {
 		out.push(item);
 	}
 	return out;
+}
+
+/** True for a .png photo URL (ignoring any query string or fragment). */
+function isPng(url: string | null | undefined): boolean {
+	return !!url && /\.png(?:[?#].*)?$/i.test(url);
 }
 
 /** Fisher-Yates shuffle into a new array. */
@@ -172,7 +177,7 @@ export function useCarouselCards(section: CarouselSection = 'hero'): CarouselCar
 							// Same machine entered twice (or as variants) must show once, even if
 							// each record carries its own copy of the photo.
 							uniqueBy(
-								equipmentRes.value.filter((eq) => !!eq.image_url),
+								equipmentRes.value.filter((eq) => isPng(eq.image_url)),
 								(eq) => identityKey(eq.brand, eq.series, eq.name)
 							),
 							(eq) => eq.image_url ?? null
