@@ -19,7 +19,8 @@ const EXPLORE_LINKS = [
 	{ label: 'Equipment', href: '/data' },
 	{ label: 'Gyms', href: '/data?view=gyms' },
 	{ label: 'Add your gym', href: '/add' },
-	{ label: 'Leaderboard', href: '/leaderboard' }
+	{ label: 'Leaderboard', href: '/leaderboard' },
+	{ label: 'API', href: '/developers', soon: true }
 ];
 
 const pillCls =
@@ -98,7 +99,14 @@ export default function MarketingHeader({ bordered = true }: { bordered?: boolea
 								<p className="text-sub px-3 pb-1 text-xs tracking-wide">Explore</p>
 								{EXPLORE_LINKS.map((l) => (
 									<Link key={l.label} href={l.href} className={panelLinkCls}>
-										{l.label}
+										<span className="flex items-center justify-between gap-2">
+											{l.label}
+											{l.soon && (
+												<span className="border-border text-sub rounded-full border px-2 py-px text-[10px] font-medium">
+													Soon
+												</span>
+											)}
+										</span>
 									</Link>
 								))}
 							</nav>
