@@ -8,6 +8,7 @@ import { WindowFrame } from '@/components/ui/AppWindow';
 import SectionNav from '@/components/landing/SectionNav';
 import CommunityPanel from '@/components/landing/CommunityPanel';
 import DatabasePanel from '@/components/landing/DatabasePanel';
+import ApiSection from '@/components/landing/ApiSection';
 import { PANEL_CLS, PANEL_LABEL_CLS } from '@/components/landing/panelStyles';
 
 const dmSans = DM_Sans({ subsets: ['latin'] });
@@ -219,6 +220,7 @@ export default function LandingPage() {
 						visual={<CommunityPanel />}
 						windowTitle="Leaderboard"
 					/>
+					<ApiSection mono={mono} />
 				</div>
 			</div>
 
