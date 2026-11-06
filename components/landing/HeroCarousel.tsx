@@ -82,6 +82,13 @@ function uniqueBy<T>(items: T[], keyOf: (item: T) => string | null): T[] {
 	return out;
 }
 
+/** Case/space-insensitive identity for a machine: brand + series + name. */
+function identityKey(...parts: (string | null | undefined)[]): string {
+	return parts
+		.map((p) => (p ?? '').toLowerCase().replace(/\s+/g, ' ').trim())
+		.join('|');
+}
+
 export type CarouselSection = 'hero' | 'footer';
 
 // Slots available on each landing section (hero: two wave rows, footer: the fan).
@@ -128,7 +135,12 @@ export function useCarouselCards(section: CarouselSection = 'hero'): CarouselCar
 			const machines: CarouselCard[] =
 				equipmentRes.status === 'fulfilled'
 					? uniqueBy(
-							equipmentRes.value.filter((eq) => !!eq.image_url),
+							// Same machine entered twice (or as variants) must show once, even if
+							// each record carries its own copy of the photo.
+							uniqueBy(
+								equipmentRes.value.filter((eq) => !!eq.image_url),
+								(eq) => identityKey(eq.brand, eq.series, eq.name)
+							),
 							(eq) => eq.image_url ?? null
 						)
 							.slice(0, MAX_MACHINES)
