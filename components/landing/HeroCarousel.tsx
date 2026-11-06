@@ -89,6 +89,19 @@ function identityKey(...parts: (string | null | undefined)[]): string {
 		.join('|');
 }
 
+/**
+ * Stand-in shown until real data loads, so the first paint (or a slow API
+ * wake-up) is never nearly empty. Only two static cards exist, so these repeat;
+ * they are replaced by the unique pool as soon as it arrives.
+ */
+function placeholderCards(section: CarouselSection): CarouselCard[] {
+	const count = section === 'hero' ? HERO_MAX : FOOTER_MAX;
+	return Array.from({ length: count }, (_, i) => ({
+		...FALLBACK[i % FALLBACK.length],
+		key: `${FALLBACK[i % FALLBACK.length].key}-ph${i}`
+	}));
+}
+
 export type CarouselSection = 'hero' | 'footer';
 
 // Slots available on each landing section (hero: two wave rows, footer: the fan).
@@ -125,6 +138,8 @@ export function fillLoop(cards: CarouselCard[]): CarouselCard[] {
 
 export function useCarouselCards(section: CarouselSection = 'hero'): CarouselCard[] {
 	const [pool, setPool] = useState<CarouselCard[]>(FALLBACK);
+	// False until the API answers (it can take a while to wake on free hosting).
+	const [loaded, setLoaded] = useState(false);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -184,7 +199,10 @@ export function useCarouselCards(section: CarouselSection = 'hero'): CarouselCar
 					: [];
 
 			// Keep the static set unless the API gave us enough to fill a loop.
-			if (machines.length + gyms.length >= 4) setPool(interleave(machines, gyms));
+			if (machines.length + gyms.length >= 4) {
+					setPool(interleave(machines, gyms));
+					setLoaded(true);
+				}
 		});
 
 		return () => {
@@ -192,7 +210,10 @@ export function useCarouselCards(section: CarouselSection = 'hero'): CarouselCar
 		};
 	}, []);
 
-	return useMemo(() => splitPool(pool, section), [pool, section]);
+	return useMemo(
+		() => (loaded ? splitPool(pool, section) : placeholderCards(section)),
+		[loaded, pool, section]
+	);
 }
 
 // ── Cards ───────────────────────────────────────────────
