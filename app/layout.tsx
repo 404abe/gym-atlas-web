@@ -45,6 +45,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 	return (
 		<html lang="en" className="h-full" suppressHydrationWarning>
 			<head>
+				{/* Satoshi (ITF Free Font License) is loaded from the Fontshare API on purpose: the licence forbids
+				    committing the font files to a public repository. */}
+				<link rel="preconnect" href="https://api.fontshare.com" crossOrigin="" />
+				<link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=satoshi@700&display=swap" />
 				<script
 					type="application/ld+json"
 					dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
