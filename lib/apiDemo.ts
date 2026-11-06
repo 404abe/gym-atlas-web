@@ -1,5 +1,5 @@
-// Shared by the landing page's "API" section (components/landing/ApiSection.tsx)
-// and its data route (app/api/nearby-demo/route.ts).
+// Shared by the /developers page demo (components/developers/ApiDemo.tsx) and
+// its data route (app/api/nearby-demo/route.ts).
 
 // A gym only makes it into the "near you" demo if it has at least this many
 // distinct approved machines, so the animated listing never looks empty.

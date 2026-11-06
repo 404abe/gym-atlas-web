@@ -11,6 +11,10 @@ import { cn } from '@/lib/utils';
 // tool call and its result follow, then the data arrives as green "added" lines.
 //   1. list: the gym's machines (the search window fills in alongside)
 //   2. spec: one machine as JSON (its row highlights in the search window)
+//
+// On wide screens both windows are drawn at a fixed design size (STAGE_W x
+// STAGE_H) and scaled down to fit. On phones only the terminal is shown, at a
+// smaller size, because two overlapping windows don't fit.
 
 type Mode = 'list' | 'spec';
 
@@ -28,6 +32,9 @@ type View = {
 };
 
 type JsonLine = { text: string } | { key: string; value: string | number | null; comma: boolean };
+
+const STAGE_W = 960;
+const STAGE_H = 540;
 
 const truncate = (text: string, max: number) => (text.length > max ? `${text.slice(0, max - 1)}…` : text);
 
@@ -67,7 +74,7 @@ const blankView = (gym: DemoGym): View => ({
 	highlight: false
 });
 
-// One finished frame, shown with reduced motion and before the loop starts.
+// One finished frame, shown with reduced motion.
 const staticView = (gym: DemoGym): View => ({
 	...blankView(gym),
 	prompt: listPrompt(gym),
@@ -80,28 +87,37 @@ const staticView = (gym: DemoGym): View => ({
 
 class Stop extends Error {}
 
-const REDUCED_MOTION = '(prefers-reduced-motion: reduce)';
+// ── Media queries ────────────────────────────────────────
 
-function subscribeReducedMotion(onChange: () => void) {
-	const query = window.matchMedia(REDUCED_MOTION);
-	query.addEventListener('change', onChange);
-	return () => query.removeEventListener('change', onChange);
+const REDUCED_MOTION = '(prefers-reduced-motion: reduce)';
+const WIDE = '(min-width: 721px)'; // matches the `sm` breakpoint
+
+function subscribeTo(query: string) {
+	return (onChange: () => void) => {
+		const list = window.matchMedia(query);
+		list.addEventListener('change', onChange);
+		return () => list.removeEventListener('change', onChange);
+	};
 }
 
+const subscribeReducedMotion = subscribeTo(REDUCED_MOTION);
 const getReducedMotion = () => window.matchMedia(REDUCED_MOTION).matches;
+const subscribeWide = subscribeTo(WIDE);
+const getWide = () => window.matchMedia(WIDE).matches;
 
 // ── Pieces ───────────────────────────────────────────────
 
-function Caret() {
+function Caret({ big }: { big: boolean }) {
 	return (
 		<span
 			aria-hidden="true"
-			className="ml-px inline-block h-[11px] w-[6px] translate-y-[1px] animate-pulse bg-white/85"
+			className={cn(
+				'ml-px inline-block translate-y-[1px] animate-pulse bg-white/85',
+				big ? 'h-[14px] w-[8px]' : 'h-[11px] w-[6px]'
+			)}
 		/>
 	);
 }
-
-const ADDED = '-mx-3 block bg-green-500/20 px-3 text-green-100';
 
 function JsonRow({ line }: { line: JsonLine }) {
 	if ('text' in line) return <>{line.text}</>;
@@ -122,19 +138,27 @@ function JsonRow({ line }: { line: JsonLine }) {
 	);
 }
 
-function TerminalBody({ view, mono }: { view: View; mono: string }) {
+function TerminalBody({ view, mono, big }: { view: View; mono: string; big: boolean }) {
 	const { gym, mode } = view;
 	const machine = gym.machines[gym.spotlight];
 	const km = gym.distanceKm != null ? ` · ${gym.distanceKm} km` : '';
 	const path = mode === 'list' ? `/gyms/${slug(gym.name)}` : `/machines/${slug(machine.name)}`;
 	const result = mode === 'list' ? `200 OK · ${gym.machines.length} machines${km}` : '200 OK';
 	const lines = specLines(machine);
+	const added = cn(
+		'block bg-green-500/20 text-green-100',
+		big ? '-mx-4 px-4' : '-mx-3 px-3'
+	);
 
 	return (
 		<div
-			className={`${mono} flex h-full flex-col px-3 pb-2 pt-2.5 text-[10.5px] leading-[1.55] text-white/80`}
+			className={cn(
+				mono,
+				'flex h-full flex-col leading-[1.55] text-white/80',
+				big ? 'px-4 pb-3 pt-3.5 text-[14px]' : 'px-3 pb-2 pt-2.5 text-[10.5px]'
+			)}
 		>
-			<div className="mb-2 truncate whitespace-pre">
+			<div className={cn('truncate whitespace-pre', big ? 'mb-3' : 'mb-2')}>
 				<span className="font-medium text-white">GymAtlas API</span>{' '}
 				<span className="text-white/50">v0.1.0 · api.gymatlas.xyz</span>
 			</div>
@@ -151,24 +175,29 @@ function TerminalBody({ view, mono }: { view: View; mono: string }) {
 
 				{view.result && mode === 'list' &&
 					gym.machines.slice(0, view.count).map((m, i) => (
-						<span key={`${m.brand}-${m.name}`} className={ADDED}>
+						<span key={`${m.brand}-${m.name}`} className={added}>
 							{String(i + 1).padStart(2)} + {truncate(toSnake(m.name), 19).padEnd(20)}x{m.count}
 						</span>
 					))}
 
 				{view.result && mode === 'spec' &&
 					lines.slice(0, view.count).map((line, i) => (
-						<span key={i} className={ADDED}>
+						<span key={i} className={added}>
 							{String(i + 1).padStart(2)} + <JsonRow line={line} />
 						</span>
 					))}
 			</div>
 
-			<div className="mt-1.5 overflow-hidden whitespace-pre border-y border-white/15 py-[3px]">
+			<div
+				className={cn(
+					'overflow-hidden whitespace-pre border-y border-white/15',
+					big ? 'mt-2 py-[5px]' : 'mt-1.5 py-[3px]'
+				)}
+			>
 				&gt; {view.input}
-				<Caret />
+				<Caret big={big} />
 			</div>
-			<div className="mt-0.5 text-white/50">coming soon</div>
+			<div className={cn('text-white/50', big ? 'mt-1' : 'mt-0.5')}>coming soon</div>
 		</div>
 	);
 }
@@ -179,11 +208,11 @@ function SearchBody({ view, mono }: { view: View; mono: string }) {
 
 	// Right padding keeps the content clear of the terminal window overlapping this one.
 	return (
-		<div className="flex h-full flex-col overflow-hidden py-2.5 pl-3 pr-9 text-xs">
-			<div className="bg-sub-alt text-main flex h-7 shrink-0 items-center overflow-hidden whitespace-nowrap rounded-md px-2">
+		<div className="flex h-full flex-col overflow-hidden py-4 pl-[18px] pr-14 text-[15px]">
+			<div className="bg-sub-alt text-main flex h-[42px] shrink-0 items-center overflow-hidden whitespace-nowrap rounded-lg px-3">
 				{view.query || <span className="text-sub">Search gyms</span>}
 			</div>
-			<div className="text-sub mb-1 mt-2.5 flex h-3.5 shrink-0 items-center justify-between text-[11px]">
+			<div className="text-sub mb-1.5 mt-3.5 flex h-[18px] shrink-0 items-center justify-between text-[13px]">
 				<span className="truncate">{view.query ? gym.name : ''}</span>
 				<span className="shrink-0 pl-2">
 					{view.query && gym.distanceKm != null ? `${gym.distanceKm} km` : ''}
@@ -194,14 +223,14 @@ function SearchBody({ view, mono }: { view: View; mono: string }) {
 					<li
 						key={`${m.brand}-${m.name}`}
 						className={cn(
-							'-mx-1.5 flex h-6 items-center justify-between rounded-md px-1.5',
+							'-mx-2 flex h-[34px] items-center justify-between rounded-lg px-2',
 							i === highlighted && 'bg-sub-alt'
 						)}
 					>
 						<span className="text-main truncate font-medium">{m.name}</span>
 						{i === highlighted ? (
 							<span
-								className={`${mono} border-accent text-accent ml-2 shrink-0 rounded-full border px-2 text-[10px]`}
+								className={`${mono} border-accent text-accent ml-2 shrink-0 rounded-full border px-2.5 py-0.5 text-[12px]`}
 							>
 								{m.type === 'pin_loaded' ? 'pin loaded' : 'plate loaded'}
 							</span>
@@ -215,15 +244,28 @@ function SearchBody({ view, mono }: { view: View; mono: string }) {
 	);
 }
 
-// ── Section ──────────────────────────────────────────────
+// ── Demo ─────────────────────────────────────────────────
 
-export default function ApiSection({ mono }: { mono: string }) {
+export default function ApiDemo({ mono }: { mono: string }) {
 	const [view, setView] = useState<View>(() => blankView(FALLBACK_GYMS[0]));
-	const stageRef = useRef<HTMLDivElement>(null);
+	const [scale, setScale] = useState<number | null>(null);
+	const rootRef = useRef<HTMLDivElement>(null);
+	const fitRef = useRef<HTMLDivElement>(null);
+
 	const reducedMotion = useSyncExternalStore(subscribeReducedMotion, getReducedMotion, () => false);
+	const wide = useSyncExternalStore(subscribeWide, getWide, () => true);
+
+	// Scale the fixed-size stage to the width it has been given (wide layout only).
+	useEffect(() => {
+		const el = fitRef.current;
+		if (!wide || !el) return;
+		const observer = new ResizeObserver(() => setScale(Math.min(1, el.clientWidth / STAGE_W)));
+		observer.observe(el);
+		return () => observer.disconnect();
+	}, [wide]);
 
 	useEffect(() => {
-		// With reduced motion the section just shows one finished frame.
+		// With reduced motion the demo just shows one finished frame.
 		if (reducedMotion) return;
 
 		let cancelled = false;
@@ -234,7 +276,7 @@ export default function ApiSection({ mono }: { mono: string }) {
 
 		const patch = (next: Partial<View>) => setView((current) => ({ ...current, ...next }));
 
-		// Resolves after `ms`, then holds while the section is off-screen so the
+		// Resolves after `ms`, then holds while the demo is off-screen so the
 		// loop doesn't burn renders nobody can see.
 		const tick = async (ms: number) => {
 			await new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -251,8 +293,8 @@ export default function ApiSection({ mono }: { mono: string }) {
 			}
 		};
 
-		// One request, only once the section is first seen. The route answers with
-		// an empty list when there's no location or no gym close enough with enough
+		// One request, only once the demo is first seen. The route answers with an
+		// empty list when there's no location or no gym close enough with enough
 		// machines listed, and the curated defaults keep playing.
 		const loadNearby = async () => {
 			try {
@@ -325,7 +367,7 @@ export default function ApiSection({ mono }: { mono: string }) {
 				void loadNearby();
 			}
 		});
-		if (stageRef.current) observer.observe(stageRef.current);
+		if (rootRef.current) observer.observe(rootRef.current);
 		void play();
 
 		return () => {
@@ -337,32 +379,46 @@ export default function ApiSection({ mono }: { mono: string }) {
 	const shown = reducedMotion ? staticView(FALLBACK_GYMS[0]) : view;
 
 	return (
-		<section id="api" className="scroll-mt-24 py-16 lg:py-24">
-			<div className="flex flex-col items-center text-center">
-				<h2 className="text-main text-[clamp(40px,6vw,72px)] font-semibold leading-none tracking-[-0.045em]">
-					API
-				</h2>
-				<p className={`${mono} text-sub mt-4 text-[13px]`}>Coming soon</p>
-			</div>
+		<div
+			ref={rootRef}
+			role="img"
+			aria-label="Animated preview of the GymAtlas API: a terminal lists a gym's machines, then prints one machine as JSON, while a search window updates alongside."
+		>
+			{wide ? (
+				<div
+					ref={fitRef}
+					className="relative mx-auto w-full overflow-hidden"
+					style={{
+						maxWidth: STAGE_W,
+						height: STAGE_H * (scale ?? 1),
+						// Hidden until measured so it never flashes at the wrong size.
+						visibility: scale === null ? 'hidden' : 'visible'
+					}}
+				>
+					<div
+						className="absolute left-0 top-0 origin-top-left"
+						style={{ width: STAGE_W, height: STAGE_H, transform: `scale(${scale ?? 1})` }}
+					>
+						<div className="absolute bottom-0 left-0 h-[350px] w-[430px]">
+							<WindowFrame title="Search" className="h-full">
+								<SearchBody view={shown} mono={mono} />
+							</WindowFrame>
+						</div>
 
-			<div
-				ref={stageRef}
-				role="img"
-				aria-label="Animated preview of the GymAtlas API: a terminal lists a gym's machines, then prints one machine as JSON, while a search window updates alongside."
-				className="relative mx-auto mt-12 h-[300px] w-full max-w-[590px] sm:h-[332px]"
-			>
-				<div className="absolute bottom-0 left-0 hidden h-[218px] w-[262px] sm:block">
-					<WindowFrame title="Search" className="h-full">
-						<SearchBody view={shown} mono={mono} />
-					</WindowFrame>
+						<div className="absolute right-0 top-0 z-10">
+							<AppWindow title="gymatlas-api · 80x24" width={580} height={470} dark>
+								<TerminalBody view={shown} mono={mono} big />
+							</AppWindow>
+						</div>
+					</div>
 				</div>
-
-				<div className="absolute left-1/2 top-0 z-10 w-[340px] max-w-full -translate-x-1/2 sm:left-auto sm:right-0 sm:translate-x-0">
+			) : (
+				<div className="mx-auto w-[340px] max-w-full">
 					<AppWindow title="gymatlas-api · 80x24" width={340} height={300} dark className="max-w-full">
-						<TerminalBody view={shown} mono={mono} />
+						<TerminalBody view={shown} mono={mono} big={false} />
 					</AppWindow>
 				</div>
-			</div>
-		</section>
+			)}
+		</div>
 	);
 }
