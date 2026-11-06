@@ -5,6 +5,7 @@ import { BadgePlus, Trophy, UserCircle, ShieldCheck, Map, Database } from 'lucid
 import { useAuth } from '@/app/contexts/AuthContext';
 import { useAuthGate } from '@/app/contexts/AuthGateContext';
 import { cn } from '@/lib/utils';
+import { isMarketingRoute } from '@/lib/marketingRoutes';
 import NotificationDrawer from '../NotificationDrawer';
 import GymAtlasLogo from '../ui/GymAtlasLogo';
 import ThemeToggle from '../ui/ThemeToggle';
@@ -27,7 +28,7 @@ export default function Topbar() {
 	const isMap = pathname === '/map';
 	const isData = pathname === '/data';
 
-	if (pathname === '/' || pathname === '/about') return null;
+	if (isMarketingRoute(pathname)) return null;
 
 	return (
 		<div className="left-5.5 pointer-events-none fixed right-6 z-[60] hidden items-start justify-between p-3 md:flex">
