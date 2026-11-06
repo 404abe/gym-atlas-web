@@ -1,6 +1,7 @@
 import { DM_Sans, JetBrains_Mono } from 'next/font/google';
 import MarketingHeader from '@/components/layout/MarketingHeader';
 import ApiDemo from '@/components/developers/ApiDemo';
+import SpinningLogo from '@/components/ui/SpinningLogo';
 
 const dmSans = DM_Sans({ subsets: ['latin'] });
 const jetbrainsMono = JetBrains_Mono({ subsets: ['latin'], weight: ['400', '500'] });
@@ -23,6 +24,7 @@ export default function DevelopersPage() {
 						API
 					</h1>
 					<p className={`${mono} text-sub mt-5 text-sm`}>Coming soon</p>
+					<SpinningLogo size={72} className="text-main mt-10" />
 				</div>
 
 				<div className="mt-14 md:mt-20">
