@@ -8,25 +8,19 @@ import { Card, CARD_SIZE, useCarouselCards, type CarouselCard } from '@/componen
 // to the right and wrapping round. Like the hero, positions are written to
 // the DOM each frame and the fan is static under prefers-reduced-motion.
 
-const FAN_COUNT = 13;
 const FAN_CARD_W = 220;
 const FAN_STEP_PX = 150;
 const FAN_SPEED = 0.12; // cards per second
 
-function fanCards(cards: CarouselCard[]): CarouselCard[] {
-	return Array.from({ length: FAN_COUNT }, (_, i) => {
-		const card = cards[i % cards.length];
-		return { ...card, key: `${card.key}-fan${Math.floor(i / cards.length)}` };
-	});
-}
-
 function CardFan({ mono }: { mono: string }) {
-	const base = useCarouselCards();
-	const cards = fanCards(base);
+	// Unique cards only, disjoint from the hero's, so the fan size follows the data.
+	const cards: CarouselCard[] = useCarouselCards('footer');
+	const count = cards.length;
 	const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
 
 	useEffect(() => {
-		const mid = Math.floor(FAN_COUNT / 2);
+		if (count === 0) return;
+		const mid = Math.floor(count / 2);
 		const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 		let elapsed = 0;
 		let last = performance.now();
@@ -36,8 +30,8 @@ function CardFan({ mono }: { mono: string }) {
 			itemRefs.current.forEach((el, i) => {
 				if (!el) return;
 				const d =
-					((((i - mid + FAN_SPEED * elapsed + FAN_COUNT / 2) % FAN_COUNT) + FAN_COUNT) % FAN_COUNT) -
-					FAN_COUNT / 2;
+					((((i - mid + FAN_SPEED * elapsed + count / 2) % count) + count) % count) -
+					count / 2;
 				const size = CARD_SIZE[cards[i].kind];
 				const h = (size.h * FAN_CARD_W) / size.w;
 				el.style.transform = `translate(calc(-50% + ${(d * FAN_STEP_PX).toFixed(1)}px), ${(36 + d * d * 6).toFixed(1)}px) rotate(${(d * 4.2).toFixed(1)}deg)`;
@@ -57,7 +51,7 @@ function CardFan({ mono }: { mono: string }) {
 		if (!reduceMotion) raf = requestAnimationFrame(tick);
 		return () => cancelAnimationFrame(raf);
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [cards.length, base]);
+	}, [count]);
 
 	return (
 		<div aria-hidden="true" className="relative mx-auto h-[360px] max-w-[1440px]">
