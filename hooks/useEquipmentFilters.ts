@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Equipment } from '@/types/equipment';
 import type { BestInClassCategory as Category } from '@/types/bestInClass';
 import { matchesSearch } from '@/lib/utils';
-import { getEquipmentCategorySuggestions } from '@/lib/equipment-categories';
+import { matchesBestInClassCategory } from '@/lib/best-in-class';
 
 export type EquipmentSortField = 'id' | 'brand' | 'name' | 'resistance_profile' | 'rating';
 
@@ -46,17 +46,7 @@ export function useEquipmentFilters(
 					if (selectedCategory === 'all') return true;
 					const cat = categories.find((c) => c.slug === selectedCategory);
 					if (!cat) return true;
-					if (cat.type === 'exercise') {
-						return cat.id === e.exercise?.category_id || cat.id === e.secondary_exercise?.category_id;
-					}
-					// muscle_group matching still relies on the name-based heuristic — there's
-					// no DB link from exercises to muscle groups yet.
-					const catName = cat.name.toLowerCase();
-					const eqName = e.name?.toLowerCase() ?? '';
-					if (eqName.includes(catName) || catName.includes(eqName)) return true;
-					const suggested = getEquipmentCategorySuggestions(e.name ?? '');
-					if (suggested) return suggested.muscles.includes(cat.name);
-					return false;
+					return matchesBestInClassCategory(e, cat);
 				})();
 				return (
 					searchMatch &&

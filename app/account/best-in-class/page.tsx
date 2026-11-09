@@ -2,16 +2,18 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useAuth } from '@/app/contexts/AuthContext';
+import { useToastContext } from '@/app/contexts/ToastContext';
 import {
+	fetchAllEquipment,
 	fetchBestInClassCategories,
 	fetchUserBestInClass,
-	searchEquipment,
 	setBestInClass,
 	removeBestInClass
 } from '@/lib/api';
-import { Trophy, Plus, X, Search, Dumbbell } from 'lucide-react';
-import Link from 'next/link';
+import { Trophy, Plus, X, Dumbbell } from 'lucide-react';
 import { BestInClassCategory as Category } from '@/types/bestInClass';
+import type { Equipment } from '@/types/equipment';
+import BestInClassPicker from './BestInClassPicker';
 
 type BestInClass = {
 	id: number;
@@ -24,20 +26,19 @@ type BestInClass = {
 	equipment_name: string;
 	image_url?: string;
 };
-type EquipmentResult = { id: number; name: string; brand: string; series?: string; slug: string };
 
 export default function BestInClassPage() {
 	const { user } = useAuth();
+	const { addToast } = useToastContext();
 	const [tab, setTab] = useState<'exercise' | 'muscle_group'>('exercise');
 	const [categories, setCategories] = useState<Category[]>([]);
 	const [selections, setSelections] = useState<BestInClass[]>([]);
 	const [loading, setLoading] = useState(true);
 
-	// Search modal state
-	const [modalCategory, setModalCategory] = useState<Category | null>(null);
-	const [query, setQuery] = useState('');
-	const [results, setResults] = useState<EquipmentResult[]>([]);
-	const [searching, setSearching] = useState(false);
+	// Machine picker
+	const [pickerCategory, setPickerCategory] = useState<Category | null>(null);
+	const [equipment, setEquipment] = useState<Equipment[] | null>(null);
+	const [saving, setSaving] = useState(false);
 
 	useEffect(() => {
 		if (!user) return;
@@ -49,29 +50,32 @@ export default function BestInClassPage() {
 			.finally(() => setLoading(false));
 	}, [user]);
 
-	// Debounced search
-	useEffect(() => {
-		if (!query.trim()) {
-			setResults([]);
-			return;
+	const openPicker = (cat: Category) => {
+		setPickerCategory(cat);
+		// Machines load the first time a slot is opened, then stay cached.
+		if (equipment === null) {
+			fetchAllEquipment()
+				.then(setEquipment)
+				.catch(() => {
+					addToast('Could not load machines', 'error');
+					setPickerCategory(null);
+				});
 		}
-		const t = setTimeout(async () => {
-			setSearching(true);
-			const data = await searchEquipment(query);
-			setResults((data as EquipmentResult[]) ?? []);
-			setSearching(false);
-		}, 300);
-		return () => clearTimeout(t);
-	}, [query]);
+	};
 
 	const handleSelect = async (equipmentId: number) => {
-		if (!modalCategory) return;
-		await setBestInClass(modalCategory.id, equipmentId);
-		const updated = await fetchUserBestInClass(user!.id);
-		setSelections((updated.best_in_class as unknown as BestInClass[]) ?? []);
-		setModalCategory(null);
-		setQuery('');
-		setResults([]);
+		if (!pickerCategory || !user) return;
+		setSaving(true);
+		try {
+			await setBestInClass(pickerCategory.id, equipmentId);
+			const updated = await fetchUserBestInClass(user.id);
+			setSelections((updated.best_in_class as unknown as BestInClass[]) ?? []);
+			setPickerCategory(null);
+		} catch {
+			addToast('Could not save your pick', 'error');
+		} finally {
+			setSaving(false);
+		}
 	};
 
 	const handleRemove = async (categoryId: number) => {
@@ -120,40 +124,50 @@ export default function BestInClassPage() {
 				{filtered.map((cat) => {
 					const sel = selections.find((s) => s.category_slug === cat.slug);
 					return sel ? (
-						// Filled slot
-						<div key={cat.id} className="bg-sub-alt group relative rounded-xl p-3">
+						// Filled slot: tap to change, X to remove
+						<div key={cat.id} className="bg-sub-alt hover:bg-main/5 group relative rounded-xl transition">
 							<button
+								type="button"
+								onClick={() => openPicker(cat)}
+								aria-label={`Change best ${cat.name}`}
+								className="block w-full rounded-xl p-3 text-left"
+							>
+								{sel.image_url ? (
+									<div className="relative mb-2 h-16 w-full">
+										<Image
+											src={sel.image_url}
+											alt={sel.equipment_name}
+											fill
+											sizes="(max-width: 640px) 45vw, 200px"
+											className="rounded-lg object-cover"
+										/>
+									</div>
+								) : (
+									<div className="bg-main/5 mb-2 flex h-16 w-full items-center justify-center rounded-lg">
+										<Dumbbell className="text-sub h-5 w-5 opacity-30" />
+									</div>
+								)}
+								<p className="text-sub text-[10px] uppercase tracking-wide">{cat.name}</p>
+								<p className="text-main mt-0.5 text-xs font-medium leading-tight">
+									{sel.brand} {sel.equipment_name}
+								</p>
+							</button>
+							<button
+								type="button"
 								onClick={() => handleRemove(cat.id)}
-								aria-label="Remove"
+								aria-label={`Remove best ${cat.name}`}
 								className="bg-bg/80 absolute right-2 top-2 hidden rounded-full p-0.5 group-hover:flex"
 							>
 								<X className="text-sub h-3 w-3" />
 							</button>
-							{sel.image_url ? (
-								<div className="relative mb-2 h-16 w-full">
-									<Image
-										src={sel.image_url}
-										alt={sel.equipment_name}
-										fill
-										sizes="(max-width: 640px) 45vw, 200px"
-										className="rounded-lg object-cover"
-									/>
-								</div>
-							) : (
-								<div className="bg-main/5 mb-2 flex h-16 w-full items-center justify-center rounded-lg">
-									<Dumbbell className="text-sub h-5 w-5 opacity-30" />
-								</div>
-							)}
-							<p className="text-sub text-[10px] uppercase tracking-wide">{cat.name}</p>
-							<p className="text-main mt-0.5 text-xs font-medium leading-tight">
-								{sel.brand} {sel.equipment_name}
-							</p>
 						</div>
 					) : (
-						// Empty slot
-						<Link
+						// Empty slot: opens the machine picker
+						<button
 							key={cat.id}
-							href={`/data?bic=${cat.slug}`}
+							type="button"
+							onClick={() => openPicker(cat)}
+							aria-label={`Choose best ${cat.name}`}
 							className="bg-sub-alt hover:bg-main/5 group flex flex-col items-center justify-center gap-2 rounded-xl p-3 transition"
 							style={{ minHeight: '120px' }}
 						>
@@ -161,80 +175,20 @@ export default function BestInClassPage() {
 								<Plus className="text-sub h-4 w-4" />
 							</div>
 							<p className="text-sub text-[10px] uppercase tracking-wide">{cat.name}</p>
-						</Link>
+						</button>
 					);
 				})}
 			</div>
 
-			{/* Search Modal */}
-			{modalCategory && (
-				<div
-					className="fixed inset-0 z-50 flex items-center justify-center p-4"
-					onClick={() => {
-						setModalCategory(null);
-						setQuery('');
-						setResults([]);
-					}}
-				>
-					<div
-						className="bg-bg border-border w-full max-w-md rounded-2xl border p-4 shadow-xl"
-						onClick={(e) => e.stopPropagation()}
-					>
-						<div className="mb-4 flex items-center justify-between">
-							<p className="text-main text-sm font-semibold">
-								Best for <span className="text-amber-400">{modalCategory.name}</span>
-							</p>
-							<button
-								onClick={() => {
-									setModalCategory(null);
-									setQuery('');
-									setResults([]);
-								}}
-								aria-label="Close"
-							>
-								<X className="text-sub h-4 w-4" />
-							</button>
-						</div>
-
-						{/* Search input */}
-						<div className="bg-sub-alt flex items-center gap-2 rounded-xl px-3 py-2">
-							<Search className="text-sub h-4 w-4 shrink-0" />
-							<input
-								autoFocus
-								value={query}
-								onChange={(e) => setQuery(e.target.value)}
-								placeholder="Search equipment..."
-								className="text-main placeholder:text-sub w-full bg-transparent text-sm outline-none"
-							/>
-						</div>
-
-						{/* Results */}
-						<div className="mt-2 max-h-64 overflow-y-auto">
-							{searching && <p className="text-sub py-4 text-center text-xs">Searching...</p>}
-							{!searching && query && results.length === 0 && (
-								<p className="text-sub py-4 text-center text-xs">No equipment found</p>
-							)}
-							{!searching && !query && (
-								<p className="text-sub py-4 text-center text-xs">Type to search equipment</p>
-							)}
-							{results.map((eq) => (
-								<button
-									key={eq.id}
-									onClick={() => handleSelect(eq.id)}
-									className="hover:bg-sub-alt flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition"
-								>
-									<div>
-										<p className="text-main text-sm font-medium">{eq.name}</p>
-										<p className="text-sub text-xs">
-											{eq.brand}
-											{eq.series ? ` · ${eq.series}` : ''}
-										</p>
-									</div>
-								</button>
-							))}
-						</div>
-					</div>
-				</div>
+			{pickerCategory && (
+				<BestInClassPicker
+					category={pickerCategory}
+					equipment={equipment}
+					currentEquipmentId={selections.find((s) => s.category_slug === pickerCategory.slug)?.equipment_id}
+					saving={saving}
+					onClose={() => setPickerCategory(null)}
+					onConfirm={handleSelect}
+				/>
 			)}
 		</div>
 	);
