@@ -8,7 +8,7 @@ export default function AppMain({ children }: { children: React.ReactNode }) {
 	const isMarketing = isMarketingRoute(pathname);
 
 	return (
-		<main className={cn('min-h-0 flex-1 overflow-y-auto', !isMarketing && 'md:pt-17')}>
+		<main className={cn('min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-x-none', !isMarketing && 'md:pt-17')}>
 			{children}
 		</main>
 	);

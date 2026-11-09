@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, Suspense } from 'react';
+import { cn } from '@/lib/utils';
 import { useSearchParams } from 'next/navigation';
 import DataSidebar from './_components/DataSidebar';
 import EquipmentGrid from './_components/EquipmentGrid';
@@ -111,7 +112,14 @@ function DataPageInner() {
 								viewMode={eq.viewMode}
 								onViewModeChange={eq.handleViewModeChange}
 							/>
-							<div className="min-h-0 flex-1 overflow-auto">
+							<div
+								className={cn(
+									'min-h-0 flex-1',
+									eq.viewMode === 'expanded'
+										? 'overflow-x-hidden overflow-y-auto overscroll-x-none'
+										: 'overflow-auto overscroll-x-contain'
+								)}
+							>
 								{eq.viewMode === 'expanded' ? (
 									<EquipmentGrid
 										equipment={eq.filtered}
