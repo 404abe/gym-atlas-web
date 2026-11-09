@@ -35,7 +35,7 @@ function FilterCountBadge({
 	const only = activeFilters.length === 1 ? activeFilters[0] : null;
 
 	return (
-		<div className="border-border bg-bg/92 pointer-events-auto absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1 rounded-full border py-1 pl-1 pr-3 shadow-lg backdrop-blur-sm">
+		<div className="border-border bg-bg md:bg-bg/92 pointer-events-auto absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1 rounded-full border py-1 pl-1 pr-3 shadow-lg md:backdrop-blur-sm">
 			<button
 				type="button"
 				onClick={onToggle}
@@ -77,7 +77,7 @@ function ActiveFilterCards() {
 			{activeFilters.map((filter) => (
 				<div
 					key={`${filter.kind}:${filter.key}`}
-					className="border-border bg-bg/92 flex items-center gap-3 rounded-2xl border p-3 shadow-lg backdrop-blur-sm"
+					className="border-border bg-bg md:bg-bg/92 flex items-center gap-3 rounded-2xl border p-3 shadow-lg md:backdrop-blur-sm"
 				>
 					<div className="bg-sub-alt relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl">
 						{filter.imageUrl ? (

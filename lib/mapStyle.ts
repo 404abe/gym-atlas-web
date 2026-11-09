@@ -4,13 +4,8 @@ import type { StyleSpecification } from 'mapbox-gl';
  * Mapbox Standard with its basemap config baked in. react-map-gl has no prop for
  * style config, so Standard is imported into a wrapper style instead, which lets
  * the config ride along declaratively with mapStyle.
- *
- * `compact` is the phone/tablet variant. Standard's 3D objects (buildings,
- * landmarks, trees, with shadows and ambient occlusion) and dense POI/transit
- * labels are the heaviest part of the basemap for a mobile GPU, and at the zooms
- * people use this map they add little, so compact turns them off.
  */
-function standardStyle(lightPreset: 'day' | 'night', compact: boolean): StyleSpecification {
+function standardStyle(lightPreset: 'day' | 'night'): StyleSpecification {
 	return {
 		version: 8,
 		imports: [
@@ -21,9 +16,7 @@ function standardStyle(lightPreset: 'day' | 'night', compact: boolean): StyleSpe
 					lightPreset,
 					theme: 'default',
 					showPlaceLabels: true,
-					showPointOfInterestLabels: !compact,
-					showTransitLabels: !compact,
-					show3dObjects: !compact
+					showPointOfInterestLabels: true
 				}
 			}
 		],
@@ -34,16 +27,22 @@ function standardStyle(lightPreset: 'day' | 'night', compact: boolean): StyleSpe
 
 // Module-level so each style's identity is stable and react-map-gl doesn't
 // re-diff the style on every render.
-const STYLES = {
-	light: standardStyle('day', false),
-	dark: standardStyle('night', false),
-	lightCompact: standardStyle('day', true),
-	darkCompact: standardStyle('night', true)
-};
+const LIGHT_STYLE = standardStyle('day');
+const DARK_STYLE = standardStyle('night');
+
+/**
+ * Compact (phone/tablet) screens use the classic Light and Dark styles. Standard
+ * is a 3D, dynamically lit basemap with far more layers; even with its 3D objects
+ * and POI labels switched off it was still too heavy for a phone GPU to pan and
+ * zoom smoothly under several hundred DOM markers. The classic styles are flat,
+ * minimal and cheap, and the gym pins carry the visual weight here anyway.
+ */
+const COMPACT_LIGHT_STYLE = 'mapbox://styles/mapbox/light-v11';
+const COMPACT_DARK_STYLE = 'mapbox://styles/mapbox/dark-v11';
 
 export function getMapStyle(theme: string, compact = false) {
-	if (theme === 'light') return compact ? STYLES.lightCompact : STYLES.light;
-	return compact ? STYLES.darkCompact : STYLES.dark;
+	if (compact) return theme === 'light' ? COMPACT_LIGHT_STYLE : COMPACT_DARK_STYLE;
+	return theme === 'light' ? LIGHT_STYLE : DARK_STYLE;
 }
 
 /**

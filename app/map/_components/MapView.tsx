@@ -26,6 +26,12 @@ const quantiseZoom = (zoom: number) => Math.round(zoom / ZOOM_STEP) * ZOOM_STEP;
  */
 const CULL_MARGIN = 0.75;
 /**
+ * Phones have far less headroom for live DOM markers (each one is repositioned in
+ * JS on every map frame), so they get a much tighter box. A fast fling can briefly
+ * outrun it, but the bounds refresh on the next throttle tick.
+ */
+const CULL_MARGIN_COMPACT = 0.3;
+/**
  * Fraction of the margin that must still be unused before the box is left alone.
  * Panning inside this slack costs no state update and therefore no re-render.
  */
@@ -86,7 +92,7 @@ const ClusterMarker = memo(function ClusterMarker({
 
 	return (
 		<div
-			className={`map-marker-shell relative grid ${sizeClass} place-items-center rounded-full border border-border bg-surface shadow-[0_10px_24px_rgb(0_0_0/0.24)] ${
+			className={`map-marker-shell relative grid ${sizeClass} place-items-center rounded-full border border-border bg-surface shadow-[0_2px_6px_rgb(0_0_0/0.28)] md:shadow-[0_10px_24px_rgb(0_0_0/0.24)] ${
 				state === 'dimmed' ? 'opacity-[0.28]' : 'opacity-100'
 			}`}
 		>
@@ -165,6 +171,11 @@ export default function MapView({
 	const gymsRef = useRef(gyms);
 	const onSelectGymRef = useRef(onSelectGym);
 	const lastBoundsAt = useRef(0);
+	const cullMarginRef = useRef(compact ? CULL_MARGIN_COMPACT : CULL_MARGIN);
+
+	useEffect(() => {
+		cullMarginRef.current = compact ? CULL_MARGIN_COMPACT : CULL_MARGIN;
+	}, [compact]);
 
 	useEffect(() => {
 		gymsRef.current = gyms;
@@ -187,8 +198,9 @@ export default function MapView({
 
 		setBounds((prev) => {
 			if (prev) {
-				const slackX = (east - west) * CULL_MARGIN * CULL_SLACK;
-				const slackY = (north - south) * CULL_MARGIN * CULL_SLACK;
+				const margin = cullMarginRef.current;
+				const slackX = (east - west) * margin * CULL_SLACK;
+				const slackY = (north - south) * margin * CULL_SLACK;
 				// Still comfortably inside the box we already rendered — keep it, so
 				// this move costs no state change at all.
 				if (
@@ -200,8 +212,8 @@ export default function MapView({
 					return prev;
 				}
 			}
-			const padX = (east - west) * CULL_MARGIN;
-			const padY = (north - south) * CULL_MARGIN;
+			const padX = (east - west) * cullMarginRef.current;
+			const padY = (north - south) * cullMarginRef.current;
 			return {
 				west: west - padX,
 				east: east + padX,

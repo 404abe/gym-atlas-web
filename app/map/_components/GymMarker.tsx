@@ -52,7 +52,7 @@ const GymPin = memo(function GymPin({
 			type="button"
 			onClick={handleClick}
 			aria-label={`Select ${gym.name}`}
-			className={`group relative z-20 grid h-[58px] w-[58px] place-items-center rounded-full border-2 border-border bg-surface shadow-[0_8px_20px_rgb(0_0_0/0.2)] transition-transform duration-150 ${
+			className={`group relative z-20 grid h-[58px] w-[58px] place-items-center rounded-full border-2 border-border bg-surface shadow-[0_2px_6px_rgb(0_0_0/0.28)] md:shadow-[0_8px_20px_rgb(0_0_0/0.2)] transition-transform duration-150 ${
 				selected ? 'scale-110' : 'hover:scale-105'
 			}`}
 		>
