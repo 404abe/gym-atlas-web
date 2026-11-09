@@ -168,13 +168,18 @@ export default function BestInClassPage() {
 							type="button"
 							onClick={() => openPicker(cat)}
 							aria-label={`Choose best ${cat.name}`}
-							className="bg-sub-alt hover:bg-main/5 group flex flex-col items-center justify-center gap-2 rounded-xl p-3 transition"
-							style={{ minHeight: '120px' }}
+							className="bg-sub-alt hover:bg-main/5 group block w-full rounded-xl p-3 text-left transition"
 						>
-							<div className="bg-main/10 group-hover:bg-main/20 flex h-8 w-8 items-center justify-center rounded-full transition">
-								<Plus className="text-sub h-4 w-4" />
+							{/* Same square frame as a filled slot so the grid stays even */}
+							<div className="mb-2 flex aspect-square w-full items-center justify-center rounded-lg">
+								<div className="bg-main/10 group-hover:bg-main/20 flex h-10 w-10 items-center justify-center rounded-full transition">
+									<Plus className="text-sub h-5 w-5" />
+								</div>
 							</div>
 							<p className="text-sub text-[10px] uppercase tracking-wide">{cat.name}</p>
+							<p aria-hidden="true" className="mt-0.5 text-xs leading-tight">
+								&nbsp;
+							</p>
 						</button>
 					);
 				})}
