@@ -262,17 +262,17 @@ export default function ProfileView({
 									className="bg-sub-alt group flex flex-col gap-1.5 rounded-xl p-3 transition"
 								>
 									{b.image_url ? (
-										<div className="relative mb-1 h-16 w-full">
+										<div className="bg-surface relative mb-1 aspect-square w-full overflow-hidden rounded-lg">
 											<Image
 												src={b.image_url}
 												alt={b.equipment_name}
 												fill
-												sizes="(max-width: 640px) 45vw, 200px"
-												className="rounded-lg object-cover"
+												sizes="(max-width: 640px) 45vw, 240px"
+												className="object-contain"
 											/>
 										</div>
 									) : (
-										<div className="bg-main/5 mb-1 flex h-16 w-full items-center justify-center rounded-lg">
+										<div className="bg-main/5 mb-1 flex aspect-square w-full items-center justify-center rounded-lg">
 											<Dumbbell className="text-sub h-6 w-6 opacity-30" />
 										</div>
 									)}
