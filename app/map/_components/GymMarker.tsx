@@ -246,11 +246,14 @@ const GymMarker = memo(function GymMarker({
 	gym,
 	selected,
 	state = 'normal',
-	onSelect
+	onSelect,
+	showCard = true
 }: {
 	gym: Gym;
 	selected: boolean;
 	state?: MarkerState;
+	/** False on mobile, where the bottom peek card shows the selected gym instead. */
+	showCard?: boolean;
 	/** Stable across renders, or memoisation of the pins below is wasted. */
 	onSelect: (gym: Gym) => void;
 }) {
@@ -263,7 +266,7 @@ const GymMarker = memo(function GymMarker({
 			}`}
 		>
 			<GymPin gym={gym} selected={selected} matched={state === 'matched'} onSelect={onSelect} />
-			{selected && <GymMarkerCard gym={gym} />}
+			{selected && showCard && <GymMarkerCard gym={gym} />}
 		</div>
 	);
 });

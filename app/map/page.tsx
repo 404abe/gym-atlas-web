@@ -13,6 +13,7 @@ import { fetchGyms } from '@/lib/api';
 import { Gym } from '@/types/gym';
 import { useGymFilter } from '@/app/contexts/GymFilterContext';
 import { useUserLocation } from '@/hooks/useUserLocation';
+import { DESKTOP_QUERY, useMediaQuery } from '@/hooks/useMediaQuery';
 
 /**
  * Bottom count badge + an eye toggle for how non-matching gyms display:
@@ -118,6 +119,11 @@ export default function Page() {
 	const desktopTriggerRef = useRef<HTMLDivElement>(null);
 	const { matchedGymIds } = useGymFilter();
 	const userLocation = useUserLocation();
+	// Both layouts below stay in the tree (CSS picks which one shows), but only the
+	// active one may mount a map: two Mapbox instances means two WebGL contexts,
+	// two style loads and two sets of tile requests, which a phone feels. `null`
+	// (server / hydration) mounts neither until the real viewport is known.
+	const isDesktop = useMediaQuery(DESKTOP_QUERY);
 
 	// Mobile: tapping the already-selected gym again (pin or story) closes the card.
 	// Stable identity: MapView passes this down to several hundred memoised pins,
@@ -253,35 +259,42 @@ export default function Page() {
 								onToggle={() => setShowUnmatched((v) => !v)}
 							/>
 							<ActiveFilterCards />
-							<MapView
-								gyms={mapGyms}
-								selectedGym={selectedGym}
-								onSelectGym={toggleSelectGym}
-								userLocation={userLocation}
-								matchedGymIds={mapMatched}
-							/>
+							{isDesktop === false && (
+								<MapView
+									gyms={mapGyms}
+									selectedGym={selectedGym}
+									onSelectGym={toggleSelectGym}
+									userLocation={userLocation}
+									matchedGymIds={mapMatched}
+								/>
+							)}
+							{/* selected-gym peek card — overlays the bottom of the map. It used to
+							    sit in its own flex row, which shrank the map on every selection and
+							    forced a canvas resize in the middle of the flyTo. */}
+							{selectedGym && isDesktop === false && (
+								<div className="pointer-events-none absolute inset-x-2 bottom-2 z-20">
+									<div className="pointer-events-auto">
+										<GymPeekCard
+											key={selectedGym.id}
+											gym={selectedGym}
+											userLocation={userLocation}
+											onDismiss={() => setSelectedGym(null)}
+										/>
+									</div>
+								</div>
+							)}
 						</div>
 					</div>
 
-					{/* selected-gym peek card — sits above the stories row (mobile only) */}
-					{selectedGym && (
-						<div className="shrink-0 px-3 pb-1">
-							<GymPeekCard
-								key={selectedGym.id}
-								gym={selectedGym}
-								userLocation={userLocation}
-								onDismiss={() => setSelectedGym(null)}
-							/>
-						</div>
-					)}
-
 					{/* gym stories row — circular avatars at the bottom (mobile only) */}
-					<GymStoriesRow
-						gyms={searchFilteredGyms}
-						selectedGym={selectedGym}
-						onSelectGym={toggleSelectGym}
-						userLocation={userLocation}
-					/>
+					{isDesktop !== true && (
+						<GymStoriesRow
+							gyms={searchFilteredGyms}
+							selectedGym={selectedGym}
+							onSelectGym={toggleSelectGym}
+							userLocation={userLocation}
+						/>
+					)}
 				</div>
 
 				{/* ── DESKTOP LAYOUT ── */}
@@ -366,13 +379,15 @@ export default function Page() {
 							onToggle={() => setShowUnmatched((v) => !v)}
 						/>
 						<ActiveFilterCards />
-						<MapView
-							gyms={mapGyms}
-							selectedGym={selectedGym}
-							onSelectGym={setSelectedGym}
-							userLocation={userLocation}
-							matchedGymIds={mapMatched}
-						/>
+						{isDesktop === true && (
+							<MapView
+								gyms={mapGyms}
+								selectedGym={selectedGym}
+								onSelectGym={setSelectedGym}
+								userLocation={userLocation}
+								matchedGymIds={mapMatched}
+							/>
+						)}
 					</div>
 				</div>
 			</div>

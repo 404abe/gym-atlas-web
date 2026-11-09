@@ -5,6 +5,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Gym } from '@/types/gym';
 import { useTheme } from '@/app/contexts/ThemeContext';
 import { getMapStyle, getMapThemeClass } from '@/lib/mapStyle';
+import { DESKTOP_QUERY, useMediaQuery } from '@/hooks/useMediaQuery';
 import GymMarker, { type MarkerState } from './GymMarker';
 import { CLUSTER_MAX_ZOOM, clusterGymsCached, type GymCluster } from './clustering';
 
@@ -150,7 +151,10 @@ export default function MapView({
 	const [bounds, setBounds] = useState<Bounds | null>(null);
 	const [mapLoaded, setMapLoaded] = useState(false);
 	const { theme } = useTheme();
-	const mapStyle = getMapStyle(theme);
+	// Below the desktop breakpoint: lighter basemap, no canvas filter, and the
+	// selected gym's details live in the peek card instead of an on-map popup.
+	const compact = !useMediaQuery(DESKTOP_QUERY);
+	const mapStyle = getMapStyle(theme, compact);
 
 	// Both handlers below are handed to several hundred memoised markers, so they
 	// must keep the same identity for the lifetime of the map. They read their
@@ -279,14 +283,8 @@ export default function MapView({
 		if (lastFlownGymId.current === selectedGym.id) return;
 		lastFlownGymId.current = selectedGym.id;
 
-		const mapWidth = mapRef.current.getContainer().offsetWidth;
-		// On narrow screens the card popup extends to the right of the pin.
-		// Offset the center so pin+card are visually centred rather than just the pin.
-		// 0.01 deg ≈ 117px at zoom 14, which centres the ~298px-wide pin+card unit.
-		const lngOffset = mapWidth < 640 ? 0.007 : 0;
-
 		mapRef.current.flyTo({
-			center: [Number(selectedGym.lng) + lngOffset, Number(selectedGym.lat)],
+			center: [Number(selectedGym.lng), Number(selectedGym.lat)],
 			zoom: 14,
 			duration: 1200
 		});
@@ -311,7 +309,7 @@ export default function MapView({
 	return (
 		<div
 			id="MapView"
-			className={getMapThemeClass(theme)}
+			className={getMapThemeClass(theme, compact)}
 			style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
 		>
 			<ReactMap
@@ -355,7 +353,13 @@ export default function MapView({
 							style={{ zIndex: isSelected ? 30 : 10 }}
 						>
 							{single ? (
-								<GymMarker gym={single} selected={isSelected} state={state} onSelect={selectGym} />
+								<GymMarker
+									gym={single}
+									selected={isSelected}
+									state={state}
+									onSelect={selectGym}
+									showCard={!compact}
+								/>
 							) : (
 								<ClusterButton cluster={cluster} state={state} onExpand={expandCluster} />
 							)}
