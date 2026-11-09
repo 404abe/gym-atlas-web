@@ -133,17 +133,17 @@ export default function BestInClassPage() {
 								className="block w-full rounded-xl p-3 text-left"
 							>
 								{sel.image_url ? (
-									<div className="relative mb-2 h-28 w-full overflow-hidden rounded-lg bg-[#eeede9]">
+									<div className="bg-surface relative mb-2 aspect-[4/3] w-full overflow-hidden rounded-lg">
 										<Image
 											src={sel.image_url}
 											alt={sel.equipment_name}
 											fill
-											sizes="(max-width: 640px) 45vw, 200px"
-											className="object-contain p-2 mix-blend-multiply"
+											sizes="(max-width: 640px) 45vw, 340px"
+											className="object-cover"
 										/>
 									</div>
 								) : (
-									<div className="bg-main/5 mb-2 flex h-28 w-full items-center justify-center rounded-lg">
+									<div className="bg-main/5 mb-2 flex aspect-[4/3] w-full items-center justify-center rounded-lg">
 										<Dumbbell className="text-sub h-5 w-5 opacity-30" />
 									</div>
 								)}
