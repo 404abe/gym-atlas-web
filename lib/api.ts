@@ -206,6 +206,17 @@ export const uploadBrandLogo = async (brandId: number, file: File): Promise<Bran
 	});
 };
 
+// Super admin only: add or replace a brand's logo at any time.
+export const adminUpdateBrandLogo = async (brandId: number, file: File): Promise<Brand> => {
+	const formData = new FormData();
+	formData.append('image', file);
+	return apiFetch(`/admin/brands/${brandId}/logo`, {
+		method: 'PUT',
+		headers: authHeaders(),
+		body: formData
+	});
+};
+
 // ── Equipment ─────────────────────────────────────────────────────────────────
 
 export const fetchEquipmentBrands = (): Promise<EquipmentBrand[]> =>
