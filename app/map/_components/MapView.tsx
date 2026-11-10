@@ -5,6 +5,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Gym } from '@/types/gym';
 import { useTheme } from '@/app/contexts/ThemeContext';
 import { getMapStyle, getMapThemeClass } from '@/lib/mapStyle';
+import { DESKTOP_QUERY, useMediaQuery } from '@/hooks/useMediaQuery';
 import GymMarker, { type MarkerState } from './GymMarker';
 import { CLUSTER_MAX_ZOOM, clusterGymsCached, type GymCluster } from './clustering';
 
@@ -24,6 +25,12 @@ const quantiseZoom = (zoom: number) => Math.round(zoom / ZOOM_STEP) * ZOOM_STEP;
  * enough that a fast pan never outruns it before the box is recomputed.
  */
 const CULL_MARGIN = 0.75;
+/**
+ * Phones have far less headroom for live DOM markers (each one is repositioned in
+ * JS on every map frame), so they get a much tighter box. A fast fling can briefly
+ * outrun it, but the bounds refresh on the next throttle tick.
+ */
+const CULL_MARGIN_COMPACT = 0.3;
 /**
  * Fraction of the margin that must still be unused before the box is left alone.
  * Panning inside this slack costs no state update and therefore no re-render.
@@ -85,7 +92,7 @@ const ClusterMarker = memo(function ClusterMarker({
 
 	return (
 		<div
-			className={`map-marker-shell relative grid ${sizeClass} place-items-center rounded-full border border-border bg-surface shadow-[0_10px_24px_rgb(0_0_0/0.24)] ${
+			className={`map-marker-shell relative grid ${sizeClass} place-items-center rounded-full border border-border bg-surface shadow-[0_2px_6px_rgb(0_0_0/0.28)] md:shadow-[0_10px_24px_rgb(0_0_0/0.24)] ${
 				state === 'dimmed' ? 'opacity-[0.28]' : 'opacity-100'
 			}`}
 		>
@@ -150,7 +157,10 @@ export default function MapView({
 	const [bounds, setBounds] = useState<Bounds | null>(null);
 	const [mapLoaded, setMapLoaded] = useState(false);
 	const { theme } = useTheme();
-	const mapStyle = getMapStyle(theme);
+	// Below the desktop breakpoint: lighter basemap, no canvas filter, and the
+	// selected gym's details live in the peek card instead of an on-map popup.
+	const compact = !useMediaQuery(DESKTOP_QUERY);
+	const mapStyle = getMapStyle(theme, compact);
 
 	// Both handlers below are handed to several hundred memoised markers, so they
 	// must keep the same identity for the lifetime of the map. They read their
@@ -161,6 +171,11 @@ export default function MapView({
 	const gymsRef = useRef(gyms);
 	const onSelectGymRef = useRef(onSelectGym);
 	const lastBoundsAt = useRef(0);
+	const cullMarginRef = useRef(compact ? CULL_MARGIN_COMPACT : CULL_MARGIN);
+
+	useEffect(() => {
+		cullMarginRef.current = compact ? CULL_MARGIN_COMPACT : CULL_MARGIN;
+	}, [compact]);
 
 	useEffect(() => {
 		gymsRef.current = gyms;
@@ -183,8 +198,9 @@ export default function MapView({
 
 		setBounds((prev) => {
 			if (prev) {
-				const slackX = (east - west) * CULL_MARGIN * CULL_SLACK;
-				const slackY = (north - south) * CULL_MARGIN * CULL_SLACK;
+				const margin = cullMarginRef.current;
+				const slackX = (east - west) * margin * CULL_SLACK;
+				const slackY = (north - south) * margin * CULL_SLACK;
 				// Still comfortably inside the box we already rendered — keep it, so
 				// this move costs no state change at all.
 				if (
@@ -196,8 +212,8 @@ export default function MapView({
 					return prev;
 				}
 			}
-			const padX = (east - west) * CULL_MARGIN;
-			const padY = (north - south) * CULL_MARGIN;
+			const padX = (east - west) * cullMarginRef.current;
+			const padY = (north - south) * cullMarginRef.current;
 			return {
 				west: west - padX,
 				east: east + padX,
@@ -279,14 +295,8 @@ export default function MapView({
 		if (lastFlownGymId.current === selectedGym.id) return;
 		lastFlownGymId.current = selectedGym.id;
 
-		const mapWidth = mapRef.current.getContainer().offsetWidth;
-		// On narrow screens the card popup extends to the right of the pin.
-		// Offset the center so pin+card are visually centred rather than just the pin.
-		// 0.01 deg ≈ 117px at zoom 14, which centres the ~298px-wide pin+card unit.
-		const lngOffset = mapWidth < 640 ? 0.007 : 0;
-
 		mapRef.current.flyTo({
-			center: [Number(selectedGym.lng) + lngOffset, Number(selectedGym.lat)],
+			center: [Number(selectedGym.lng), Number(selectedGym.lat)],
 			zoom: 14,
 			duration: 1200
 		});
@@ -311,7 +321,7 @@ export default function MapView({
 	return (
 		<div
 			id="MapView"
-			className={getMapThemeClass(theme)}
+			className={getMapThemeClass(theme, compact)}
 			style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
 		>
 			<ReactMap
@@ -355,7 +365,13 @@ export default function MapView({
 							style={{ zIndex: isSelected ? 30 : 10 }}
 						>
 							{single ? (
-								<GymMarker gym={single} selected={isSelected} state={state} onSelect={selectGym} />
+								<GymMarker
+									gym={single}
+									selected={isSelected}
+									state={state}
+									onSelect={selectGym}
+									showCard={!compact}
+								/>
 							) : (
 								<ClusterButton cluster={cluster} state={state} onExpand={expandCluster} />
 							)}

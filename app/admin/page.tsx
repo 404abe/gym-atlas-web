@@ -1,17 +1,18 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/contexts/AuthContext';
-import { Check, X, Building2, Dumbbell, Clock, Users, ShieldCheck, ImageIcon, Layers, Weight, Activity } from 'lucide-react';
+import { Check, X, Building2, Dumbbell, Clock, Users, ShieldCheck, ImageIcon, Layers, Weight, Activity, Tag, Upload } from 'lucide-react';
 import { FaInstagram } from 'react-icons/fa';
-import { fetchAdminPending, fetchAdminUsers, adminAction, adminPhotoAction, makeAdmin } from '@/lib/api';
+import { fetchAdminPending, fetchAdminUsers, adminAction, adminPhotoAction, makeAdmin, fetchBrands, adminUpdateBrandLogo, type Brand } from '@/lib/api';
+import BrandLogo from '@/components/ui/BrandLogo';
 import { PendingGym, PendingEquipment, PendingSuggestion, PendingPhoto, PendingVariant, PendingWeightStack, PendingGymInstagram, PendingFreeWeights, PendingExerciseChange, AdminUser } from '@/types/admin';
 
 type ActionState = Record<string, 'approving' | 'rejecting' | 'done'>;
 
-const TABS = ['equipment', 'gyms', 'suggestions', 'photos', 'variants', 'weights', 'free-weights', 'instagram', 'exercises', 'users'] as const;
+const TABS = ['equipment', 'gyms', 'suggestions', 'photos', 'variants', 'weights', 'free-weights', 'instagram', 'exercises', 'brands', 'users'] as const;
 type Tab = (typeof TABS)[number];
 
 // Exercise mapping changes are confirmed by super admins only, so the tab is
@@ -28,6 +29,7 @@ const TAB_LABELS: Record<Tab, string> = {
 	'free-weights': 'free weights',
 	instagram: 'instagram',
 	exercises: 'exercise changes',
+	brands: 'brands',
 	users: 'users'
 };
 
@@ -48,6 +50,12 @@ export default function AdminPage() {
 	const [gymInstagrams, setGymInstagrams] = useState<PendingGymInstagram[]>([]);
 	const [freeWeights, setFreeWeights] = useState<PendingFreeWeights[]>([]);
 	const [exerciseChanges, setExerciseChanges] = useState<PendingExerciseChange[]>([]);
+	const [brands, setBrands] = useState<Brand[]>([]);
+	const [brandSearch, setBrandSearch] = useState('');
+	const [uploadingBrandId, setUploadingBrandId] = useState<number | null>(null);
+	const [brandError, setBrandError] = useState<string | null>(null);
+	const logoInputRef = useRef<HTMLInputElement>(null);
+	const logoTargetRef = useRef<number | null>(null);
 
 	const isSuperAdmin = user?.role === 'super_admin';
 
@@ -66,6 +74,9 @@ export default function AdminPage() {
 		// Evaluate the condition dynamically inside the effect instead of tracking its boolean state
 		if (user.role === 'super_admin') {
 			fetchUsers();
+			fetchBrands()
+				.then(setBrands)
+				.catch((err) => console.error('Failed to fetch brands:', err));
 		}
 	}, [user, router]);
 
@@ -94,6 +105,29 @@ export default function AdminPage() {
 			setUsers(data.users || []);
 		} catch (err) {
 			console.error('Failed to fetch users:', err);
+		}
+	};
+
+	const pickLogo = (brandId: number) => {
+		logoTargetRef.current = brandId;
+		logoInputRef.current?.click();
+	};
+
+	const handleLogoSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		const brandId = logoTargetRef.current;
+		e.target.value = '';
+		if (!file || brandId === null) return;
+		setBrandError(null);
+		setUploadingBrandId(brandId);
+		try {
+			const updated = await adminUpdateBrandLogo(brandId, file);
+			setBrands((prev) => prev.map((b) => (b.id === brandId ? { ...b, logo_url: updated.logo_url } : b)));
+		} catch (err) {
+			console.error('Failed to update brand logo:', err);
+			setBrandError(err instanceof Error ? err.message : 'Failed to update logo');
+		} finally {
+			setUploadingBrandId(null);
 		}
 	};
 
@@ -218,6 +252,7 @@ export default function AdminPage() {
 							{tab === 'free-weights' && <Weight className="h-3.5 w-3.5" />}
 							{tab === 'instagram' && <FaInstagram className="h-3.5 w-3.5" />}
 							{tab === 'exercises' && <Activity className="h-3.5 w-3.5" />}
+							{tab === 'brands' && <Tag className="h-3.5 w-3.5" />}
 							{tab === 'users' && <Users className="h-3.5 w-3.5" />}
 
 							<span className="capitalize">{TAB_LABELS[tab]}</span>
@@ -769,6 +804,53 @@ export default function AdminPage() {
 									</div>
 								);
 							})
+						)}
+					</div>
+				)}
+
+				{/* Brands Tab Content (super_admin only) */}
+				{activeTab === 'brands' && isSuperAdmin && (
+					<div className="space-y-2">
+						<input
+							ref={logoInputRef}
+							type="file"
+							accept="image/*"
+							className="hidden"
+							onChange={handleLogoSelected}
+						/>
+						<input
+							type="search"
+							value={brandSearch}
+							onChange={(e) => setBrandSearch(e.target.value)}
+							placeholder="Search brands..."
+							aria-label="Search brands"
+							className="border-border bg-surface text-main placeholder:text-sub mb-2 w-full rounded-xl border px-3 py-2 text-sm outline-none focus:border-main/50"
+						/>
+						{brandError && <p className="text-xs text-red-400">{brandError}</p>}
+						{brands.length === 0 ? (
+							<EmptyState label="No brands found" />
+						) : (
+							brands
+								.filter((b) => b.name.toLowerCase().includes(brandSearch.trim().toLowerCase()))
+								.map((b) => (
+									<div key={b.id} className="bg-surface flex items-center gap-4 rounded-2xl p-4">
+										<BrandLogo name={b.name} logoUrl={b.logo_url} className="h-12 w-12" />
+										<div className="min-w-0 flex-1">
+											<p className="text-main text-sm font-medium">{b.name}</p>
+											<p className="text-sub text-xs">
+												{b.equipment_count} machines{b.logo_url ? '' : ' · no logo'}
+											</p>
+										</div>
+										<button
+											onClick={() => pickLogo(b.id)}
+											disabled={uploadingBrandId === b.id}
+											className="border-border text-sub hover:border-main/50 hover:text-main flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition disabled:opacity-40"
+										>
+											<Upload className="h-3.5 w-3.5" />
+											{uploadingBrandId === b.id ? 'Uploading...' : b.logo_url ? 'Change logo' : 'Add logo'}
+										</button>
+									</div>
+								))
 						)}
 					</div>
 				)}

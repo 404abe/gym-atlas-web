@@ -52,7 +52,7 @@ const GymPin = memo(function GymPin({
 			type="button"
 			onClick={handleClick}
 			aria-label={`Select ${gym.name}`}
-			className={`group relative z-20 grid h-[58px] w-[58px] place-items-center rounded-full border-2 border-border bg-surface shadow-[0_8px_20px_rgb(0_0_0/0.2)] transition-transform duration-150 ${
+			className={`group relative z-20 grid h-[58px] w-[58px] place-items-center rounded-full border-2 border-border bg-surface shadow-[0_2px_6px_rgb(0_0_0/0.28)] md:shadow-[0_8px_20px_rgb(0_0_0/0.2)] transition-transform duration-150 ${
 				selected ? 'scale-110' : 'hover:scale-105'
 			}`}
 		>
@@ -246,11 +246,14 @@ const GymMarker = memo(function GymMarker({
 	gym,
 	selected,
 	state = 'normal',
-	onSelect
+	onSelect,
+	showCard = true
 }: {
 	gym: Gym;
 	selected: boolean;
 	state?: MarkerState;
+	/** False on mobile, where the bottom peek card shows the selected gym instead. */
+	showCard?: boolean;
 	/** Stable across renders, or memoisation of the pins below is wasted. */
 	onSelect: (gym: Gym) => void;
 }) {
@@ -263,7 +266,7 @@ const GymMarker = memo(function GymMarker({
 			}`}
 		>
 			<GymPin gym={gym} selected={selected} matched={state === 'matched'} onSelect={onSelect} />
-			{selected && <GymMarkerCard gym={gym} />}
+			{selected && showCard && <GymMarkerCard gym={gym} />}
 		</div>
 	);
 });
