@@ -9,7 +9,10 @@ import GymPeekCard from './_components/GymPeekCard';
 import KeyboardShortcutsModal from './_components/KeyboardShortcutsModal';
 import CommandPalette, { type PaletteAnchor } from './_components/CommandPalette';
 import SearchTrigger from './_components/SearchTrigger';
-import { fetchGyms } from '@/lib/api';
+import ChainFilterControl from './_components/ChainFilterControl';
+import { fetchChains, fetchGyms, type ChainWithCount } from '@/lib/api';
+import { applyChainFilter } from '@/lib/chain-filter';
+import { useChainFilter } from '@/hooks/useChainFilter';
 import { Gym } from '@/types/gym';
 import { useGymFilter } from '@/app/contexts/GymFilterContext';
 import { useUserLocation } from '@/hooks/useUserLocation';
@@ -143,6 +146,16 @@ export default function Page() {
 		fetchGyms().then(setGyms);
 	}, []);
 
+	const [chains, setChains] = useState<ChainWithCount[]>([]);
+	const chainFilter = useChainFilter();
+
+	useEffect(() => {
+		// The list is only for the filter panel; the map works without it.
+		fetchChains()
+			.then(setChains)
+			.catch(() => setChains([]));
+	}, []);
+
 	// Cmd+. (Mac) / Ctrl+. toggles the gym list sidebar.
 	// Cmd+K (Mac) / Ctrl+K opens the search palette anchored to the search pill.
 	// Cmd+Shift+U (Mac) / Ctrl+Shift+U — test-only backup: same palette, centered.
@@ -190,17 +203,33 @@ export default function Page() {
 	// from both the map and the list. Off by default.
 	const [showUnmatched, setShowUnmatched] = useState(false);
 
+	// Chain filter first: it narrows the universe that the machine filters, the eye
+	// toggle and the counts below all work on. Returns `gyms` itself when inactive.
+	const chainVisibleGyms = useMemo(
+		() => applyChainFilter(gyms, chainFilter.state),
+		[gyms, chainFilter.state]
+	);
 	// Gyms whose equipment includes ALL selected filters. Memoised because the
 	// array identity is what MapView keys its clustering (and its cluster cache)
 	// on — rebuilding it on every unrelated render re-clusters every gym.
 	const filteredGyms = useMemo(
-		() => (matchedGymIds ? gyms.filter((g) => matchedGymIds.has(g.id)) : gyms),
-		[gyms, matchedGymIds]
+		() =>
+			matchedGymIds ? chainVisibleGyms.filter((g) => matchedGymIds.has(g.id)) : chainVisibleGyms,
+		[chainVisibleGyms, matchedGymIds]
 	);
 	// What the map and list actually render, per the eye toggle.
-	const mapGyms = showUnmatched ? gyms : filteredGyms;
+	const baseGyms = showUnmatched ? chainVisibleGyms : filteredGyms;
+	// A gym picked from the search palette can be one the chain filter hides. Keep
+	// it on the map while selected, or the pin and card it flies to wouldn't exist.
+	const mapGyms = useMemo(
+		() =>
+			selectedGym && !baseGyms.some((g) => g.id === selectedGym.id) && gyms.some((g) => g.id === selectedGym.id)
+				? [...baseGyms, selectedGym]
+				: baseGyms,
+		[baseGyms, selectedGym, gyms]
+	);
 	const mapMatched = showUnmatched ? matchedGymIds : null;
-	const listGyms = showUnmatched ? gyms : filteredGyms;
+	const listGyms = baseGyms;
 	const searchFilteredGyms = useMemo(() => {
 		if (!gymSearch) return listGyms;
 		const needle = gymSearch.toLowerCase();
@@ -254,11 +283,19 @@ export default function Page() {
 					<div className="relative z-0 min-h-0 flex-1 px-3 pt-2">
 						<div className="border-border relative h-full overflow-hidden rounded-2xl border">
 							<FilterCountBadge
-								total={gyms.length}
+								total={chainVisibleGyms.length}
 								showUnmatched={showUnmatched}
 								onToggle={() => setShowUnmatched((v) => !v)}
 							/>
 							<ActiveFilterCards />
+							<ChainFilterControl
+								className="absolute left-3 top-3 z-10"
+								chains={chains}
+								state={chainFilter.state}
+								onIndependentOnlyChange={chainFilter.setIndependentOnly}
+								onToggleChain={chainFilter.toggleChain}
+								onReset={chainFilter.reset}
+							/>
 							{isDesktop === false && (
 								<MapView
 									gyms={mapGyms}
@@ -374,11 +411,19 @@ export default function Page() {
 							<SearchTrigger open={paletteOpen} onOpen={openPalette} />
 						</div>
 						<FilterCountBadge
-							total={gyms.length}
+							total={chainVisibleGyms.length}
 							showUnmatched={showUnmatched}
 							onToggle={() => setShowUnmatched((v) => !v)}
 						/>
 						<ActiveFilterCards />
+						<ChainFilterControl
+							className="absolute left-3 top-[76px] z-10"
+							chains={chains}
+							state={chainFilter.state}
+							onIndependentOnlyChange={chainFilter.setIndependentOnly}
+							onToggleChain={chainFilter.toggleChain}
+							onReset={chainFilter.reset}
+						/>
 						{isDesktop === true && (
 							<MapView
 								gyms={mapGyms}

@@ -1,5 +1,12 @@
 import type { ExerciseRef } from './equipment';
 
+export interface GymChain {
+	id: number;
+	name: string;
+	slug: string;
+	logo_url: string | null;
+}
+
 export interface Gym {
 	created_at: string | number | Date;
 	is_favorite: boolean;
@@ -19,6 +26,8 @@ export interface Gym {
 	user_rating?: number;
 	favourites?: number;
 	image_url?: string;
+	chain_id?: number | null;
+	chain?: GymChain | null;
 	opening_hours?: {
 		openNow: boolean;
 		periods: {

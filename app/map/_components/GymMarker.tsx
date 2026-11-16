@@ -142,7 +142,9 @@ function GymMarkerCard({ gym }: { gym: Gym }) {
 				</div>
 				<div className="min-w-0">
 					<p className="truncate text-sm font-semibold text-main">{gym.name}</p>
-					<p className="text-xs text-sub">{gym.city || 'Gym'}</p>
+					<p className="truncate text-xs text-sub">
+						{gym.chain ? [gym.chain.name, gym.city].filter(Boolean).join(' · ') : gym.city || 'Gym'}
+					</p>
 				</div>
 			</div>
 
@@ -258,12 +260,15 @@ const GymMarker = memo(function GymMarker({
 	onSelect: (gym: Gym) => void;
 }) {
 	const dimmed = state === 'dimmed' && !selected;
+	// Chain pins are smaller and softer so independents read first, but a selected
+	// chain gym goes back to full size so its card and pin stay legible.
+	const muted = Boolean(gym.chain) && !selected;
 
 	return (
 		<div
-			className={`relative flex flex-col items-center transition-opacity duration-500 ${
-				dimmed ? 'opacity-[0.28]' : 'opacity-100'
-			}`}
+			className={`relative flex flex-col items-center transition-[opacity,transform] duration-500 ${
+				muted ? 'origin-bottom scale-[0.78]' : ''
+			} ${dimmed ? 'opacity-[0.28]' : muted ? 'opacity-75' : 'opacity-100'}`}
 		>
 			<GymPin gym={gym} selected={selected} matched={state === 'matched'} onSelect={onSelect} />
 			{selected && showCard && <GymMarkerCard gym={gym} />}
