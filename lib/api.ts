@@ -1,5 +1,5 @@
 import { API_URL } from './config';
-import type { Gym, GymEquipment, GymFreeWeightsInput, GymWithQuantity } from '@/types/gym';
+import type { Gym, GymChain, GymEquipment, GymFreeWeightsInput, GymWithQuantity } from '@/types/gym';
 import type { Equipment, EquipmentVariant } from '@/types/equipment';
 import type { PendingGym, PendingEquipment, PendingSuggestion, PendingPhoto, PendingVariant, PendingWeightStack, PendingGymInstagram, PendingFreeWeights, PendingExerciseChange, AdminUser } from '@/types/admin';
 import type { LeaderboardEntry } from '@/types/leaderboard';
@@ -181,6 +181,12 @@ export type Brand = {
 	logo_url: string | null;
 	equipment_count: number;
 };
+
+// ── Chains ────────────────────────────────────────────────────────────────────
+
+export type ChainWithCount = GymChain & { approved_gym_count: number };
+
+export const fetchChains = (): Promise<ChainWithCount[]> => apiFetch('/chains');
 
 // ── Brands ────────────────────────────────────────────────────────────────────
 
