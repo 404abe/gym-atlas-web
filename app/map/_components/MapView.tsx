@@ -80,10 +80,13 @@ const FULL_CLUSTER_COUNT = 100;
 
 const ClusterMarker = memo(function ClusterMarker({
 	count,
-	state
+	state,
+	chain
 }: {
 	count: number;
 	state: MarkerState;
+	/** A cluster of chain gyms: drawn smaller and muted so independents stand out. */
+	chain: boolean;
 }) {
 	const sizeClass = count < 4 ? 'h-[46px] w-[46px]' : count < 10 ? 'h-[50px] w-[50px]' : 'h-[54px] w-[54px]';
 	const innerClass = count < 4 ? 'inset-[13px]' : count < 10 ? 'inset-[14px]' : 'inset-[15px]';
@@ -93,8 +96,8 @@ const ClusterMarker = memo(function ClusterMarker({
 	return (
 		<div
 			className={`map-marker-shell relative grid ${sizeClass} place-items-center rounded-full border border-border bg-surface shadow-[0_2px_6px_rgb(0_0_0/0.28)] md:shadow-[0_10px_24px_rgb(0_0_0/0.24)] ${
-				state === 'dimmed' ? 'opacity-[0.28]' : 'opacity-100'
-			}`}
+				chain ? 'origin-bottom scale-[0.8]' : ''
+			} ${state === 'dimmed' ? 'opacity-[0.28]' : chain ? 'opacity-70' : 'opacity-100'}`}
 		>
 			<div
 				className="absolute inset-[4px] rounded-full"
@@ -118,10 +121,12 @@ const ClusterMarker = memo(function ClusterMarker({
 const ClusterButton = memo(function ClusterButton({
 	cluster,
 	state,
+	chain,
 	onExpand
 }: {
 	cluster: GymCluster;
 	state: MarkerState;
+	chain: boolean;
 	/** Stable across renders, or the memo above never hits. */
 	onExpand: (cluster: GymCluster) => void;
 }) {
@@ -132,7 +137,7 @@ const ClusterButton = memo(function ClusterButton({
 			onClick={() => onExpand(cluster)}
 			className="cursor-pointer opacity-95 transition duration-500 ease-out hover:scale-105 hover:opacity-100"
 		>
-			<ClusterMarker count={cluster.gyms.length} state={state} />
+			<ClusterMarker count={cluster.gyms.length} state={state} chain={chain} />
 		</button>
 	);
 });
@@ -168,7 +173,18 @@ export default function MapView({
 	// a fresh callback, or a new gyms array, would otherwise silently un-memoise
 	// every pin. Only event handlers read these, never render, so the one-frame
 	// lag of an effect is immaterial.
-	const gymsRef = useRef(gyms);
+	// Chain gyms and independents are clustered separately. Clustering them together
+	// lets one PureGym absorb an independent into a bubble, and in a city with
+	// dozens of chain sites the independents would disappear into the count.
+	const { chainGyms, independentGyms } = useMemo(() => {
+		const chain: Gym[] = [];
+		const independent: Gym[] = [];
+		for (const gym of gyms) (gym.chain ? chain : independent).push(gym);
+		return { chainGyms: chain, independentGyms: independent };
+	}, [gyms]);
+
+	const chainGymsRef = useRef(chainGyms);
+	const independentGymsRef = useRef(independentGyms);
 	const onSelectGymRef = useRef(onSelectGym);
 	const lastBoundsAt = useRef(0);
 	const cullMarginRef = useRef(compact ? CULL_MARGIN_COMPACT : CULL_MARGIN);
@@ -178,8 +194,9 @@ export default function MapView({
 	}, [compact]);
 
 	useEffect(() => {
-		gymsRef.current = gyms;
-	}, [gyms]);
+		chainGymsRef.current = chainGyms;
+		independentGymsRef.current = independentGyms;
+	}, [chainGyms, independentGyms]);
 
 	useEffect(() => {
 		onSelectGymRef.current = onSelectGym;
@@ -245,7 +262,10 @@ export default function MapView({
 		// The rendered clusters come from the quantised zoom, so the search has to
 		// start there too — from the live zoom this cluster's id might not exist.
 		const fromZoom = quantiseZoom(mapRef.current?.getZoom() ?? 5);
-		const targetZoom = getExpansionZoom(gymsRef.current, cluster, fromZoom);
+		// A cluster only ever holds one kind, and its id is only stable within the
+		// list it was built from, so the expansion search must use that same list.
+		const source = cluster.gyms[0]?.chain ? chainGymsRef.current : independentGymsRef.current;
+		const targetZoom = getExpansionZoom(source, cluster, fromZoom);
 		// Scale duration to the distance actually travelled: a cluster that's one
 		// nudge from splitting shouldn't take as long as one that needs to jump from
 		// a country-wide zoom all the way down to street level.
@@ -257,7 +277,12 @@ export default function MapView({
 		});
 	}, []);
 
-	const clusters = useMemo(() => clusterGymsCached(gyms, zoom), [gyms, zoom]);
+	// Chains first so independents come later in the DOM and paint over them where
+	// the two overlap; the explicit zIndex below does the same job for the selection.
+	const clusters = useMemo(
+		() => [...clusterGymsCached(chainGyms, zoom), ...clusterGymsCached(independentGyms, zoom)],
+		[chainGyms, independentGyms, zoom]
+	);
 
 	const visibleClusters = useMemo(() => {
 		if (!bounds) return clusters;
@@ -355,6 +380,7 @@ export default function MapView({
 							: 'dimmed';
 					const single = cluster.gyms.length === 1 ? cluster.gyms[0] : null;
 					const isSelected = single !== null && selectedGym?.id === single.id;
+					const isChain = Boolean(cluster.gyms[0]?.chain);
 
 					return (
 						<Marker
@@ -362,7 +388,7 @@ export default function MapView({
 							longitude={cluster.lng}
 							latitude={cluster.lat}
 							anchor="bottom"
-							style={{ zIndex: isSelected ? 30 : 10 }}
+							style={{ zIndex: isSelected ? 30 : isChain ? 5 : 10 }}
 						>
 							{single ? (
 								<GymMarker
@@ -373,7 +399,12 @@ export default function MapView({
 									showCard={!compact}
 								/>
 							) : (
-								<ClusterButton cluster={cluster} state={state} onExpand={expandCluster} />
+								<ClusterButton
+									cluster={cluster}
+									state={state}
+									chain={isChain}
+									onExpand={expandCluster}
+								/>
 							)}
 						</Marker>
 					);
